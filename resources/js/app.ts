@@ -1,6 +1,6 @@
 import { initTheme, useRequestKey } from 'ornito';
 import { createApp } from 'vue';
-import './css/app.css';
+import '../css/app.css';
 import App from '@/App.vue';
 import { useRequest } from '@/core/composables/useRequest';
 import router from '@/router';

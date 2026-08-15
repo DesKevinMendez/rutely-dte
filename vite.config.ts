@@ -8,12 +8,12 @@ import path from 'path';
 export default defineConfig({
     resolve: {
         alias: {
-            '@': path.resolve(__dirname, './resources'),
+            '@': path.resolve(__dirname, './resources/js'),
         },
     },
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/app.ts'],
+            input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,
             fonts: [
                 bunny('Instrument Sans', {
