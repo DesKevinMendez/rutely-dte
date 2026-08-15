@@ -33,6 +33,7 @@
         "concurrently": "^10.0.3",
         "laravel-vite-plugin": "^3.1",
         "tailwind-merge": "^3.2.0",
+        "ornito": "git+https://github.com/DesKevinMendez/ornito.git#v0.4.1",
         "tailwindcss": "^4.1.1",
         "typescript": "^5.2.2",
         "vite": "^8.0.0",
