@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Dte;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateDteRequest extends FormRequest
+class UpdateDteInvalidationRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.

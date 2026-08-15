@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Dte\StoreDteRequest;
-use App\Http\Requests\Dte\UpdateDteRequest;
-use App\Models\Dte;
+use App\Http\Requests\Dte\StoreDteInvalidationRequest;
+use App\Http\Requests\Dte\UpdateDteInvalidationRequest;
+use App\Models\DteInvalidation;
 
-class DteController extends Controller
+class DteInvalidationController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -27,7 +27,7 @@ class DteController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreDteRequest $request)
+    public function store(StoreDteInvalidationRequest $request)
     {
         //
     }
@@ -35,7 +35,7 @@ class DteController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Dte $dte)
+    public function show(DteInvalidation $dteInvalidation)
     {
         //
     }
@@ -43,7 +43,7 @@ class DteController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Dte $dte)
+    public function edit(DteInvalidation $dteInvalidation)
     {
         //
     }
@@ -51,7 +51,7 @@ class DteController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateDteRequest $request, Dte $dte)
+    public function update(UpdateDteInvalidationRequest $request, DteInvalidation $dteInvalidation)
     {
         //
     }
@@ -59,7 +59,7 @@ class DteController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Dte $dte)
+    public function destroy(DteInvalidation $dteInvalidation)
     {
         //
     }
