@@ -4,6 +4,8 @@ import laravel from 'laravel-vite-plugin';
 import { bunny } from 'laravel-vite-plugin/fonts';
 import { defineConfig } from 'vite';
 import path from 'path';
+import AutoImport from 'unplugin-auto-import/vite';
+import Components from 'unplugin-vue-components/vite';
 
 export default defineConfig({
     resolve: {
@@ -29,6 +31,18 @@ export default defineConfig({
                     includeAbsolute: false,
                 },
             },
+        }),
+         AutoImport({
+            imports: ['vue', 'vue-router'],
+            dts: true,
+            exclude: [/[\\/]node_modules[\\/]/, /[\\/]\.git[\\/]/, /[\\/]ornito[\\/]dist[\\/]/],
+        }),
+        Components({
+            dirs: [
+                './resources/js/**',,
+            ],
+            deep: true,
+            dts: true,
         }),
     ],
 });

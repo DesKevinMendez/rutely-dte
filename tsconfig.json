@@ -122,5 +122,8 @@
         "resources/js/**/*.tsx",
         "resources/js/**/*.vue",
         "resources/js/app.ts",
-        "resources/js/App.vue"    ]
+        "resources/js/App.vue",
+        "auto-imports.d.ts",
+        "components.d.ts"
+    ]
 }
