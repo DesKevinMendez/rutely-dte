@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-class Dte extends Model
+class Municipalities extends Model
 {
-    /** @use HasFactory<\Database\Factories\DteFactory> */
+    /** @use HasFactory<\Database\Factories\MunicipalitiesFactory> */
     use HasFactory, HasUuids;
 }
