@@ -18,7 +18,10 @@ test('an user can do login', function () {
         "data" => [
             "token" => $response->json('data.token'),
             "user" => [
-                "id" => 1,
+                "id" => $response->json('data.user.id'),
+                "company_id" => null,
+                "role" => $response->json('data.user.role'),
+                "phone" => $response->json('data.user.phone'),
                 "name" => $response->json('data.user.name'),
                 "email" => $response->json('data.user.email'),
                 "email_verified_at" => $response->json('data.user.email_verified_at'),
