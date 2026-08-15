@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('municipalities', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreign('departament_id')->references('id')->on('departaments');
+            $table->foreignUuid('departament_id')->constrained();
             $table->string('departament_code')->unique()->notNullable();
             $table->string('code')->unique();
             $table->string('name')->notNullable();
