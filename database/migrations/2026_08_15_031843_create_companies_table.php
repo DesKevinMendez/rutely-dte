@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('commercial_name');
             $table->string('economic_activity_code');
             $table->string('establishment_type');
-            $table->string('department');
-            $table->string('municipality');
+            $table->foreignUuid('departament_id')->constrained();
+            $table->foreignUuid('municipality_id')->constrained();
             $table->string('email');
             $table->string('mh_establishment_code');
             $table->string('mh_pos_code');
