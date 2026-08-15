@@ -34,7 +34,7 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
-        @vite(['resources/css/app.css', 'resources/js/app.ts'])
+        @vite(['resources/css/app.css', 'resources/app.ts'])
     </head>
     <body class="font-sans antialiased">
         <div id="app"></div>
