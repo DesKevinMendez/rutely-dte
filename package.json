@@ -9,10 +9,14 @@
         "format:check": "prettier --check resources/",
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
+        "playwright:install": "playwright install chromium",
+        "test:e2e": "playwright test",
+        "test:e2e:ui": "playwright test --ui",
         "types:check": "vue-tsc --noEmit"
     },
     "devDependencies": {
         "@eslint/js": "^9.19.0",
+        "@playwright/test": "^1.62.1",
         "@stylistic/eslint-plugin": "^5.10.0",
         "@types/node": "^22.13.5",
         "@vue/eslint-config-typescript": "^14.3.0",

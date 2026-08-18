@@ -1,19 +1,8 @@
 <script setup lang="ts">
-import { Form } from 'vee-validate';
-import * as yup from 'yup';
 import { BaseButton, Card, FormInput } from 'ornito';
 import useLogin from '../composables/useLogin';
 
-const { email, password, isLoading, error, login } = useLogin();
-
-const emailRules = yup
-    .string()
-    .required('El correo electrónico es requerido.')
-    .email('Ingresá un correo electrónico válido.');
-
-const passwordRules = yup
-    .string()
-    .required('La contraseña es requerida.');
+const { email, password, rules, isLoading, error, login } = useLogin();
 </script>
 
 <template>
@@ -25,7 +14,7 @@ const passwordRules = yup
             </p>
         </div>
 
-        <Form class="space-y-5" @submit="login">
+        <form id="login-form" class="space-y-5" novalidate @submit.prevent="login">
             <FormInput
                 v-model="email"
                 id="email"
@@ -34,7 +23,7 @@ const passwordRules = yup
                 label="Correo Electrónico"
                 placeholder="admin@rutely.biz"
                 autocomplete="email"
-                :rules="emailRules"
+                :rules="rules.email"
             />
 
             <FormInput
@@ -45,7 +34,7 @@ const passwordRules = yup
                 label="Contraseña"
                 placeholder="••••••••"
                 autocomplete="current-password"
-                :rules="passwordRules"
+                :rules="rules.password"
             />
 
             <div
@@ -56,6 +45,7 @@ const passwordRules = yup
             </div>
 
             <BaseButton
+                form="login-form"
                 type="submit"
                 variant="primary"
                 size="auto"
@@ -74,6 +64,6 @@ const passwordRules = yup
                     Registrarse
                 </RouterLink>
             </p>
-        </Form>
+        </form>
     </Card>
 </template>
