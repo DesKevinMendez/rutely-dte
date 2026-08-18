@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('establishment_type');
             $table->foreignUuid('departament_id')->constrained();
             $table->foreignUuid('municipality_id')->constrained();
+            $table->foreignUuid('district_id')->nullable()->constrained();
             $table->string('email');
             $table->string('mh_establishment_code');
             $table->string('mh_pos_code');

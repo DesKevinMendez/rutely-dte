@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('municipalities', function (Blueprint $table) {
+        Schema::create('districts', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('departament_id')->constrained();
-            $table->string('departament_code')->notNullable();
+            $table->foreignUuid('municipality_id')->constrained();
             $table->string('code');
             $table->string('name')->notNullable();
             $table->timestamps();
 
-            $table->unique(['departament_id', 'code']);
+            $table->unique(['municipality_id', 'code']);
         });
     }
 
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('municipalities');
+        Schema::dropIfExists('districts');
     }
 };

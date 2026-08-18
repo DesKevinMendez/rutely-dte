@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('economic_activity_description')->nullable();
             $table->foreignUuid('departament_id')->nullable()->constrained();
             $table->foreignUuid('municipality_id')->nullable()->constrained();
+            $table->foreignUuid('district_id')->nullable()->constrained();
             $table->string('address_complement')->nullable();
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
