@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Company;
 
 use App\Models\Company;
+use App\Models\User;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -13,7 +14,9 @@ class StoreCompanyRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Company::class) ?? false;
+        $user = $this->user();
+
+        return $user instanceof User && $user->can('create', Company::class);
     }
 
     /**
