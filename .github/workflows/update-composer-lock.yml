@@ -1,0 +1,38 @@
+name: update composer lock
+
+on:
+  push:
+    branches:
+      - agent/public-catalog-endpoints
+    paths:
+      - .github/workflows/update-composer-lock.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update-lock:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+          coverage: none
+
+      - name: Update Composer lock
+        run: composer update spatie/laravel-query-builder --with-all-dependencies --no-interaction --no-scripts
+
+      - name: Commit Composer lock
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add composer.lock
+          git diff --cached --quiet && exit 0
+          git commit -m "build: lock query builder dependency"
+          git push
