@@ -1,92 +1,94 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useForm } from 'vee-validate';
+import * as yup from 'yup';
 import { BaseButton, Card, FormInput, SearchableSelect } from 'ornito';
 import { useAuthUser } from '@/core/composables/useAuthUser';
 
 const router = useRouter();
 const { clearSession } = useAuthUser();
-const formError = ref<string | null>(null);
 
-const form = reactive({
-    name: '',
-    commercialName: '',
-    nit: '',
-    nrc: '',
-    phone: '',
-    email: '',
-    address: '',
-    economicActivityCode: '',
-    establishmentType: '',
-    departmentId: '',
-    municipalityId: '',
-    districtId: '',
-    ownEstablishmentCode: '',
-    ownPosCode: '',
+const onboardingSchema = yup.object({
+    name: yup.string().required('La razón social es requerida.'),
+    commercialName: yup.string().required('El nombre comercial es requerido.'),
+    nit: yup.string().required('El NIT es requerido.'),
+    nrc: yup.string().nullable(),
+    phone: yup.string().required('El teléfono es requerido.'),
+    email: yup.string().email('Ingresá un correo electrónico válido.').required('El correo electrónico es requerido.'),
+    address: yup.string().required('La dirección es requerida.'),
+    economicActivityCode: yup.string().required('La actividad económica es requerida.'),
+    establishmentType: yup.string().required('El tipo de establecimiento es requerido.'),
+    departmentId: yup.string().required('El departamento es requerido.'),
+    municipalityId: yup.string().required('El municipio es requerido.'),
+    districtId: yup.string().required('El distrito es requerido.'),
+    ownEstablishmentCode: yup.string().required('El código de establecimiento es requerido.'),
+    ownPosCode: yup.string().required('El código de punto de venta es requerido.'),
 });
 
+const { defineField, handleSubmit, setFieldValue } = useForm({
+    validationSchema: onboardingSchema,
+    initialValues: {
+        name: '',
+        commercialName: '',
+        nit: '',
+        nrc: '',
+        phone: '',
+        email: '',
+        address: '',
+        economicActivityCode: '',
+        establishmentType: '',
+        departmentId: '',
+        municipalityId: '',
+        districtId: '',
+        ownEstablishmentCode: '',
+        ownPosCode: '',
+    },
+});
+
+const [name] = defineField('name');
+const [commercialName] = defineField('commercialName');
+const [nit] = defineField('nit');
+const [nrc] = defineField('nrc');
+const [phone] = defineField('phone');
+const [email] = defineField('email');
+const [address] = defineField('address');
+const [economicActivityCode] = defineField('economicActivityCode');
+const [establishmentType] = defineField('establishmentType');
+const [departmentId] = defineField('departmentId');
+const [municipalityId] = defineField('municipalityId');
+const [districtId] = defineField('districtId');
+const [ownEstablishmentCode] = defineField('ownEstablishmentCode');
+const [ownPosCode] = defineField('ownPosCode');
+
 const municipalityUrl = computed(() => {
-    if (!form.departmentId) {
+    if (!departmentId.value) {
         return '/api/v1/data/municipalities?per_page=100';
     }
 
-    return `/api/v1/data/municipalities?per_page=100&filter[department_id]=${form.departmentId}`;
+    return `/api/v1/data/municipalities?per_page=100&filter[department_id]=${departmentId.value}`;
 });
 
 const districtUrl = computed(() => {
-    if (!form.municipalityId) {
+    if (!municipalityId.value) {
         return '/api/v1/data/districts?per_page=100';
     }
 
-    return `/api/v1/data/districts?per_page=100&filter[municipality_id]=${form.municipalityId}`;
+    return `/api/v1/data/districts?per_page=100&filter[municipality_id]=${municipalityId.value}`;
 });
 
-watch(
-    () => form.departmentId,
-    () => {
-        form.municipalityId = '';
-        form.districtId = '';
-    },
-);
+watch(departmentId, () => {
+    setFieldValue('municipalityId', '');
+    setFieldValue('districtId', '');
+});
 
-watch(
-    () => form.municipalityId,
-    () => {
-        form.districtId = '';
-    },
-);
+watch(municipalityId, () => {
+    setFieldValue('districtId', '');
+});
 
-const continueFlow = async (): Promise<void> => {
-    formError.value = null;
-
-    const requiredValues = [
-        form.name,
-        form.commercialName,
-        form.nit,
-        form.phone,
-        form.email,
-        form.address,
-        form.economicActivityCode,
-        form.establishmentType,
-        form.departmentId,
-        form.municipalityId,
-        form.districtId,
-        form.ownEstablishmentCode,
-        form.ownPosCode,
-    ];
-
-    if (requiredValues.some((value) => !value)) {
-        formError.value = 'Completá todos los campos requeridos antes de continuar.';
-        return;
-    }
-
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-        formError.value = 'Ingresá un correo electrónico válido.';
-        return;
-    }
-
+const continueFlow = handleSubmit(async (): Promise<void> => {
     await router.push({ name: 'dashboard' });
-};
+});
 
 const logout = async (): Promise<void> => {
     clearSession();
@@ -120,15 +122,15 @@ const logout = async (): Promise<void> => {
 
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <FormInput
-                                v-model="form.name"
-                                id="companyName"
-                                name="companyName"
+                                v-model="name"
+                                id="name"
+                                name="name"
                                 label="Razón Social"
                                 placeholder="Ej. RUTELY S.A. DE C.V."
                             />
 
                             <FormInput
-                                v-model="form.commercialName"
+                                v-model="commercialName"
                                 id="commercialName"
                                 name="commercialName"
                                 label="Nombre Comercial"
@@ -136,7 +138,7 @@ const logout = async (): Promise<void> => {
                             />
 
                             <FormInput
-                                v-model="form.nit"
+                                v-model="nit"
                                 id="nit"
                                 name="nit"
                                 label="NIT"
@@ -145,7 +147,7 @@ const logout = async (): Promise<void> => {
                             />
 
                             <FormInput
-                                v-model="form.nrc"
+                                v-model="nrc"
                                 id="nrc"
                                 name="nrc"
                                 label="NRC"
@@ -155,7 +157,7 @@ const logout = async (): Promise<void> => {
 
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <SearchableSelect
-                                v-model="form.economicActivityCode"
+                                v-model="economicActivityCode"
                                 id="economicActivityCode"
                                 name="economicActivityCode"
                                 label="Actividad Económica (CAT-019)"
@@ -168,7 +170,7 @@ const logout = async (): Promise<void> => {
                             />
 
                             <SearchableSelect
-                                v-model="form.establishmentType"
+                                v-model="establishmentType"
                                 id="establishmentType"
                                 name="establishmentType"
                                 label="Tipo de Establecimiento (CAT-009)"
@@ -195,7 +197,7 @@ const logout = async (): Promise<void> => {
 
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <FormInput
-                                v-model="form.phone"
+                                v-model="phone"
                                 id="phone"
                                 name="phone"
                                 type="tel"
@@ -205,9 +207,9 @@ const logout = async (): Promise<void> => {
                             />
 
                             <FormInput
-                                v-model="form.email"
-                                id="companyEmail"
-                                name="companyEmail"
+                                v-model="email"
+                                id="email"
+                                name="email"
                                 type="email"
                                 label="Correo Electrónico"
                                 placeholder="facturacion@rutely.biz"
@@ -216,7 +218,7 @@ const logout = async (): Promise<void> => {
                         </div>
 
                         <FormInput
-                            v-model="form.address"
+                            v-model="address"
                             id="address"
                             name="address"
                             label="Complemento de Dirección"
@@ -225,7 +227,7 @@ const logout = async (): Promise<void> => {
 
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <SearchableSelect
-                                v-model="form.departmentId"
+                                v-model="departmentId"
                                 id="departmentId"
                                 name="departmentId"
                                 label="Departamento (CAT-012)"
@@ -239,34 +241,34 @@ const logout = async (): Promise<void> => {
                             />
 
                             <SearchableSelect
-                                :key="form.departmentId || 'municipality-empty'"
-                                v-model="form.municipalityId"
+                                :key="departmentId || 'municipality-empty'"
+                                v-model="municipalityId"
                                 id="municipalityId"
                                 name="municipalityId"
                                 label="Municipio (CAT-013)"
-                                :placeholder="form.departmentId ? 'Seleccioná' : 'Elegí un departamento'"
+                                :placeholder="departmentId ? 'Seleccioná' : 'Elegí un departamento'"
                                 :url="municipalityUrl"
                                 search-by="filter[name]"
                                 label-key="name"
                                 value-key="id"
                                 subtitle-key="code"
-                                :disabled="!form.departmentId"
+                                :disabled="!departmentId"
                                 local-search-first
                             />
 
                             <SearchableSelect
-                                :key="form.municipalityId || 'district-empty'"
-                                v-model="form.districtId"
+                                :key="municipalityId || 'district-empty'"
+                                v-model="districtId"
                                 id="districtId"
                                 name="districtId"
                                 label="Distrito (CAT-008)"
-                                :placeholder="form.municipalityId ? 'Seleccioná' : 'Elegí un municipio'"
+                                :placeholder="municipalityId ? 'Seleccioná' : 'Elegí un municipio'"
                                 :url="districtUrl"
                                 search-by="filter[name]"
                                 label-key="name"
                                 value-key="id"
                                 subtitle-key="code"
-                                :disabled="!form.municipalityId"
+                                :disabled="!municipalityId"
                                 local-search-first
                             />
                         </div>
@@ -284,7 +286,7 @@ const logout = async (): Promise<void> => {
 
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <FormInput
-                                v-model="form.ownEstablishmentCode"
+                                v-model="ownEstablishmentCode"
                                 id="ownEstablishmentCode"
                                 name="ownEstablishmentCode"
                                 label="Código de Establecimiento"
@@ -292,7 +294,7 @@ const logout = async (): Promise<void> => {
                             />
 
                             <FormInput
-                                v-model="form.ownPosCode"
+                                v-model="ownPosCode"
                                 id="ownPosCode"
                                 name="ownPosCode"
                                 label="Código de Punto de Venta"
@@ -300,13 +302,6 @@ const logout = async (): Promise<void> => {
                             />
                         </div>
                     </section>
-
-                    <div
-                        v-if="formError"
-                        class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300"
-                    >
-                        {{ formError }}
-                    </div>
 
                     <div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
                         <BaseButton type="button" variant="outline" size="auto" @click="logout">
