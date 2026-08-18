@@ -56,7 +56,8 @@ export default function useOnboarding() {
     );
 
     const continueFlow = async (): Promise<void> => {
-        await router.push({ name: 'dashboard' });
+        // Company/user registration is not persisted yet.
+        // Keep the user on the onboarding form until that flow exists.
     };
 
     const goToLogin = async (): Promise<void> => {
