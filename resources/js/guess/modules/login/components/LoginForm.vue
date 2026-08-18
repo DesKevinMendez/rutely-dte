@@ -1,19 +1,11 @@
 <script setup lang="ts">
-import { Form } from 'vee-validate';
-import * as yup from 'yup';
+import { ErrorMessage } from 'vee-validate';
 import { BaseButton, Card, FormInput } from 'ornito';
 import useLogin from '../composables/useLogin';
 
-const { email, password, isLoading, error, login } = useLogin();
+const { email, password, rules, isLoading, error, login } = useLogin();
 
-const emailRules = yup
-    .string()
-    .required('El correo electrónico es requerido.')
-    .email('Ingresá un correo electrónico válido.');
-
-const passwordRules = yup
-    .string()
-    .required('La contraseña es requerida.');
+const errorClass = 'mt-1 text-sm text-danger-600 dark:text-danger-400';
 </script>
 
 <template>
@@ -25,28 +17,34 @@ const passwordRules = yup
             </p>
         </div>
 
-        <Form class="space-y-5" @submit="login">
-            <FormInput
-                v-model="email"
-                id="email"
-                name="email"
-                type="email"
-                label="Correo Electrónico"
-                placeholder="admin@rutely.biz"
-                autocomplete="email"
-                :rules="emailRules"
-            />
+        <form id="login-form" class="space-y-5" novalidate @submit.prevent="login">
+            <div>
+                <FormInput
+                    v-model="email"
+                    id="email"
+                    name="email"
+                    type="email"
+                    label="Correo Electrónico"
+                    placeholder="admin@rutely.biz"
+                    autocomplete="email"
+                    :rules="rules.email"
+                />
+                <ErrorMessage name="email" :class="errorClass" />
+            </div>
 
-            <FormInput
-                v-model="password"
-                id="password"
-                name="password"
-                type="password"
-                label="Contraseña"
-                placeholder="••••••••"
-                autocomplete="current-password"
-                :rules="passwordRules"
-            />
+            <div>
+                <FormInput
+                    v-model="password"
+                    id="password"
+                    name="password"
+                    type="password"
+                    label="Contraseña"
+                    placeholder="••••••••"
+                    autocomplete="current-password"
+                    :rules="rules.password"
+                />
+                <ErrorMessage name="password" :class="errorClass" />
+            </div>
 
             <div
                 v-if="error"
@@ -56,6 +54,7 @@ const passwordRules = yup
             </div>
 
             <BaseButton
+                form="login-form"
                 type="submit"
                 variant="primary"
                 size="auto"
@@ -74,6 +73,6 @@ const passwordRules = yup
                     Registrarse
                 </RouterLink>
             </p>
-        </Form>
+        </form>
     </Card>
 </template>
