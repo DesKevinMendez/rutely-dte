@@ -3,12 +3,12 @@ import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Navbar, UserProfileDropdown } from 'ornito';
 import type { DropdownMenuItem } from 'ornito';
-import { useAuthUser } from '@/core/composables/useAuthUser';
+import { useAuth } from '@/core/stores/auth';
 
 const router = useRouter();
-const { user, clearSession } = useAuthUser();
+const auth = useAuth();
 
-const userName = computed(() => user.value?.name ?? 'Usuario');
+const userName = computed(() => auth.user?.name ?? 'Usuario');
 const userInitials = computed(() => {
     const words = userName.value.trim().split(/\s+/).filter(Boolean);
 
@@ -17,10 +17,10 @@ const userInitials = computed(() => {
         .map((word) => word.charAt(0).toUpperCase())
         .join('') || 'U';
 });
-const userRole = computed(() => user.value?.role ?? 'Usuario');
+const userRole = computed(() => auth.user?.role ?? 'Usuario');
 
 const logout = async (): Promise<void> => {
-    clearSession();
+    auth.clearSession();
     await router.push({ name: 'login' });
 };
 
