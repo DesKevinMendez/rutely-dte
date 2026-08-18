@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('phone')->nullable();
-            $table->string('company_id')->nullable();
+            $table->uuid('company_id')->nullable();
             $table->string('role')->default(Role::ADMIN->value);
             $table->boolean('status')->default(true);
         });

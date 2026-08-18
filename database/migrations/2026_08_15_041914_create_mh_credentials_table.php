@@ -13,7 +13,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('mh_credentials', function (Blueprint $table) {
-            $table->uuid('id');
+            $table->uuid('id')->primary();
             $table->foreignUuid('company_id')->constrained('companies');
             $table->string('environment')->default(Environment::SANDBOX->value);
             $table->string('nit')->notNullable();

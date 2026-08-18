@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('establishment_type');
             $table->foreignUuid('departament_id')->constrained();
             $table->foreignUuid('municipality_id')->constrained();
+            $table->foreignUuid('district_id')->nullable()->constrained();
             $table->string('email');
             $table->string('mh_establishment_code');
             $table->string('mh_pos_code');
@@ -33,6 +34,13 @@ return new class extends Migration
 
             $table->timestamps();
         });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('company_id')
+                ->references('id')
+                ->on('companies')
+                ->nullOnDelete();
+        });
     }
 
     /**
@@ -40,6 +48,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['company_id']);
+        });
+
         Schema::dropIfExists('companies');
     }
 };

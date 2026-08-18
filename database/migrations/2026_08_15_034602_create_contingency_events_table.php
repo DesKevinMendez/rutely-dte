@@ -22,12 +22,18 @@ return new class extends Migration
             $table->datetime('start_date_at')->notNullable();
             $table->datetime('end_date_at')->nullable();
             $table->json('original_json')->notNullable();
-            $table->json('signed_json')->notNullable();
-            $table->text('recieved_seal');
+            $table->text('signed_json')->nullable();
+            $table->text('received_seal')->nullable();
             $table->string('status');
-            $table->string('observations');
+            $table->string('observations')->nullable();
 
             $table->timestamps();
+        });
+
+        Schema::table('dtes', function (Blueprint $table) {
+            $table->foreignUuid('contingency_event_id')
+                ->nullable()
+                ->constrained('contingency_events');
         });
     }
 
@@ -36,6 +42,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('dtes', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('contingency_event_id');
+        });
+
         Schema::dropIfExists('contingency_events');
     }
 };

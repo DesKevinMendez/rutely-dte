@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignUuid('company_id')->constrained();
             $table->foreignUuid('dte_id')->constrained();
             $table->string('generation_code')->notNullable()->unique();
-            $table->string('Invalidation_type')->notNullable();
+            $table->string('invalidation_type')->notNullable();
             $table->text('reason')->notNullable();
             $table->string('name_person_in_charge')->notNullable();
             $table->string('doc_type_person_in_charge')->notNullable();
@@ -26,10 +26,10 @@ return new class extends Migration
             $table->string('doc_type_request')->notNullable();
             $table->string('doc_number_request')->notNullable();
             $table->json('original_json')->notNullable();
-            $table->json('signed_json')->notNullable();
-            $table->text('recieved_seal');
+            $table->text('signed_json')->nullable();
+            $table->text('received_seal')->nullable();
             $table->string('status');
-            $table->string('observations');
+            $table->string('observations')->nullable();
 
             $table->string('environment')->default(Environment::SANDBOX->value);
             $table->timestamps();

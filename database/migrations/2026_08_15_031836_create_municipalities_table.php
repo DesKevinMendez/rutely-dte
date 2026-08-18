@@ -14,10 +14,12 @@ return new class extends Migration
         Schema::create('municipalities', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('departament_id')->constrained();
-            $table->string('departament_code')->unique()->notNullable();
-            $table->string('code')->unique();
+            $table->string('departament_code')->notNullable();
+            $table->string('code');
             $table->string('name')->notNullable();
             $table->timestamps();
+
+            $table->unique(['departament_id', 'code']);
         });
     }
 

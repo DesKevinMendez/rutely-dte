@@ -11,14 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('dte_correlatives', function (Blueprint $table) {
+        Schema::create('districts', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('company_id')->constrained('companies');
-            $table->string('key')->notNullable();
-            $table->string('last_value')->default('0')->notNullable();
+            $table->foreignUuid('departament_id')->constrained();
+            $table->foreignUuid('municipality_id')->constrained();
+            $table->string('code');
+            $table->string('name')->notNullable();
             $table->timestamps();
 
-            $table->unique(['company_id', 'key']);
+            $table->unique(['municipality_id', 'code']);
         });
     }
 
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('dte_correlatives');
+        Schema::dropIfExists('districts');
     }
 };
