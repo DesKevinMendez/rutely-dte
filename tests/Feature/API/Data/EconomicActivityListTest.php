@@ -18,7 +18,7 @@ test('economic activities return the exact collection response', function () {
 
     $response = $this->getJson(route('api.v1.data.economic-activities.index'));
 
-    $response->assertStatus(200)
+    $response->assertOk()
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
@@ -45,7 +45,7 @@ test('economic activities can be filtered by description', function () {
         'filter' => ['description' => 'Programación Informática'],
     ]));
 
-    $response->assertStatus(200)
+    $response->assertOk()
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
