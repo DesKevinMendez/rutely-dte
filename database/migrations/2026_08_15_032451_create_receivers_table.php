@@ -13,18 +13,21 @@ return new class extends Migration
     {
         Schema::create('receivers', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->foreignUuid('company_id')->constrained('companies');
             $table->string('document_type');
             $table->string('document_number');
             $table->string('nrc')->nullable();
             $table->string('name');
-            $table->string('economic_activity_code');
-            $table->string('economic_activity_description');
-             $table->foreignUuid('departament_id')->constrained();
-             $table->foreignUuid('municipality_id')->constrained();
-            $table->string('address_complement');
-            $table->string('phone');
-            $table->string('email');
+            $table->string('economic_activity_code')->nullable();
+            $table->string('economic_activity_description')->nullable();
+            $table->foreignUuid('departament_id')->nullable()->constrained();
+            $table->foreignUuid('municipality_id')->nullable()->constrained();
+            $table->string('address_complement')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('email')->nullable();
             $table->timestamps();
+
+            $table->index(['company_id', 'document_number']);
         });
     }
 
