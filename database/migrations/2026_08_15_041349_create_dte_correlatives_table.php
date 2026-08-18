@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('last_value')->default('0')->notNullable();
             $table->timestamps();
 
-            $table->primary(['company_id', 'key']);
+            $table->unique(['company_id', 'key']);
         });
     }
 
