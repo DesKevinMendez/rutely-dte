@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 class MunicipalitiesSeeder extends Seeder
@@ -71,10 +71,7 @@ class MunicipalitiesSeeder extends Seeder
             }
 
             return [
-                'id' => Uuid::uuid5(
-                    Uuid::NAMESPACE_URL,
-                    "https://rutely.biz/dte/catalogs/municipalities/{$municipality['departament_code']}/{$municipality['code']}"
-                )->toString(),
+                'id' => Str::uuid()->toString(),
                 'departament_id' => $departamentId,
                 'departament_code' => $municipality['departament_code'],
                 'code' => $municipality['code'],
@@ -84,10 +81,6 @@ class MunicipalitiesSeeder extends Seeder
             ];
         }, $municipalities);
 
-        DB::table('municipalities')->upsert(
-            $rows,
-            ['id'],
-            ['departament_id', 'departament_code', 'code', 'name', 'updated_at']
-        );
+        DB::table('municipalities')->insert($rows);
     }
 }
