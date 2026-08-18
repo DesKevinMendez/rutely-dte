@@ -13,11 +13,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('mh_certificates', function (Blueprint $table) {
-            $table->uuid('id');
+            $table->uuid('id')->primary();
             $table->foreignUuid('company_id')->constrained('companies');
             $table->string('environment')->default(Environment::SANDBOX->value);
             $table->string('nit')->notNullable();
             $table->text('encrypted_certificate')->notNullable();
+            $table->text('encrypted_private_key_password')->notNullable();
             $table->boolean('active')->default(true);
 
             $table->timestamps();
