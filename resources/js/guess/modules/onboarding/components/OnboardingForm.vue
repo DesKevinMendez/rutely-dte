@@ -4,7 +4,7 @@ import * as yup from 'yup';
 import { BaseButton, Card, FormInput, SearchableSelect } from 'ornito';
 import useOnboarding from '../composables/useOnboarding';
 
-const { form, municipalityUrl, districtUrl, continueFlow, logout } = useOnboarding();
+const { form, municipalityUrl, districtUrl, continueFlow, goToLogin } = useOnboarding();
 
 const requiredText = (message: string) => yup.string().required(message);
 
@@ -234,8 +234,8 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
             </section>
 
             <div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
-                <BaseButton type="button" variant="outline" size="auto" @click="logout">
-                    Cerrar sesión
+                <BaseButton type="button" variant="outline" size="auto" @click="goToLogin">
+                    Volver al login
                 </BaseButton>
 
                 <BaseButton type="submit" variant="primary" size="auto">
