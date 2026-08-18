@@ -18,7 +18,7 @@ test('departments can be listed without authentication', function () {
 
     $response = $this->getJson(route('api.v1.data.departments.index'));
 
-    $response->assertStatus(200)
+    $response->assertOk()
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
@@ -45,7 +45,7 @@ test('departments can be filtered by name', function () {
         'filter' => ['name' => 'San Salvador'],
     ]));
 
-    $response->assertStatus(200)
+    $response->assertOk()
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
