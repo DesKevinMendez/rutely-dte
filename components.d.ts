@@ -12,8 +12,13 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     App: typeof import('./resources/js/App.vue')['default']
+    DashboardView: typeof import('./resources/js/modules/dashboard/views/DashboardView.vue')['default']
+    LayoutAuthenticated: typeof import('./resources/js/layouts/LayoutAuthenticated.vue')['default']
     LayoutGuest: typeof import('./resources/js/layouts/LayoutGuest.vue')['default']
+    LoginForm: typeof import('./resources/js/guess/modules/login/components/LoginForm.vue')['default']
     LoginView: typeof import('./resources/js/guess/modules/login/views/LoginView.vue')['default']
+    OnboardingForm: typeof import('./resources/js/guess/modules/onboarding/components/OnboardingForm.vue')['default']
+    OnboardingView: typeof import('./resources/js/guess/modules/onboarding/views/OnboardingView.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

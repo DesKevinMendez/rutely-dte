@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import type { Ref } from 'vue';
+import { useAuth } from '@/core/stores/auth';
 
 interface RequestOptions<B = unknown> {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -18,6 +19,7 @@ const getBaseUrl = (): string => {
 };
 
 export function useRequest() {
+    const auth = useAuth();
     const data: Ref<unknown> = ref(null);
     const statusCode: Ref<number | null> = ref(null);
     const isLoading: Ref<boolean> = ref(false);
@@ -39,10 +41,8 @@ export function useRequest() {
             ...customHeaders,
         };
 
-        const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-
-        if (token && !headers['Authorization']) {
-            headers['Authorization'] = `Bearer ${token}`;
+        if (auth.token && !headers['Authorization']) {
+            headers['Authorization'] = `Bearer ${auth.token}`;
         }
 
         const companyId = typeof localStorage !== 'undefined' ? localStorage.getItem('company_id') : null;
@@ -85,9 +85,8 @@ export function useRequest() {
                 error.value = errorMsg;
                 data.value = null;
 
-                if (response.status === 401 && typeof window !== 'undefined') {
-                    localStorage.removeItem('auth_token');
-                    localStorage.removeItem('company_id');
+                if (response.status === 401) {
+                    auth.clearSession();
                 }
             } else {
                 data.value = result;

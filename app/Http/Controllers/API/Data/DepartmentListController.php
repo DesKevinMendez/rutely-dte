@@ -15,11 +15,11 @@ class DepartmentListController extends Controller
     {
         $departments = QueryBuilder::for(Departament::class)
             ->select(['id', 'code', 'name'])
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::exact('id'),
                 AllowedFilter::exact('code'),
                 AllowedFilter::partial('name'),
-            ])
+            )
             ->orderBy('code')
             ->paginate($request->integer('per_page', 10));
 

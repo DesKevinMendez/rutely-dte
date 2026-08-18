@@ -22,13 +22,13 @@ class MunicipalityListController extends Controller
                 'code',
                 'name',
             ])
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::exact('id'),
                 AllowedFilter::exact('department_id', 'departament_id'),
                 AllowedFilter::exact('department_code', 'departament_code'),
                 AllowedFilter::exact('code'),
                 AllowedFilter::partial('name'),
-            ])
+            )
             ->orderBy('departament_code')
             ->orderBy('code')
             ->paginate($request->integer('per_page', 10));
