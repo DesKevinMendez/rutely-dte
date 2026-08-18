@@ -1,13 +1,13 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthUser } from '@/core/composables/useAuthUser';
 import { useRequest } from '@/core/composables/useRequest';
+import { useAuth } from '@/core/stores/auth';
 import type { LoginRequest, LoginResponse } from '../types/Login';
 
 export default function useLogin() {
     const router = useRouter();
+    const auth = useAuth();
     const { post, isLoading, error } = useRequest();
-    const { setUser } = useAuthUser();
 
     const email = ref('');
     const password = ref('');
@@ -26,8 +26,7 @@ export default function useLogin() {
             return;
         }
 
-        localStorage.setItem('auth_token', session.token);
-        setUser(session.user);
+        auth.setSession(session.token, session.user);
 
         await router.push({
             name: session.user.company_id ? 'dashboard' : 'onboarding',
