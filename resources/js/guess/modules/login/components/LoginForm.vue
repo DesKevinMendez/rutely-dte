@@ -64,6 +64,16 @@ const passwordRules = yup
             >
                 Acceder al Sistema
             </BaseButton>
+
+            <p class="text-center text-sm text-gray-500 dark:text-gray-400">
+                ¿No tenés una cuenta?
+                <RouterLink
+                    :to="{ name: 'onboarding' }"
+                    class="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+                >
+                    Registrarse
+                </RouterLink>
+            </p>
         </Form>
     </Card>
 </template>
