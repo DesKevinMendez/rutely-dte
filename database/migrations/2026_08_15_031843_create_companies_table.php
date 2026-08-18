@@ -33,6 +33,13 @@ return new class extends Migration
 
             $table->timestamps();
         });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('company_id')
+                ->references('id')
+                ->on('companies')
+                ->nullOnDelete();
+        });
     }
 
     /**
@@ -40,6 +47,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['company_id']);
+        });
+
         Schema::dropIfExists('companies');
     }
 };
