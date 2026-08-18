@@ -1,11 +1,11 @@
 import { computed, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthUser } from '@/core/composables/useAuthUser';
+import { useAuth } from '@/core/stores/auth';
 import type { OnboardingForm } from '../types/Onboarding';
 
 export default function useOnboarding() {
     const router = useRouter();
-    const { clearSession } = useAuthUser();
+    const auth = useAuth();
 
     const form = reactive<OnboardingForm>({
         name: '',
@@ -60,7 +60,7 @@ export default function useOnboarding() {
     };
 
     const goToLogin = async (): Promise<void> => {
-        clearSession();
+        auth.clearSession();
         await router.push({ name: 'login' });
     };
 
