@@ -29,7 +29,7 @@ test('municipalities return the exact collection response', function () {
 
     $response = $this->getJson(route('api.v1.data.municipalities.index'));
 
-    $response->assertStatus(200)
+    $response->assertOk()
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
@@ -63,7 +63,7 @@ test('municipalities can be filtered by department code', function () {
         'filter' => ['department_code' => '06'],
     ]));
 
-    $response->assertStatus(200)
+    $response->assertOk()
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
