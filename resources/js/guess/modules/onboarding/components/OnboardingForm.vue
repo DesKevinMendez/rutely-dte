@@ -28,7 +28,7 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
 
 <template>
     <Card class="border-gray-200 dark:border-gray-800">
-        <Form class="space-y-8" @submit="continueFlow">
+        <Form id="onboarding-form" as="form" class="space-y-8" @submit="continueFlow">
             <section class="space-y-4">
                 <div>
                     <h2 class="text-base font-bold">Información fiscal y comercial</h2>
@@ -238,7 +238,7 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                     Volver al login
                 </BaseButton>
 
-                <BaseButton type="submit" variant="primary" size="auto">
+                <BaseButton form="onboarding-form" type="submit" variant="primary" size="auto">
                     Continuar
                 </BaseButton>
             </div>
