@@ -59,7 +59,7 @@ export default function useOnboarding() {
         await router.push({ name: 'dashboard' });
     };
 
-    const logout = async (): Promise<void> => {
+    const goToLogin = async (): Promise<void> => {
         clearSession();
         await router.push({ name: 'login' });
     };
@@ -69,6 +69,6 @@ export default function useOnboarding() {
         municipalityUrl,
         districtUrl,
         continueFlow,
-        logout,
+        goToLogin,
     };
 }
