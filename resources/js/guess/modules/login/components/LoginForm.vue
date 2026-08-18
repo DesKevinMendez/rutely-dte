@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import { ErrorMessage } from 'vee-validate';
 import { BaseButton, Card, FormInput } from 'ornito';
 import useLogin from '../composables/useLogin';
 
 const { email, password, rules, isLoading, error, login } = useLogin();
+
+const errorClass = 'mt-1 text-sm text-danger-600 dark:text-danger-400';
 </script>
 
 <template>
@@ -15,27 +18,33 @@ const { email, password, rules, isLoading, error, login } = useLogin();
         </div>
 
         <form id="login-form" class="space-y-5" novalidate @submit.prevent="login">
-            <FormInput
-                v-model="email"
-                id="email"
-                name="email"
-                type="email"
-                label="Correo Electrónico"
-                placeholder="admin@rutely.biz"
-                autocomplete="email"
-                :rules="rules.email"
-            />
+            <div>
+                <FormInput
+                    v-model="email"
+                    id="email"
+                    name="email"
+                    type="email"
+                    label="Correo Electrónico"
+                    placeholder="admin@rutely.biz"
+                    autocomplete="email"
+                    :rules="rules.email"
+                />
+                <ErrorMessage name="email" :class="errorClass" />
+            </div>
 
-            <FormInput
-                v-model="password"
-                id="password"
-                name="password"
-                type="password"
-                label="Contraseña"
-                placeholder="••••••••"
-                autocomplete="current-password"
-                :rules="rules.password"
-            />
+            <div>
+                <FormInput
+                    v-model="password"
+                    id="password"
+                    name="password"
+                    type="password"
+                    label="Contraseña"
+                    placeholder="••••••••"
+                    autocomplete="current-password"
+                    :rules="rules.password"
+                />
+                <ErrorMessage name="password" :class="errorClass" />
+            </div>
 
             <div
                 v-if="error"
