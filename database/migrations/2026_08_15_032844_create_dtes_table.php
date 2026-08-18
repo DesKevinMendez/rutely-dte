@@ -22,15 +22,15 @@ return new class extends Migration
             $table->string('environment')->default(Environment::SANDBOX->value);
             $table->string('status')->notNullable();
             $table->string('issuer_nit')->notNullable();
-            $table->string('receiver_document')->notNullable();
-            $table->string('total_amount')->notNullable();
+            $table->string('receiver_document')->nullable();
+            $table->integer('total_amount')->notNullable();
             $table->json('original_json')->notNullable();
-            $table->json('signed_json')->notNullable();
-            $table->text('recieved_seal');
-            $table->text('pdf_url');
-            $table->text('observations');
-            $table->json('mh_response_json');
-            $table->foreignUuid('receiver_id')->constrained('receivers');
+            $table->text('signed_json')->nullable();
+            $table->text('received_seal')->nullable();
+            $table->text('pdf_url')->nullable();
+            $table->text('observations')->nullable();
+            $table->json('mh_response_json')->nullable();
+            $table->foreignUuid('receiver_id')->nullable()->constrained('receivers');
 
             $table->timestamps();
 
