@@ -1,34 +1,16 @@
 <script setup lang="ts">
-import { Form } from 'vee-validate';
-import * as yup from 'yup';
+import { ErrorMessage } from 'vee-validate';
 import { BaseButton, Card, FormInput, SearchableSelect } from 'ornito';
 import useOnboarding from '../composables/useOnboarding';
 
-const { form, municipalityUrl, districtUrl, continueFlow, goToLogin } = useOnboarding();
+const { form, rules, municipalityUrl, districtUrl, continueFlow, goToLogin } = useOnboarding();
 
-const requiredText = (message: string) => yup.string().required(message);
-
-const companyNameRules = requiredText('La razón social es requerida.');
-const commercialNameRules = requiredText('El nombre comercial es requerido.');
-const nitRules = requiredText('El NIT es requerido.');
-const phoneRules = requiredText('El teléfono es requerido.');
-const emailRules = yup
-    .string()
-    .required('El correo electrónico es requerido.')
-    .email('Ingresá un correo electrónico válido.');
-const addressRules = requiredText('La dirección es requerida.');
-const economicActivityRules = requiredText('La actividad económica es requerida.');
-const establishmentTypeRules = requiredText('El tipo de establecimiento es requerido.');
-const departmentRules = requiredText('El departamento es requerido.');
-const municipalityRules = requiredText('El municipio es requerido.');
-const districtRules = requiredText('El distrito es requerido.');
-const ownEstablishmentCodeRules = requiredText('El código de establecimiento es requerido.');
-const ownPosCodeRules = requiredText('El código de punto de venta es requerido.');
+const errorClass = 'mt-1 text-sm text-danger-600 dark:text-danger-400';
 </script>
 
 <template>
     <Card class="border-gray-200 dark:border-gray-800">
-        <Form id="onboarding-form" as="form" class="space-y-8" @submit="continueFlow">
+        <form id="onboarding-form" class="space-y-8" @submit.prevent="continueFlow">
             <section class="space-y-4">
                 <div>
                     <h2 class="text-base font-bold">Información fiscal y comercial</h2>
@@ -44,7 +26,7 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                         name="name"
                         label="Razón Social"
                         placeholder="Ej. RUTELY S.A. DE C.V."
-                        :rules="companyNameRules"
+                        :rules="rules.name"
                     />
 
                     <FormInput
@@ -53,7 +35,7 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                         name="commercialName"
                         label="Nombre Comercial"
                         placeholder="Ej. Rutely"
-                        :rules="commercialNameRules"
+                        :rules="rules.commercialName"
                     />
 
                     <FormInput
@@ -63,7 +45,7 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                         label="NIT"
                         placeholder="0614-280390-112-1"
                         mask="####-######-###-#"
-                        :rules="nitRules"
+                        :rules="rules.nit"
                     />
 
                     <FormInput
@@ -76,34 +58,40 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <SearchableSelect
-                        v-model="form.economicActivityCode"
-                        id="economicActivityCode"
-                        name="economicActivityCode"
-                        label="Actividad Económica (CAT-019)"
-                        placeholder="Buscá por descripción"
-                        url="/api/v1/data/economic-activities?per_page=25"
-                        search-by="filter[description]"
-                        label-key="{code} - {description}"
-                        value-key="code"
-                        subtitle-key="code"
-                        :rules="economicActivityRules"
-                    />
+                    <div>
+                        <SearchableSelect
+                            v-model="form.economicActivityCode"
+                            id="economicActivityCode"
+                            name="economicActivityCode"
+                            label="Actividad Económica (CAT-019)"
+                            placeholder="Buscá por descripción"
+                            url="/api/v1/data/economic-activities?per_page=25"
+                            search-by="filter[description]"
+                            label-key="{code} - {description}"
+                            value-key="code"
+                            subtitle-key="code"
+                            :rules="rules.economicActivityCode"
+                        />
+                        <ErrorMessage name="economicActivityCode" :class="errorClass" />
+                    </div>
 
-                    <SearchableSelect
-                        v-model="form.establishmentType"
-                        id="establishmentType"
-                        name="establishmentType"
-                        label="Tipo de Establecimiento (CAT-009)"
-                        placeholder="Seleccioná un tipo"
-                        url="/api/v1/data/establishment-types?per_page=100"
-                        search-by="filter[description]"
-                        label-key="description"
-                        value-key="code"
-                        subtitle-key="code"
-                        local-search-first
-                        :rules="establishmentTypeRules"
-                    />
+                    <div>
+                        <SearchableSelect
+                            v-model="form.establishmentType"
+                            id="establishmentType"
+                            name="establishmentType"
+                            label="Tipo de Establecimiento (CAT-009)"
+                            placeholder="Seleccioná un tipo"
+                            url="/api/v1/data/establishment-types?per_page=100"
+                            search-by="filter[description]"
+                            label-key="description"
+                            value-key="code"
+                            subtitle-key="code"
+                            local-search-first
+                            :rules="rules.establishmentType"
+                        />
+                        <ErrorMessage name="establishmentType" :class="errorClass" />
+                    </div>
                 </div>
             </section>
 
@@ -126,7 +114,7 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                         label="Teléfono"
                         placeholder="+503 7802 7600"
                         mask="+503 #### ####"
-                        :rules="phoneRules"
+                        :rules="rules.phone"
                     />
 
                     <FormInput
@@ -137,7 +125,7 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                         label="Correo Electrónico"
                         placeholder="facturacion@rutely.biz"
                         autocomplete="email"
-                        :rules="emailRules"
+                        :rules="rules.email"
                     />
                 </div>
 
@@ -147,58 +135,67 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                     name="address"
                     label="Complemento de Dirección"
                     placeholder="Calle, avenida, número de local y referencias"
-                    :rules="addressRules"
+                    :rules="rules.address"
                 />
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <SearchableSelect
-                        v-model="form.departmentId"
-                        id="departmentId"
-                        name="departmentId"
-                        label="Departamento (CAT-012)"
-                        placeholder="Seleccioná"
-                        url="/api/v1/data/departments?per_page=100"
-                        search-by="filter[name]"
-                        label-key="name"
-                        value-key="id"
-                        subtitle-key="code"
-                        local-search-first
-                        :rules="departmentRules"
-                    />
+                    <div>
+                        <SearchableSelect
+                            v-model="form.departmentId"
+                            id="departmentId"
+                            name="departmentId"
+                            label="Departamento (CAT-012)"
+                            placeholder="Seleccioná"
+                            url="/api/v1/data/departments?per_page=100"
+                            search-by="filter[name]"
+                            label-key="name"
+                            value-key="id"
+                            subtitle-key="code"
+                            local-search-first
+                            :rules="rules.departmentId"
+                        />
+                        <ErrorMessage name="departmentId" :class="errorClass" />
+                    </div>
 
-                    <SearchableSelect
-                        :key="form.departmentId || 'municipality-empty'"
-                        v-model="form.municipalityId"
-                        id="municipalityId"
-                        name="municipalityId"
-                        label="Municipio (CAT-013)"
-                        :placeholder="form.departmentId ? 'Seleccioná' : 'Elegí un departamento'"
-                        :url="municipalityUrl"
-                        search-by="filter[name]"
-                        label-key="name"
-                        value-key="id"
-                        subtitle-key="code"
-                        :disabled="!form.departmentId"
-                        local-search-first
-                        :rules="municipalityRules"
-                    />
+                    <div>
+                        <SearchableSelect
+                            :key="form.departmentId || 'municipality-empty'"
+                            v-model="form.municipalityId"
+                            id="municipalityId"
+                            name="municipalityId"
+                            label="Municipio (CAT-013)"
+                            :placeholder="form.departmentId ? 'Seleccioná' : 'Elegí un departamento'"
+                            :url="municipalityUrl"
+                            search-by="filter[name]"
+                            label-key="name"
+                            value-key="id"
+                            subtitle-key="code"
+                            :disabled="!form.departmentId"
+                            local-search-first
+                            :rules="rules.municipalityId"
+                        />
+                        <ErrorMessage name="municipalityId" :class="errorClass" />
+                    </div>
 
-                    <SearchableSelect
-                        :key="form.municipalityId || 'district-empty'"
-                        v-model="form.districtId"
-                        id="districtId"
-                        name="districtId"
-                        label="Distrito (CAT-008)"
-                        :placeholder="form.municipalityId ? 'Seleccioná' : 'Elegí un municipio'"
-                        :url="districtUrl"
-                        search-by="filter[name]"
-                        label-key="name"
-                        value-key="id"
-                        subtitle-key="code"
-                        :disabled="!form.municipalityId"
-                        local-search-first
-                        :rules="districtRules"
-                    />
+                    <div>
+                        <SearchableSelect
+                            :key="form.municipalityId || 'district-empty'"
+                            v-model="form.districtId"
+                            id="districtId"
+                            name="districtId"
+                            label="Distrito (CAT-008)"
+                            :placeholder="form.municipalityId ? 'Seleccioná' : 'Elegí un municipio'"
+                            :url="districtUrl"
+                            search-by="filter[name]"
+                            label-key="name"
+                            value-key="id"
+                            subtitle-key="code"
+                            :disabled="!form.municipalityId"
+                            local-search-first
+                            :rules="rules.districtId"
+                        />
+                        <ErrorMessage name="districtId" :class="errorClass" />
+                    </div>
                 </div>
             </section>
 
@@ -219,7 +216,7 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                         name="ownEstablishmentCode"
                         label="Código de Establecimiento"
                         placeholder="Ej. M001"
-                        :rules="ownEstablishmentCodeRules"
+                        :rules="rules.ownEstablishmentCode"
                     />
 
                     <FormInput
@@ -228,7 +225,7 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                         name="ownPosCode"
                         label="Código de Punto de Venta"
                         placeholder="Ej. P001"
-                        :rules="ownPosCodeRules"
+                        :rules="rules.ownPosCode"
                     />
                 </div>
             </section>
@@ -242,6 +239,6 @@ const ownPosCodeRules = requiredText('El código de punto de venta es requerido.
                     Continuar
                 </BaseButton>
             </div>
-        </Form>
+        </form>
     </Card>
 </template>
