@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Str;
 
 class EstablishmentTypesSeeder extends Seeder
 {
@@ -21,10 +21,7 @@ class EstablishmentTypesSeeder extends Seeder
 
         $rows = array_map(
             fn (array $type): array => [
-                'id' => Uuid::uuid5(
-                    Uuid::NAMESPACE_URL,
-                    "https://rutely.biz/dte/catalogs/establishment-types/{$type['code']}"
-                )->toString(),
+                'id' => Str::uuid()->toString(),
                 ...$type,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -32,10 +29,6 @@ class EstablishmentTypesSeeder extends Seeder
             $types
         );
 
-        DB::table('establishment_types')->upsert(
-            $rows,
-            ['id'],
-            ['code', 'description', 'updated_at']
-        );
+        DB::table('establishment_types')->insert($rows);
     }
 }
