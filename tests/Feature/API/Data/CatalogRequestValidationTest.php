@@ -5,7 +5,7 @@ test('catalog endpoints validate per page', function (string $routeName) {
         'per_page' => 'invalid',
     ]));
 
-    $response->assertStatus(422)
+    $response->assertUnprocessable()
         ->assertExactJson([
             'message' => 'The per page field must be an integer.',
             'errors' => [
