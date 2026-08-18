@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useForm } from 'vee-validate';
+import * as yup from 'yup';
 import { BaseButton, Card, FormInput } from 'ornito';
 import { useAuthUser } from '@/core/composables/useAuthUser';
 import { useRequest } from '@/core/composables/useRequest';
@@ -10,21 +11,26 @@ const router = useRouter();
 const { post, isLoading, error } = useRequest();
 const { setUser } = useAuthUser();
 
-const email = ref('');
-const password = ref('');
-const validationError = ref<string | null>(null);
+const loginSchema = yup.object({
+    email: yup.string().email('Ingresá un correo electrónico válido.').required('El correo electrónico es requerido.'),
+    password: yup.string().required('La contraseña es requerida.'),
+});
 
-const login = async (): Promise<void> => {
-    validationError.value = null;
+const { defineField, handleSubmit } = useForm({
+    validationSchema: loginSchema,
+    initialValues: {
+        email: '',
+        password: '',
+    },
+});
 
-    if (!email.value || !password.value) {
-        validationError.value = 'Ingresá tu correo electrónico y contraseña.';
-        return;
-    }
+const [email] = defineField('email');
+const [password] = defineField('password');
 
+const login = handleSubmit(async (values): Promise<void> => {
     const response = await post<LoginResponse>('/api/v1/login', {
-        email: email.value,
-        password: password.value,
+        email: values.email,
+        password: values.password,
         device_name: 'rutely-dte-web',
     });
 
@@ -40,7 +46,7 @@ const login = async (): Promise<void> => {
     await router.push({
         name: session.user.company_id ? 'dashboard' : 'onboarding',
     });
-};
+});
 </script>
 
 <template>
@@ -90,10 +96,10 @@ const login = async (): Promise<void> => {
                     />
 
                     <div
-                        v-if="validationError || error"
+                        v-if="error"
                         class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300"
                     >
-                        {{ validationError ?? error }}
+                        {{ error }}
                     </div>
 
                     <BaseButton
