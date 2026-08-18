@@ -15,11 +15,11 @@ class EconomicActivityListController extends Controller
     {
         $activities = QueryBuilder::for(EconomicActivity::class)
             ->select(['id', 'code', 'description'])
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::exact('id'),
                 AllowedFilter::exact('code'),
                 AllowedFilter::partial('description'),
-            ])
+            )
             ->orderBy('code')
             ->paginate($request->integer('per_page', 10));
 
