@@ -22,13 +22,13 @@ class DistrictListController extends Controller
                 'code',
                 'name',
             ])
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::exact('id'),
                 AllowedFilter::exact('department_id', 'departament_id'),
                 AllowedFilter::exact('municipality_id'),
                 AllowedFilter::exact('code'),
                 AllowedFilter::partial('name'),
-            ])
+            )
             ->orderBy('name')
             ->orderBy('code')
             ->paginate($request->integer('per_page', 10));
