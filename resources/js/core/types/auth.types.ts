@@ -9,10 +9,3 @@ export interface AuthUser {
     created_at: string;
     updated_at: string;
 }
-
-export interface LoginResponse {
-    data: {
-        token: string;
-        user: AuthUser;
-    };
-}
