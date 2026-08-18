@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Str;
 
 class EconomicActivitySeeder extends Seeder
 {
@@ -23,10 +23,7 @@ class EconomicActivitySeeder extends Seeder
 
         $rows = array_map(
             fn (array $activity): array => [
-                'id' => Uuid::uuid5(
-                    Uuid::NAMESPACE_URL,
-                    "https://rutely.biz/dte/catalogs/economic-activities/{$activity['code']}"
-                )->toString(),
+                'id' => Str::uuid()->toString(),
                 ...$activity,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -35,11 +32,7 @@ class EconomicActivitySeeder extends Seeder
         );
 
         foreach (array_chunk($rows, 250) as $chunk) {
-            DB::table('economic_activities')->upsert(
-                $chunk,
-                ['id'],
-                ['code', 'description', 'updated_at']
-            );
+            DB::table('economic_activities')->insert($chunk);
         }
     }
 }
