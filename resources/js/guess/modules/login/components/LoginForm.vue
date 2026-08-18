@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { ErrorMessage } from 'vee-validate';
 import { BaseButton, Card, FormInput } from 'ornito';
+import { Form } from 'vee-validate';
 import useLogin from '../composables/useLogin';
+const { email, password, rules, isLoading, login } = useLogin();
 
-const { email, password, rules, isLoading, error, login } = useLogin();
-
-const errorClass = 'mt-1 text-sm text-danger-600 dark:text-danger-400';
 </script>
 
 <template>
@@ -17,44 +15,28 @@ const errorClass = 'mt-1 text-sm text-danger-600 dark:text-danger-400';
             </p>
         </div>
 
-        <form id="login-form" class="space-y-5" novalidate @submit.prevent="login">
-            <div>
-                <FormInput
-                    v-model="email"
-                    id="email"
-                    name="email"
-                    type="email"
-                    label="Correo Electrónico"
-                    placeholder="admin@rutely.biz"
-                    autocomplete="email"
-                    :rules="rules.email"
-                />
-                <ErrorMessage name="email" :class="errorClass" />
-            </div>
-
-            <div>
-                <FormInput
-                    v-model="password"
-                    id="password"
-                    name="password"
-                    type="password"
-                    label="Contraseña"
-                    placeholder="••••••••"
-                    autocomplete="current-password"
-                    :rules="rules.password"
-                />
-                <ErrorMessage name="password" :class="errorClass" />
-            </div>
-
-            <div
-                v-if="error"
-                class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300"
-            >
-                {{ error }}
-            </div>
-
+        <Form @submit="login" class="space-y-6">
+            <FormInput
+                v-model="email"
+                id="email"
+                name="email"
+                type="email"
+                label="Correo Electrónico"
+                placeholder="admin@rutely.biz"
+                autocomplete="email"
+                :rules="rules.email"
+            />
+            <FormInput
+                v-model="password"
+                id="password"
+                name="password"
+                type="password"
+                label="Contraseña"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                :rules="rules.password"
+            />
             <BaseButton
-                form="login-form"
                 type="submit"
                 variant="primary"
                 size="auto"
@@ -63,16 +45,15 @@ const errorClass = 'mt-1 text-sm text-danger-600 dark:text-danger-400';
             >
                 Acceder al Sistema
             </BaseButton>
-
-            <p class="text-center text-sm text-gray-500 dark:text-gray-400">
-                ¿No tenés una cuenta?
-                <RouterLink
-                    :to="{ name: 'onboarding' }"
-                    class="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
-                >
-                    Registrarse
-                </RouterLink>
-            </p>
-        </form>
+        </Form>
+        <p class="text-center text-base block text-gray-500 dark:text-gray-400 mt-4">
+            ¿No tenés una cuenta?
+            <RouterLink
+                :to="{ name: 'onboarding' }"
+                class="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            >
+                Registrarse
+            </RouterLink>
+        </p>
     </Card>
 </template>
