@@ -17,7 +17,7 @@ test('establishment types return the exact collection response', function () {
 
     $response = $this->getJson(route('api.v1.data.establishment-types.index'));
 
-    $response->assertStatus(200)
+    $response->assertOk()
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
@@ -44,7 +44,7 @@ test('establishment types can be filtered by code', function () {
         'filter' => ['code' => '02'],
     ]));
 
-    $response->assertStatus(200)
+    $response->assertOk()
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
