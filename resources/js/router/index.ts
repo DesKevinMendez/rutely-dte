@@ -1,15 +1,13 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
-import { useAuthUser } from '@/core/composables/useAuthUser';
-
-const hasAuthToken = (): boolean =>
-    typeof localStorage !== 'undefined' && Boolean(localStorage.getItem('auth_token'));
+import { useAuthSession } from '@/core/composables/useAuthSession';
+import { useAuth } from '@/core/stores/auth';
 
 const router = createRouter({
     history: createWebHashHistory(),
     routes: [
         {
             path: '/',
-            redirect: () => ({ name: hasAuthToken() ? 'dashboard' : 'login' }),
+            redirect: () => ({ name: useAuth().isAuthenticated ? 'dashboard' : 'login' }),
         },
         {
             path: '/login',
@@ -49,14 +47,15 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
-    const { ensureSession, user } = useAuthUser();
+    const auth = useAuth();
+    const { ensureSession } = useAuthSession();
 
     if (to.meta.requiresAuth && !(await ensureSession())) {
         return { name: 'login' };
     }
 
-    if (to.name === 'login' && hasAuthToken() && await ensureSession()) {
-        return { name: user.value?.company_id ? 'dashboard' : 'onboarding' };
+    if (to.name === 'login' && auth.isAuthenticated && await ensureSession()) {
+        return { name: auth.user?.company_id ? 'dashboard' : 'onboarding' };
     }
 
     return true;
