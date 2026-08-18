@@ -1,3 +1,6 @@
 @import 'tailwindcss';
+@import 'ornito/theme.css';
+
+@source '../../node_modules/ornito/dist';
 
 @custom-variant dark (&:is(.dark *));
