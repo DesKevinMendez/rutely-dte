@@ -108,6 +108,39 @@ test('a superadmin cannot create a company', function () {
         ->assertForbidden();
 });
 
+test('an admin with a company cannot create another company', function () {
+    $payload = validCompanyPayload();
+    $companyId = (string) Str::uuid();
+
+    DB::table('companies')->insert([
+        'id' => $companyId,
+        ...$payload,
+    ]);
+
+    $user = User::factory()->create([
+        'company_id' => $companyId,
+    ]);
+
+    Sanctum::actingAs($user);
+
+    $this->postJson(route('api.v1.companies.store'))
+        ->assertForbidden();
+});
+
+test('nullable company fields may be null', function (string $field) {
+    $user = User::factory()->create();
+    Sanctum::actingAs($user);
+
+    $payload = validCompanyPayload();
+    $payload[$field] = null;
+
+    $this->postJson(route('api.v1.companies.store'), $payload)
+        ->assertCreated();
+})->with([
+    'nrc' => 'nrc',
+    'district' => 'district_id',
+]);
+
 test('company request validation returns 422', function (string $field, mixed $value) {
     $user = User::factory()->create();
     Sanctum::actingAs($user);
