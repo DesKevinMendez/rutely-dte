@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Ramsey\Uuid\Uuid;
+use Illuminate\Support\Str;
 
 class DepartamentSeeder extends Seeder
 {
@@ -31,10 +31,7 @@ class DepartamentSeeder extends Seeder
 
         $rows = array_map(
             fn (array $departament): array => [
-                'id' => Uuid::uuid5(
-                    Uuid::NAMESPACE_URL,
-                    "https://rutely.biz/dte/catalogs/departaments/{$departament['code']}"
-                )->toString(),
+                'id' => Str::uuid()->toString(),
                 ...$departament,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -42,10 +39,6 @@ class DepartamentSeeder extends Seeder
             $departaments
         );
 
-        DB::table('departaments')->upsert(
-            $rows,
-            ['id'],
-            ['code', 'name', 'updated_at']
-        );
+        DB::table('departaments')->insert($rows);
     }
 }
