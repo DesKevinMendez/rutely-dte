@@ -15,6 +15,8 @@ class EconomicActivitySeeder extends Seeder
             require __DIR__.'/data/economic_activities_2.php',
             require __DIR__.'/data/economic_activities_3.php',
             require __DIR__.'/data/economic_activities_4.php',
+            require __DIR__.'/data/economic_activities_5.php',
+            require __DIR__.'/data/economic_activities_6.php',
         );
 
         $now = now();
