@@ -197,7 +197,7 @@ test('store DTE request validation returns 422', function (array $payload, strin
     'receiver email must be valid' => [dteValidationPayload(['receptor' => ['correo' => 'invalid']]), 'receptor.correo', 'El campo correo del receptor debe ser una dirección de correo electrónico válida.'],
     'items required' => [[], 'items', 'El campo ítems es obligatorio.'],
     'items must be array' => [['items' => 'items'], 'items', 'El campo ítems debe ser un arreglo.'],
-    'items minimum' => [['items' => []], 'items', 'El campo ítems debe contener al menos 1 elementos.'],
+    'items minimum' => [['items' => []], 'items', 'El campo ítems es obligatorio.'],
     'items maximum' => [['items' => array_fill(0, 201, ['descripcion' => 'Item', 'cantidad' => 1, 'precioUni' => 1])], 'items', 'El campo ítems no debe contener más de 200 elementos.'],
     'item description required' => [['items' => [['cantidad' => 1, 'precioUni' => 1]]], 'items.0.descripcion', 'El campo descripción del ítem es obligatorio.'],
     'item description must be string' => [['items' => [['descripcion' => ['Item'], 'cantidad' => 1, 'precioUni' => 1]]], 'items.0.descripcion', 'El campo descripción del ítem debe ser una cadena de caracteres.'],
