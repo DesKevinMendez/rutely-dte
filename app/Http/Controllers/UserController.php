@@ -43,21 +43,21 @@ class UserController extends Controller
 
         $user = User::query()->create($data);
 
-        return new CommonResponse(['data' => $user], 201);
+        return new CommonResponse($user, 201);
     }
 
     public function show(User $user): CommonResponse
     {
         Gate::authorize('view', $user);
 
-        return new CommonResponse(['data' => $user]);
+        return new CommonResponse($user);
     }
 
     public function update(UpdateUserRequest $request, User $user): CommonResponse
     {
         $user->update($request->validated());
 
-        return new CommonResponse(['data' => $user->refresh()]);
+        return new CommonResponse($user->refresh());
     }
 
     public function destroy(Request $request, User $user): CommonResponse
@@ -66,6 +66,6 @@ class UserController extends Controller
 
         $user->delete();
 
-        return new CommonResponse(['message' => 'Usuario eliminado correctamente.']);
+        return new CommonResponse(message: 'Usuario eliminado correctamente.');
     }
 }
