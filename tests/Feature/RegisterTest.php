@@ -41,7 +41,6 @@ test('a user can register and is assigned the admin role', function () {
                     'phone' => $payload['phone'],
                     'name' => $payload['name'],
                     'email' => $payload['email'],
-                    'email_verified_at' => null,
                     'created_at' => $response->json('data.user.created_at'),
                     'updated_at' => $response->json('data.user.updated_at'),
                 ],

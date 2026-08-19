@@ -35,7 +35,7 @@ class RegisterController extends Controller
 
         return CommonResource::make([
             'token' => $token,
-            'user' => $user,
+            'user' => $user->makeHidden('email_verified_at'),
         ])->response()->setStatusCode(201);
     }
 }

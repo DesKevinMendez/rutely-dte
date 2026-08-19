@@ -19,7 +19,7 @@ test('an user can do login', function () {
             "token" => $response->json('data.token'),
             "user" => [
                 "id" => $response->json('data.user.id'),
-                "company_id" => null,
+                "company_id" => $user->company_id,
                 "role" => $response->json('data.user.role'),
                 "phone" => $response->json('data.user.phone'),
                 "name" => $response->json('data.user.name'),
