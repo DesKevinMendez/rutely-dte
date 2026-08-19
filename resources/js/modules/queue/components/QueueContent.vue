@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Alert, BaseButton, Card } from 'ornito';
-import QueueTable from './QueueTable.vue';
 import { useQueueUi } from '../composables/useQueueUi';
+import QueueTable from './QueueTable.vue';
 
 const {
     jobs,

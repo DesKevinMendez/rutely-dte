@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Alert, BaseButton } from 'ornito';
 import { useAuth } from '@/core/stores/auth';
-import DashboardMetrics from './DashboardMetrics.vue';
 import { useDashboardUi } from '../composables/useDashboardUi';
+import DashboardMetrics from './DashboardMetrics.vue';
 
 const auth = useAuth();
 const { metrics, lastUpdated, isLoading, error, refreshMetrics } =

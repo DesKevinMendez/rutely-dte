@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Alert, BaseButton } from 'ornito';
+import { useContingencyUi } from '../composables/useContingencyUi';
 import ContingencyGuide from './ContingencyGuide.vue';
 import ContingencyStatusCards from './ContingencyStatusCards.vue';
-import { useContingencyUi } from '../composables/useContingencyUi';
 
 const {
     contingencyActive,

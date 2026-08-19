@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { Alert, BaseButton, Card, FormSelect } from 'ornito';
 import { ref } from 'vue';
-import CreateDteModal from './CreateDteModal.vue';
-import DteDataTable from './DteDataTable.vue';
 import { useDtesUi } from '../composables/useDtesUi';
 import type { DteDraft } from '../types/dte.types';
+import CreateDteModal from './CreateDteModal.vue';
+import DteDataTable from './DteDataTable.vue';
 
 const isCreateModalOpen = ref(false);
 const {

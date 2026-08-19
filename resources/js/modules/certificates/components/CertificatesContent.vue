@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Alert } from 'ornito';
+import { useCertificateUi } from '../composables/useCertificateUi';
 import CertificateRequirementsCard from './CertificateRequirementsCard.vue';
 import CertificateStatusCard from './CertificateStatusCard.vue';
 import CertificateUploadForm from './CertificateUploadForm.vue';
-import { useCertificateUi } from '../composables/useCertificateUi';
 
 const {
     selectedEnvironment,

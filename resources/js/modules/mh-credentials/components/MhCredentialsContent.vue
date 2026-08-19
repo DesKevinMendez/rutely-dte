@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Alert } from 'ornito';
+import { useMhCredentialsUi } from '../composables/useMhCredentialsUi';
 import MhCredentialsForm from './MhCredentialsForm.vue';
 import MhCredentialsStatusCard from './MhCredentialsStatusCard.vue';
-import { useMhCredentialsUi } from '../composables/useMhCredentialsUi';
 
 const {
     selectedEnvironment,
