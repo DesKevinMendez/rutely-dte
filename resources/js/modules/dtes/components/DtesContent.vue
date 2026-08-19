@@ -1,21 +1,15 @@
 <script setup lang="ts">
-import { Alert, BaseButton, Card, FormSelect } from 'ornito';
-import { ref } from 'vue';
+import { Alert, Badge, BaseButton, Card, DataTable, FormSelect } from 'ornito';
+import type { BadgeVariant, TableField } from 'ornito';
+import { computed, ref } from 'vue';
 import { useDtesUi } from '../composables/useDtesUi';
-import type { DteDraft } from '../types/dte.types';
+import type { DteApiRecord, DteDraft } from '../types/dte.types';
 import CreateDteModal from './CreateDteModal.vue';
-import DteDataTable from './DteDataTable.vue';
 
 const isCreateModalOpen = ref(false);
-const {
-    filterTipoDte,
-    filterEstado,
-    filteredRecords,
-    isLoading,
-    error,
-    refreshDtes,
-    createDte,
-} = await useDtesUi();
+const tableKey = ref(0);
+const { filterTipoDte, filterEstado, isLoading, error, createDte } =
+    await useDtesUi();
 
 const tipoDteOptions = [
     { value: '', label: 'Todos los tipos' },
@@ -35,9 +29,81 @@ const estadoOptions = [
     { value: 'INVALIDADO', label: 'INVALIDADO' },
 ];
 
+const typeLabels: Record<string, string> = {
+    '01': 'Factura (01)',
+    '03': 'CCF (03)',
+    '05': 'Nota de Crédito (05)',
+    '14': 'Sujeto Excluido (14)',
+};
+
+const columns: TableField<DteApiRecord>[] = [
+    { label: 'Código Generación', key: 'generation_code' },
+    { label: 'Nº Control', key: 'control_number' },
+    {
+        label: 'Tipo DTE',
+        key: 'dte_type',
+        format: (row) => typeLabels[row.dte_type] ?? row.dte_type,
+    },
+    { label: 'Receptor', key: 'receiver_document', slot: 'receiver' },
+    {
+        label: 'Monto Total',
+        key: 'total_amount',
+        format: (row) => `$${(row.total_amount / 100).toFixed(2)}`,
+    },
+    { label: 'Estado', key: 'status', slot: 'status' },
+    {
+        label: 'Fecha',
+        key: 'created_at',
+        format: (row) => new Date(row.created_at).toLocaleDateString('es-SV'),
+    },
+];
+
+const tableUrl = computed(() => {
+    const params = new URLSearchParams();
+
+    if (filterTipoDte.value) {
+        params.set('filter[tipoDte]', filterTipoDte.value);
+    }
+
+    if (filterEstado.value) {
+        params.set('filter[estado]', filterEstado.value);
+    }
+
+    const query = params.toString();
+
+    return query ? `/api/v1/dtes?${query}` : '/api/v1/dtes';
+});
+
+const receiverName = (record: DteApiRecord): string =>
+    record.original_json?.receptor?.nombre?.trim() || 'Cliente General';
+
+const receiverDocument = (record: DteApiRecord): string =>
+    record.receiver_document ||
+    record.original_json?.receptor?.numDocumento ||
+    'N/A';
+
+const statusVariant = (status: string): BadgeVariant => {
+    switch (status) {
+        case 'PROCESADO':
+            return 'success';
+        case 'RECHAZADO':
+            return 'danger';
+        case 'CONTINGENCIA':
+        case 'FIRMADO':
+            return 'warning';
+        default:
+            return 'neutral';
+    }
+};
+
+const refreshTable = (): void => {
+    tableKey.value += 1;
+};
+
 const handleCreated = async (draft: DteDraft): Promise<void> => {
     if (await createDte(draft)) {
         isCreateModalOpen.value = false;
+        refreshTable();
     }
 };
 </script>
@@ -63,9 +129,9 @@ const handleCreated = async (draft: DteDraft): Promise<void> => {
                     variant="outline"
                     size="auto"
                     :disabled="isLoading"
-                    @click="refreshDtes"
+                    @click="refreshTable"
                 >
-                    {{ isLoading ? 'Actualizando…' : 'Actualizar' }}
+                    Actualizar
                 </BaseButton>
                 <BaseButton
                     variant="primary"
@@ -108,7 +174,25 @@ const handleCreated = async (draft: DteDraft): Promise<void> => {
                 </div>
             </template>
 
-            <DteDataTable :records="filteredRecords" />
+            <DataTable
+                :key="tableKey"
+                :columns="columns"
+                :url="tableUrl"
+                search-by="query"
+                search-placeholder="Buscar DTE..."
+            >
+                <template #receiver="{ row }">
+                    <p>{{ receiverName(row) }}</p>
+                    <p class="text-xs text-gray-500">
+                        Doc: {{ receiverDocument(row) }}
+                    </p>
+                </template>
+                <template #status="{ row }">
+                    <Badge :variant="statusVariant(row.status)" text="xs">
+                        {{ row.status }}
+                    </Badge>
+                </template>
+            </DataTable>
         </Card>
 
         <CreateDteModal
