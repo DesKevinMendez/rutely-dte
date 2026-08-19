@@ -32,10 +32,8 @@ class QueueRetryController extends Controller
         ])->values()->all();
 
         return new CommonResponse([
-            'data' => [
-                'count' => count($results),
-                'results' => $results,
-            ],
+            'count' => count($results),
+            'results' => $results,
         ]);
     }
 }
