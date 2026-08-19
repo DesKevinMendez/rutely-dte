@@ -28,20 +28,4 @@ class StoreContingencyEventRequest extends FormRequest
             'motivoContingencia' => ['sometimes', 'nullable', 'string', 'min:5', 'max:500'],
         ];
     }
-
-    /** @return array<string, string> */
-    public function attributes(): array
-    {
-        return [
-            'dtes' => 'DTE',
-            'dtes.*.codigoGeneracion' => 'código de generación',
-            'dtes.*.tipoDte' => 'tipo de DTE',
-            'fInicio' => 'fecha de inicio',
-            'hInicio' => 'hora de inicio',
-            'fFin' => 'fecha de fin',
-            'hFin' => 'hora de fin',
-            'tipoContingencia' => 'tipo de contingencia',
-            'motivoContingencia' => 'motivo de contingencia',
-        ];
-    }
 }
