@@ -13,7 +13,7 @@ import type {
 
 const requiredText = (message: string) => yup.string().required(message);
 
-const rules = {
+const accountRules = {
     userName: requiredText('El nombre del administrador es requerido.'),
     userEmail: yup
         .string()
@@ -27,6 +27,9 @@ const rules = {
         .string()
         .required('La confirmación de contraseña es requerida.')
         .oneOf([yup.ref('password')], 'Las contraseñas no coinciden.'),
+};
+
+const companyRules = {
     name: requiredText('La razón social es requerida.'),
     commercialName: requiredText('El nombre comercial es requerido.'),
     nit: requiredText('El NIT es requerido.'),
@@ -53,6 +56,13 @@ export default function useOnboarding() {
     const auth = useAuth();
     const { post, isLoading, error } = useRequest();
     const isAuthenticated = computed(() => auth.isAuthenticated);
+
+    const validationSchema = computed(() =>
+        yup.object({
+            ...(auth.isAuthenticated ? {} : accountRules),
+            ...companyRules,
+        }),
+    );
 
     const form = reactive<OnboardingForm>({
         userName: '',
@@ -185,7 +195,7 @@ export default function useOnboarding() {
 
     return {
         form,
-        rules,
+        validationSchema,
         municipalityUrl,
         districtUrl,
         isAuthenticated,

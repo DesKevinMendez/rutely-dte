@@ -5,7 +5,7 @@ import useOnboarding from '../composables/useOnboarding';
 
 const {
     form,
-    rules,
+    validationSchema,
     municipalityUrl,
     districtUrl,
     isAuthenticated,
@@ -17,7 +17,12 @@ const {
 
 <template>
     <Card class="border-gray-200 dark:border-gray-800">
-        <Form id="onboarding-form" class="space-y-8" @submit="continueFlow">
+        <Form
+            id="onboarding-form"
+            class="space-y-8"
+            :validation-schema="validationSchema"
+            @submit="continueFlow"
+        >
             <section v-if="!isAuthenticated" class="space-y-4">
                 <div>
                     <h2 class="text-base font-bold">Cuenta de administrador</h2>
@@ -34,7 +39,6 @@ const {
                         label="Nombre"
                         placeholder="Ej. Kevin Mendez"
                         autocomplete="name"
-                        :rules="rules.userName"
                     />
 
                     <FormInput
@@ -45,7 +49,6 @@ const {
                         label="Correo Electrónico"
                         placeholder="admin@rutely.biz"
                         autocomplete="email"
-                        :rules="rules.userEmail"
                     />
 
                     <FormInput
@@ -56,7 +59,6 @@ const {
                         label="Contraseña"
                         placeholder="••••••••"
                         autocomplete="new-password"
-                        :rules="rules.password"
                     />
 
                     <FormInput
@@ -67,7 +69,6 @@ const {
                         label="Confirmar Contraseña"
                         placeholder="••••••••"
                         autocomplete="new-password"
-                        :rules="rules.passwordConfirmation"
                     />
                 </div>
             </section>
@@ -89,7 +90,6 @@ const {
                         name="name"
                         label="Razón Social"
                         placeholder="Ej. RUTELY S.A. DE C.V."
-                        :rules="rules.name"
                     />
 
                     <FormInput
@@ -98,7 +98,6 @@ const {
                         name="commercialName"
                         label="Nombre Comercial"
                         placeholder="Ej. Rutely"
-                        :rules="rules.commercialName"
                     />
 
                     <FormInput
@@ -108,7 +107,6 @@ const {
                         label="NIT"
                         placeholder="0614-280390-112-1"
                         mask="####-######-###-#"
-                        :rules="rules.nit"
                     />
 
                     <FormInput
@@ -132,7 +130,6 @@ const {
                         label-key="{code} - {description}"
                         value-key="code"
                         subtitle-key="code"
-                        :rules="rules.economicActivityCode"
                     />
 
                     <SearchableSelect
@@ -147,7 +144,6 @@ const {
                         value-key="code"
                         subtitle-key="code"
                         local-search-first
-                        :rules="rules.establishmentType"
                     />
                 </div>
             </section>
@@ -171,7 +167,6 @@ const {
                         label="Teléfono"
                         placeholder="+503 7802 7600"
                         mask="+503 #### ####"
-                        :rules="rules.phone"
                     />
 
                     <FormInput
@@ -182,7 +177,6 @@ const {
                         label="Correo Electrónico"
                         placeholder="facturacion@rutely.biz"
                         autocomplete="email"
-                        :rules="rules.email"
                     />
                 </div>
 
@@ -192,7 +186,6 @@ const {
                     name="address"
                     label="Complemento de Dirección"
                     placeholder="Calle, avenida, número de local y referencias"
-                    :rules="rules.address"
                 />
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -208,7 +201,6 @@ const {
                         value-key="id"
                         subtitle-key="code"
                         local-search-first
-                        :rules="rules.departmentId"
                     />
 
                     <SearchableSelect
@@ -225,7 +217,6 @@ const {
                         subtitle-key="code"
                         :disabled="!form.departmentId"
                         local-search-first
-                        :rules="rules.municipalityId"
                     />
 
                     <SearchableSelect
@@ -242,7 +233,6 @@ const {
                         subtitle-key="code"
                         :disabled="!form.municipalityId"
                         local-search-first
-                        :rules="rules.districtId"
                     />
                 </div>
             </section>
@@ -264,7 +254,6 @@ const {
                         name="ownEstablishmentCode"
                         label="Código de Establecimiento"
                         placeholder="Ej. M001"
-                        :rules="rules.ownEstablishmentCode"
                     />
 
                     <FormInput
@@ -273,7 +262,6 @@ const {
                         name="ownPosCode"
                         label="Código de Punto de Venta"
                         placeholder="Ej. P001"
-                        :rules="rules.ownPosCode"
                     />
                 </div>
             </section>
