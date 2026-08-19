@@ -58,10 +58,5 @@ jobs:
           git diff --no-color -- resources/js
           pnpm types:check
 
-      - name: Prepare Playwright Database
-        run: |
-          php artisan migrate:fresh --force
-          php artisan db:seed --class=DeveloperSeeder --force
-
       - name: Run Playwright E2E Tests
         run: pnpm test:e2e
