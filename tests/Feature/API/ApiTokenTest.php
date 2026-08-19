@@ -88,3 +88,29 @@ test('requires a name when creating a company API token', function () {
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['name']);
 });
+
+test('lists only Sanctum tokens owned by the authenticated company', function () {
+    $company = apiTokenTestCompany('3');
+    $otherCompany = apiTokenTestCompany('4');
+
+    $company->createToken('ERP principal', ['create:dte']);
+    $company->createToken('Sistema contable', ['create:dte']);
+    $otherCompany->createToken('Token de otra empresa', ['create:dte']);
+
+    Sanctum::actingAs(apiTokenTestUser($company));
+
+    $response = $this->getJson(route('api.v1.tokens.index', ['per_page' => 100]))
+        ->assertOk()
+        ->assertJsonPath('pagination.total', 2)
+        ->assertJsonPath('data.0.name', 'Sistema contable')
+        ->assertJsonPath('data.1.name', 'ERP principal')
+        ->assertJsonMissing(['name' => 'Token de otra empresa']);
+
+    foreach ($response->json('data') as $token) {
+        expect($token)->toHaveKeys(['id', 'name', 'last_used_at', 'created_at'])
+            ->and(array_key_exists('token', $token))->toBeFalse()
+            ->and(array_key_exists('abilities', $token))->toBeFalse()
+            ->and(array_key_exists('tokenable_id', $token))->toBeFalse()
+            ->and(array_key_exists('tokenable_type', $token))->toBeFalse();
+    }
+});

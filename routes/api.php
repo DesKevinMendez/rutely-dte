@@ -32,6 +32,8 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('dashboard', [DashboardController::class, 'show'])
             ->name('api.v1.dashboard.show');
 
+        Route::get('tokens', [ApiTokenController::class, 'index'])
+            ->name('api.v1.tokens.index');
         Route::post('tokens', [ApiTokenController::class, 'store'])
             ->name('api.v1.tokens.store');
 
