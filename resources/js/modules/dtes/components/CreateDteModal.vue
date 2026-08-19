@@ -11,8 +11,9 @@ import type { TableField } from 'ornito';
 import { computed, ref, watch } from 'vue';
 import type { DteDraft, DteItem } from '../types/dte.types';
 
-const props = defineProps<{
+const { isOpen, isSubmitting = false } = defineProps<{
     isOpen: boolean;
+    isSubmitting?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -70,9 +71,7 @@ const subtotal = computed(() =>
         0,
     ),
 );
-const iva = computed(() =>
-    tipoDte.value === '03' ? subtotal.value * 0.13 : 0,
-);
+const iva = computed(() => subtotal.value * 0.13);
 const total = computed(() => subtotal.value + iva.value);
 
 const addItem = (): void => {
@@ -118,47 +117,46 @@ const reset = (): void => {
 };
 
 watch(
-    () => props.isOpen,
-    (isOpen) => {
-        if (isOpen) {
+    () => isOpen,
+    (open) => {
+        if (open) {
             reset();
         }
     },
 );
 
 const handleOpenChange = (value: boolean): void => {
-    emit('update:isOpen', value);
+    if (!isSubmitting) {
+        emit('update:isOpen', value);
+    }
 };
 
 const submit = (): void => {
+    if (isSubmitting) {
+        return;
+    }
+
     emit('created', {
         tipoDte: tipoDte.value,
+        tipoDocumento: tipoDocumento.value,
         receptorNombre: receptorNombre.value,
         receptorDocumento: receptorDocumento.value,
         receptorCorreo: receptorCorreo.value,
         items: items.value.map((item) => ({ ...item })),
         montoTotal: total.value,
     });
-    emit('update:isOpen', false);
 };
 </script>
 
 <template>
     <Modal
-        :open="props.isOpen"
+        :open="isOpen"
         title="Emitir Documento Tributario Electrónico (DTE)"
         subtitle="Complete la información para generar y transmitir el comprobante fiscal al MH."
         size="xl"
         @update:open="handleOpenChange"
     >
         <form class="space-y-5 pt-2 text-sm" @submit.prevent="submit">
-            <div
-                class="rounded-xl border border-primary-200 bg-primary-50 p-3 text-xs text-primary-700 dark:border-primary-800 dark:bg-primary-950/40 dark:text-primary-300"
-            >
-                Modo UI: esta emisión se agrega únicamente al listado local de
-                demostración.
-            </div>
-
             <FormSelect
                 v-model="tipoDte"
                 id="tipo-dte"
@@ -281,8 +279,8 @@ const submit = (): void => {
                     class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
                 >
                     <span class="text-xs text-gray-500 dark:text-gray-400"
-                        >El monto se calcula automáticamente según el tipo de
-                        comprobante.</span
+                        >El monto se calcula automáticamente con IVA según el
+                        flujo actual del backend.</span
                     >
                     <div
                         class="text-right text-xs text-gray-500 dark:text-gray-400"
@@ -291,7 +289,7 @@ const submit = (): void => {
                             Subtotal:
                             <strong>${{ subtotal.toFixed(2) }}</strong>
                         </div>
-                        <div v-if="tipoDte === '03'">
+                        <div>
                             IVA (13%): <strong>${{ iva.toFixed(2) }}</strong>
                         </div>
                         <div
@@ -310,12 +308,18 @@ const submit = (): void => {
                     type="button"
                     variant="outline"
                     size="auto"
+                    :disabled="isSubmitting"
                     @click="emit('update:isOpen', false)"
                     >Cancelar</BaseButton
                 >
-                <BaseButton type="submit" variant="primary" size="auto"
-                    >Emitir DTE</BaseButton
+                <BaseButton
+                    type="submit"
+                    variant="primary"
+                    size="auto"
+                    :disabled="isSubmitting"
                 >
+                    {{ isSubmitting ? 'Emitiendo…' : 'Emitir DTE' }}
+                </BaseButton>
             </div>
         </form>
     </Modal>

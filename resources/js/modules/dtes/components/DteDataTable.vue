@@ -3,7 +3,7 @@ import { Badge, DataTable } from 'ornito';
 import type { BadgeVariant, TableField } from 'ornito';
 import type { DteRecord } from '../types/dte.types';
 
-const props = defineProps<{
+const { records } = defineProps<{
     records: DteRecord[];
 }>();
 
@@ -25,6 +25,7 @@ const statusVariant = (status: string): BadgeVariant => {
         case 'RECHAZADO':
             return 'danger';
         case 'CONTINGENCIA':
+        case 'FIRMADO':
             return 'warning';
         default:
             return 'neutral';
@@ -60,7 +61,7 @@ const columns: TableField<DteRecord>[] = [
 <template>
     <DataTable
         :columns="columns"
-        :data="props.records"
+        :data="records"
         :show-search="true"
         search-placeholder="Buscar DTE..."
     >
