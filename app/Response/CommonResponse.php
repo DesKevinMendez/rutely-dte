@@ -15,6 +15,8 @@ class CommonResponse implements Responsable
 
     public function toResponse($request)
     {
-        return response()->json($this->data, $this->status);
+        return response()->json([
+            'data' => $this->data,
+        ], $this->status);
     }
 }
