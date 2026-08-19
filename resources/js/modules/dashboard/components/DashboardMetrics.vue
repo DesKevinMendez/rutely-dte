@@ -2,7 +2,7 @@
 import { StatCard } from 'ornito';
 import type { DteDashboardMetrics } from '../types/dashboard.types';
 
-defineProps<{
+const { metrics } = defineProps<{
     metrics: DteDashboardMetrics;
 }>();
 </script>
@@ -12,7 +12,7 @@ defineProps<{
         <StatCard
             title="Total Emitidos"
             :value="metrics.totalEmitidos"
-            description="Documentos procesados"
+            description="Documentos registrados"
             change-type="info"
         />
         <StatCard
@@ -28,9 +28,9 @@ defineProps<{
             change-type="positive"
         />
         <StatCard
-            title="Rechazados / Contingencia"
-            :value="metrics.rechazadosCount + metrics.contingenciaCount"
-            description="Requieren atención o reintento"
+            title="Requieren atención"
+            :value="metrics.rechazadosCount + metrics.invalidatedCount + metrics.pendingTransmissionsCount"
+            description="Rechazados, invalidados o pendientes"
             change-type="negative"
         />
     </div>
