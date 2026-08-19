@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'observations',
     'mh_response_json',
     'receiver_id',
+    'contingency_event_id',
 ])]
 class Dte extends Model
 {
@@ -53,6 +54,12 @@ class Dte extends Model
     public function receiver(): BelongsTo
     {
         return $this->belongsTo(Receivers::class);
+    }
+
+    /** @return BelongsTo<ContingencyEvent, $this> */
+    public function contingencyEvent(): BelongsTo
+    {
+        return $this->belongsTo(ContingencyEvent::class);
     }
 
     /** @return HasMany<DteInvalidation, $this> */
