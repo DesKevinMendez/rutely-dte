@@ -48,10 +48,8 @@ class DteController extends Controller
         $result = $issuanceService->issue((string) $request->user()->company_id, $request->validated());
 
         return new CommonResponse([
-            'data' => [
-                'record' => $result['record'],
-                'mh_result' => $result['mhResult'],
-            ],
+            'record' => $result['record'],
+            'mh_result' => $result['mhResult'],
         ], 201);
     }
 
@@ -59,6 +57,6 @@ class DteController extends Controller
     {
         Gate::authorize('view', $dte);
 
-        return new CommonResponse(['data' => $dte]);
+        return new CommonResponse($dte);
     }
 }
