@@ -33,13 +33,15 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/",
+            "Rutely\\DteSigned\\": "dte-signed/src/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/"
+            "Tests\\": "tests/",
+            "Rutely\\DteSigned\\Tests\\": "dte-signed/tests/"
         }
     },
     "scripts": {
