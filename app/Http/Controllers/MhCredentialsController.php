@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Environment;
 use App\Http\Requests\Mh\ShowMhCredentialsRequest;
-use App\Http\Requests\Mh\StoreMhCredentialsRequest;
+use App\Http\Http\Requests\Mh\StoreMhCredentialsRequest;
 use App\Models\MhCredentials;
 use App\Response\CommonResponse;
 
@@ -26,7 +26,7 @@ class MhCredentialsController extends Controller
             ],
         );
 
-        return new CommonResponse(['data' => $this->metadata($credentials->refresh())]);
+        return new CommonResponse($this->metadata($credentials->refresh()));
     }
 
     public function show(ShowMhCredentialsRequest $request): CommonResponse
@@ -38,7 +38,7 @@ class MhCredentialsController extends Controller
             ->latest('updated_at')
             ->firstOrFail();
 
-        return new CommonResponse(['data' => $this->metadata($credentials)]);
+        return new CommonResponse($this->metadata($credentials));
     }
 
     /** @return array<string, mixed> */
