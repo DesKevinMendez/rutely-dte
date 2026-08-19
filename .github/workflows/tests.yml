@@ -39,9 +39,11 @@ jobs:
           composer install --no-interaction --prefer-dist
           php -r "file_exists('.env') || copy('.env.example', '.env');"
           php artisan key:generate
-          php artisan migrate --force
           pnpm install --frozen-lockfile
           pnpm build
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run DTE Signer PHP Checks
         run: |
@@ -55,3 +57,11 @@ jobs:
           pnpm exec prettier --write resources/js/core/types/api.types.ts resources/js/modules/dashboard resources/js/modules/dtes resources/js/modules/queue resources/js/modules/contingency resources/js/modules/certificates resources/js/modules/mh-credentials
           git diff --no-color -- resources/js
           pnpm types:check
+
+      - name: Prepare Playwright Database
+        run: |
+          php artisan migrate:fresh --force
+          php artisan db:seed --class=DeveloperSeeder --force
+
+      - name: Run Playwright E2E Tests
+        run: pnpm test:e2e
