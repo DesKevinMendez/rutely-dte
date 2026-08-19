@@ -16,7 +16,7 @@ class ContingencyStatusController extends Controller
         $company = Company::query()->findOrFail($request->user()->company_id);
         Gate::authorize('view', $company);
 
-        return new CommonResponse(['data' => $this->status($company)]);
+        return new CommonResponse($this->status($company));
     }
 
     public function update(UpdateContingencyStatusRequest $request): CommonResponse
@@ -24,7 +24,7 @@ class ContingencyStatusController extends Controller
         $company = Company::query()->findOrFail($request->user()->company_id);
         Cache::forever($this->cacheKey($company), (bool) $request->boolean('active'));
 
-        return new CommonResponse(['data' => $this->status($company)]);
+        return new CommonResponse($this->status($company));
     }
 
     /** @return array{contingency_active: bool, circuit_state: string} */
