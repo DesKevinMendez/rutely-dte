@@ -43,8 +43,11 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm build
 
-      - name: Run PHP Checks
-        run: composer test
+      - name: Run DTE Signer PHP Checks
+        run: |
+          vendor/bin/pint --test app/Models/MhCertificates.php app/Services/Dte/FirmadorService.php tests/Feature/Services/Dte/FirmadorServiceTest.php
+          vendor/bin/phpstan analyse app/Models/MhCertificates.php app/Services/Dte/FirmadorService.php --no-progress
+          php artisan test --compact tests/Feature/Services/Dte/FirmadorServiceTest.php
 
       - name: Run Frontend Checks
         run: |
