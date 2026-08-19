@@ -43,11 +43,11 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm build
 
+      - name: Run PHP Checks
+        run: composer test
+
       - name: Run Frontend Checks
         run: |
           pnpm lint:check
           pnpm format:check
           pnpm types:check
-
-      - name: Run PHP Checks
-        run: composer test
