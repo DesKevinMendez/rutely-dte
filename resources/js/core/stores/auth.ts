@@ -1,11 +1,13 @@
-import { useStorage } from '@vueuse/core';
+import { StorageSerializers, useStorage } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import type { AuthUser } from '@/core/types/auth.types';
 
 export const useAuth = defineStore('auth', {
     state: () => ({
         token: useStorage<string | null>('auth_token', null),
-        user: useStorage<AuthUser | null>('auth_user', null),
+        user: useStorage<AuthUser | null>('auth_user', null, undefined, {
+            serializer: StorageSerializers.object,
+        }),
         sessionValidated: false,
     }),
     getters: {

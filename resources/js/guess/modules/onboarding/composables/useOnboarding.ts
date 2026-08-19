@@ -1,13 +1,35 @@
 import { computed, reactive, watch } from 'vue';
-import { useForm } from 'vee-validate';
 import { useRouter } from 'vue-router';
 import * as yup from 'yup';
+import { useRequest } from '@/core/composables/useRequest';
 import { useAuth } from '@/core/stores/auth';
-import type { OnboardingForm } from '../types/Onboarding';
+import type {
+    CompanyRequest,
+    CompanyResponse,
+    OnboardingForm,
+    RegisterRequest,
+    RegisterResponse,
+} from '../types/Onboarding';
 
 const requiredText = (message: string) => yup.string().required(message);
 
-const rules = {
+const accountRules = {
+    userName: requiredText('El nombre del administrador es requerido.'),
+    userEmail: yup
+        .string()
+        .required('El correo electrónico del administrador es requerido.')
+        .email('Ingresá un correo electrónico válido.'),
+    password: yup
+        .string()
+        .required('La contraseña es requerida.')
+        .min(8, 'La contraseña debe tener al menos 8 caracteres.'),
+    passwordConfirmation: yup
+        .string()
+        .required('La confirmación de contraseña es requerida.')
+        .oneOf([yup.ref('password')], 'Las contraseñas no coinciden.'),
+};
+
+const companyRules = {
     name: requiredText('La razón social es requerida.'),
     commercialName: requiredText('El nombre comercial es requerido.'),
     nit: requiredText('El NIT es requerido.'),
@@ -23,81 +45,51 @@ const rules = {
     departmentId: requiredText('El departamento es requerido.'),
     municipalityId: requiredText('El municipio es requerido.'),
     districtId: requiredText('El distrito es requerido.'),
-    ownEstablishmentCode: requiredText('El código de establecimiento es requerido.'),
-    ownPosCode: requiredText('El código de punto de venta es requerido.'),
+    ownEstablishmentCode: requiredText('El código de establecimiento es requerido.').max(
+        4,
+        'El código de establecimiento no debe contener más de 4 caracteres.',
+    ),
+    ownPosCode: requiredText('El código de punto de venta es requerido.').max(
+        4,
+        'El código de punto de venta no debe contener más de 4 caracteres.',
+    ),
 };
 
-const requiredFields = [
-    'name',
-    'commercialName',
-    'nit',
-    'phone',
-    'email',
-    'address',
-    'economicActivityCode',
-    'establishmentType',
-    'departmentId',
-    'municipalityId',
-    'districtId',
-    'ownEstablishmentCode',
-    'ownPosCode',
-] as const;
+const digitsOnly = (value: string): string => value.replace(/\D/g, '');
 
 export default function useOnboarding() {
     const router = useRouter();
     const auth = useAuth();
+    const { post, isLoading, error } = useRequest();
+    const isAuthenticated = computed(() => auth.isAuthenticated);
 
-    const { defineField, setFieldValue, validateField } = useForm<OnboardingForm>({
-        validationSchema: yup.object(rules),
-        initialValues: {
-            name: '',
-            commercialName: '',
-            nit: '',
-            nrc: '',
-            phone: '',
-            email: '',
-            address: '',
-            economicActivityCode: '',
-            establishmentType: '',
-            departmentId: '',
-            municipalityId: '',
-            districtId: '',
-            ownEstablishmentCode: '',
-            ownPosCode: '',
-        },
+    const validationSchema = computed(() =>
+        yup.object({
+            ...(auth.isAuthenticated ? {} : accountRules),
+            ...companyRules,
+        }),
+    );
+
+    const form = reactive<OnboardingForm>({
+        userName: '',
+        userEmail: '',
+        password: '',
+        passwordConfirmation: '',
+        name: '',
+        commercialName: '',
+        nit: '',
+        nrc: '',
+        phone: '',
+        email: '',
+        address: '',
+        economicActivityCode: '',
+        establishmentType: '',
+        departmentId: '',
+        municipalityId: '',
+        districtId: '',
+        ownEstablishmentCode: '',
+        ownPosCode: '',
     });
-
-    const [name] = defineField('name');
-    const [commercialName] = defineField('commercialName');
-    const [nit] = defineField('nit');
-    const [nrc] = defineField('nrc');
-    const [phone] = defineField('phone');
-    const [email] = defineField('email');
-    const [address] = defineField('address');
-    const [economicActivityCode] = defineField('economicActivityCode');
-    const [establishmentType] = defineField('establishmentType');
-    const [departmentId] = defineField('departmentId');
-    const [municipalityId] = defineField('municipalityId');
-    const [districtId] = defineField('districtId');
-    const [ownEstablishmentCode] = defineField('ownEstablishmentCode');
-    const [ownPosCode] = defineField('ownPosCode');
-
-    const form = reactive({
-        name,
-        commercialName,
-        nit,
-        nrc,
-        phone,
-        email,
-        address,
-        economicActivityCode,
-        establishmentType,
-        departmentId,
-        municipalityId,
-        districtId,
-        ownEstablishmentCode,
-        ownPosCode,
-    }) as OnboardingForm;
 
     const municipalityUrl = computed(() => {
         if (!form.departmentId) {
@@ -118,26 +110,88 @@ export default function useOnboarding() {
     watch(
         () => form.departmentId,
         () => {
-            setFieldValue('municipalityId', '');
-            setFieldValue('districtId', '');
+            form.municipalityId = '';
+            form.districtId = '';
         },
     );
 
     watch(
         () => form.municipalityId,
         () => {
-            setFieldValue('districtId', '');
+            form.districtId = '';
         },
     );
 
-    const validateRequiredFields = async (): Promise<boolean> => {
-        const results = await Promise.all(requiredFields.map((field) => validateField(field)));
+    const registerUser = async (): Promise<boolean> => {
+        const payload: RegisterRequest = {
+            name: form.userName,
+            email: form.userEmail,
+            phone: null,
+            password: form.password,
+            password_confirmation: form.passwordConfirmation,
+        };
 
-        return results.every((result) => result.valid);
+        const response = await post<RegisterResponse, RegisterRequest>('/api/v1/register', payload);
+        const session = response.data.value?.data;
+
+        if (!session?.token || !session.user) {
+            return false;
+        }
+
+        auth.setSession(session.token, session.user);
+
+        return true;
+    };
+
+    const createCompany = async (): Promise<string | null> => {
+        const payload: CompanyRequest = {
+            name: form.name,
+            address: form.address,
+            phone: form.phone,
+            nit: digitsOnly(form.nit),
+            nrc: digitsOnly(form.nrc) || null,
+            commercial_name: form.commercialName,
+            economic_activity_code: form.economicActivityCode,
+            establishment_type: form.establishmentType,
+            departament_id: form.departmentId,
+            municipality_id: form.municipalityId,
+            district_id: form.districtId || null,
+            email: form.email,
+            mh_establishment_code: form.ownEstablishmentCode,
+            mh_pos_code: form.ownPosCode,
+            own_establishment_code: form.ownEstablishmentCode,
+            own_pos_code: form.ownPosCode,
+        };
+
+        const response = await post<CompanyResponse, CompanyRequest>('/api/v1/companies', payload);
+
+        return response.data.value?.data.id ?? null;
     };
 
     const continueFlow = async (): Promise<void> => {
-        await validateRequiredFields();
+        if (isLoading.value) {
+            return;
+        }
+
+        error.value = null;
+
+        if (!auth.isAuthenticated && !(await registerUser())) {
+            return;
+        }
+
+        const companyId = await createCompany();
+        const currentUser = auth.user;
+
+        if (!companyId || !currentUser) {
+            return;
+        }
+
+        auth.setUser({
+            ...currentUser,
+            company_id: companyId,
+        });
+
+        await router.push({ name: 'dashboard' });
     };
 
     const goToLogin = async (): Promise<void> => {
@@ -147,9 +201,12 @@ export default function useOnboarding() {
 
     return {
         form,
-        rules,
+        validationSchema,
         municipalityUrl,
         districtUrl,
+        isAuthenticated,
+        isLoading,
+        error,
         continueFlow,
         goToLogin,
     };
