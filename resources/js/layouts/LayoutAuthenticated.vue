@@ -198,7 +198,7 @@ watch(
                     </template>
                 </Navbar>
 
-                <main class="flex-1 overflow-y-auto bg-gray-50 p-4 dark:bg-gray-900 sm:p-6">
+                <main class="flex-1 overflow-y-auto bg-white p-4 dark:bg-gray-900 sm:p-6">
                     <div class="mx-auto w-full max-w-7xl">
                         <RouterView />
                     </div>
