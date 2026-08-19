@@ -57,35 +57,4 @@ class StoreDteRequest extends FormRequest
             'items.*.uniMedida' => ['sometimes', 'integer'],
         ];
     }
-
-    /** @return array<string, string> */
-    public function attributes(): array
-    {
-        return [
-            'tipoDte' => 'tipo de DTE',
-            'ambiente' => 'ambiente',
-            'emisor.nit' => 'NIT del emisor',
-            'emisor.nombre' => 'nombre del emisor',
-            'emisor.codActividad' => 'código de actividad del emisor',
-            'emisor.descActividad' => 'descripción de actividad del emisor',
-            'emisor.tipoEstablecimiento' => 'tipo de establecimiento del emisor',
-            'emisor.direccion.departamento' => 'departamento del emisor',
-            'emisor.direccion.municipio' => 'municipio del emisor',
-            'emisor.direccion.complemento' => 'complemento de dirección del emisor',
-            'emisor.correo' => 'correo del emisor',
-            'receptor.tipoDocumento' => 'tipo de documento del receptor',
-            'receptor.direccion.departamento' => 'departamento del receptor',
-            'receptor.direccion.municipio' => 'municipio del receptor',
-            'receptor.direccion.complemento' => 'complemento de dirección del receptor',
-            'receptor.correo' => 'correo del receptor',
-            'items' => 'ítems',
-            'items.*.descripcion' => 'descripción del ítem',
-            'items.*.cantidad' => 'cantidad del ítem',
-            'items.*.precioUni' => 'precio unitario del ítem',
-            'items.*.montoDescu' => 'monto de descuento del ítem',
-            'items.*.tipoItem' => 'tipo de ítem',
-            'items.*.codigo' => 'código del ítem',
-            'items.*.uniMedida' => 'unidad de medida del ítem',
-        ];
-    }
 }
