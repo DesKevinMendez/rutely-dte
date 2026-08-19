@@ -15,9 +15,12 @@ test.describe('DTEs', () => {
         await expect(page.getByText('DTE-01-00010001-000000000000001', { exact: true })).toBeVisible();
         await expect(page.getByText('DTE-01-00010001-000000000000002', { exact: true })).toBeVisible();
         await expect(page.getByText('DTE-01-00010001-000000000000003', { exact: true })).toBeVisible();
-        await expect(page.getByText('PROCESADO', { exact: true })).toBeVisible();
-        await expect(page.getByText('RECHAZADO', { exact: true })).toBeVisible();
-        await expect(page.getByText('INVALIDADO', { exact: true })).toBeVisible();
+
+        const table = page.getByRole('table');
+
+        await expect(table.getByText('PROCESADO', { exact: true })).toBeVisible();
+        await expect(table.getByText('RECHAZADO', { exact: true })).toBeVisible();
+        await expect(table.getByText('INVALIDADO', { exact: true })).toBeVisible();
     });
 
     test('filters DTEs by status', async ({ page }) => {
