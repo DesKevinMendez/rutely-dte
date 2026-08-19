@@ -34,7 +34,7 @@ class MhCertificatesController extends Controller
             ],
         );
 
-        return new CommonResponse(['data' => $this->metadata($storedCertificate->refresh())]);
+        return new CommonResponse($this->metadata($storedCertificate->refresh()));
     }
 
     public function show(ShowMhCertificatesRequest $request): CommonResponse
@@ -46,7 +46,7 @@ class MhCertificatesController extends Controller
             ->latest('updated_at')
             ->firstOrFail();
 
-        return new CommonResponse(['data' => $this->metadata($certificate)]);
+        return new CommonResponse($this->metadata($certificate));
     }
 
     /** @return array<string, mixed> */
