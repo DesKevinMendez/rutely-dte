@@ -15,6 +15,10 @@ export interface DteApiRecord {
     receiver_document: string | null;
     total_amount: number;
     original_json: {
+        identificacion?: {
+            fecEmi?: string | null;
+            horEmi?: string | null;
+        } | null;
         receptor?: {
             nombre?: string | null;
             numDocumento?: string | null;

@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import {
-    BaseButton,
-    Card,
-    DataTable,
-    FormInput,
-    FormSelect,
-    Modal,
-} from 'ornito';
-import type { TableField } from 'ornito';
+import { BaseButton, Card, FormInput, FormSelect, Modal } from 'ornito';
 import { computed, ref, watch } from 'vue';
 import type { DteDraft, DteItem } from '../types/dte.types';
 
@@ -48,22 +40,6 @@ const items = ref<DteItem[]>([
     },
 ]);
 
-const itemColumns: TableField<DteItem>[] = [
-    {
-        label: 'Descripción',
-        key: 'descripcion',
-        width: 320,
-        slot: 'description',
-    },
-    { label: 'Cant.', key: 'cantidad', width: 120, slot: 'quantity' },
-    {
-        label: 'Precio Uni ($)',
-        key: 'precioUni',
-        width: 150,
-        slot: 'unitPrice',
-    },
-];
-
 const subtotal = computed(() =>
     items.value.reduce(
         (total, item) =>
@@ -78,27 +54,22 @@ const addItem = (): void => {
     items.value.push({ descripcion: '', cantidad: 1, precioUni: 0 });
 };
 
-const removeItem = (row: DteItem): void => {
-    const index = items.value.indexOf(row);
-
-    if (index >= 0 && items.value.length > 1) {
+const removeItem = (index: number): void => {
+    if (items.value.length > 1) {
         items.value.splice(index, 1);
     }
 };
 
-const itemIndex = (row: DteItem): number =>
-    Math.max(items.value.indexOf(row), 0);
-
-const updateDescription = (row: DteItem, value: unknown): void => {
-    row.descripcion = String(value ?? '');
+const updateDescription = (item: DteItem, value: unknown): void => {
+    item.descripcion = String(value ?? '');
 };
 
-const updateQuantity = (row: DteItem, value: unknown): void => {
-    row.cantidad = Number(value ?? 0);
+const updateQuantity = (item: DteItem, value: unknown): void => {
+    item.cantidad = Number(value ?? 0);
 };
 
-const updateUnitPrice = (row: DteItem, value: unknown): void => {
-    row.precioUni = Number(value ?? 0);
+const updateUnitPrice = (item: DteItem, value: unknown): void => {
+    item.precioUni = Number(value ?? 0);
 };
 
 const reset = (): void => {
@@ -218,60 +189,59 @@ const submit = (): void => {
                     </BaseButton>
                 </template>
 
-                <DataTable
-                    :columns="itemColumns"
-                    :data="items"
-                    :show-search="false"
-                    actions-label="Acción"
-                >
-                    <template #description="{ row }">
+                <div class="space-y-3">
+                    <div
+                        class="hidden grid-cols-[minmax(0,1fr)_7rem_9rem_5rem] gap-3 px-1 text-xs font-semibold text-gray-500 sm:grid dark:text-gray-400"
+                    >
+                        <span>Descripción</span>
+                        <span>Cant.</span>
+                        <span>Precio Uni ($)</span>
+                        <span>Acción</span>
+                    </div>
+
+                    <div
+                        v-for="(item, index) in items"
+                        :key="index"
+                        class="grid grid-cols-1 gap-3 rounded-lg border border-gray-200 p-3 sm:grid-cols-[minmax(0,1fr)_7rem_9rem_5rem] sm:items-end dark:border-gray-700"
+                    >
                         <FormInput
-                            :model-value="row.descripcion"
-                            :id="`item-desc-${itemIndex(row)}`"
-                            :name="`item-${itemIndex(row)}-descripcion`"
+                            :model-value="item.descripcion"
+                            :id="`item-desc-${index}`"
+                            :name="`item-${index}-descripcion`"
                             type="text"
-                            label=""
+                            label="Descripción"
                             small
-                            @update:model-value="updateDescription(row, $event)"
+                            @update:model-value="updateDescription(item, $event)"
                         />
-                    </template>
-
-                    <template #quantity="{ row }">
                         <FormInput
-                            :model-value="row.cantidad"
-                            :id="`item-qty-${itemIndex(row)}`"
-                            :name="`item-${itemIndex(row)}-cantidad`"
+                            :model-value="item.cantidad"
+                            :id="`item-qty-${index}`"
+                            :name="`item-${index}-cantidad`"
                             type="number"
-                            label=""
+                            label="Cant."
                             small
-                            @update:model-value="updateQuantity(row, $event)"
+                            @update:model-value="updateQuantity(item, $event)"
                         />
-                    </template>
-
-                    <template #unitPrice="{ row }">
                         <FormInput
-                            :model-value="row.precioUni"
-                            :id="`item-price-${itemIndex(row)}`"
-                            :name="`item-${itemIndex(row)}-precio`"
+                            :model-value="item.precioUni"
+                            :id="`item-price-${index}`"
+                            :name="`item-${index}-precio`"
                             type="number"
-                            label=""
+                            label="Precio Uni ($)"
                             small
-                            @update:model-value="updateUnitPrice(row, $event)"
+                            @update:model-value="updateUnitPrice(item, $event)"
                         />
-                    </template>
-
-                    <template #actions="{ row }">
                         <BaseButton
                             type="button"
                             variant="outline"
                             size="small"
                             :disabled="items.length <= 1"
-                            @click.stop="removeItem(row)"
+                            @click="removeItem(index)"
                         >
                             Quitar
                         </BaseButton>
-                    </template>
-                </DataTable>
+                    </div>
+                </div>
             </Card>
 
             <Card>
