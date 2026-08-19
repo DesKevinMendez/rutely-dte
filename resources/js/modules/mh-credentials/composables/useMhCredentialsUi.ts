@@ -67,7 +67,8 @@ export async function useMhCredentialsUi() {
         }
 
         error.value =
-            response.error.value ?? 'No se pudieron cargar las credenciales MH.';
+            response.error.value ??
+            'No se pudieron cargar las credenciales MH.';
 
         return false;
     };
@@ -97,7 +98,8 @@ export async function useMhCredentialsUi() {
         if (!response.data.value) {
             saveSuccess.value = false;
             error.value =
-                response.error.value ?? 'No se pudieron guardar las credenciales MH.';
+                response.error.value ??
+                'No se pudieron guardar las credenciales MH.';
 
             return false;
         }

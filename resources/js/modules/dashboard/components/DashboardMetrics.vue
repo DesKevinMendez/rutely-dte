@@ -29,7 +29,11 @@ const { metrics } = defineProps<{
         />
         <StatCard
             title="Requieren atención"
-            :value="metrics.rechazadosCount + metrics.invalidatedCount + metrics.pendingTransmissionsCount"
+            :value="
+                metrics.rechazadosCount +
+                metrics.invalidatedCount +
+                metrics.pendingTransmissionsCount
+            "
             description="Rechazados, invalidados o pendientes"
             change-type="negative"
         />

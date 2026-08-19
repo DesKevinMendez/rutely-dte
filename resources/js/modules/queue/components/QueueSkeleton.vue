@@ -20,12 +20,20 @@ const columns: TableField<Record<string, unknown>>[] = [
             class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
             <div class="space-y-2">
-                <div class="h-7 w-[30rem] max-w-full animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
-                <div class="h-4 w-[34rem] max-w-full animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+                <div
+                    class="h-7 w-[30rem] max-w-full animate-pulse rounded bg-gray-200 dark:bg-gray-800"
+                />
+                <div
+                    class="h-4 w-[34rem] max-w-full animate-pulse rounded bg-gray-200 dark:bg-gray-800"
+                />
             </div>
             <div class="flex gap-2.5">
-                <div class="h-9 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" />
-                <div class="h-9 w-40 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" />
+                <div
+                    class="h-9 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800"
+                />
+                <div
+                    class="h-9 w-40 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800"
+                />
             </div>
         </div>
 
@@ -33,6 +41,8 @@ const columns: TableField<Record<string, unknown>>[] = [
             <TableSkeleton :columns="columns" :rows="8" />
         </Card>
 
-        <div class="ml-auto h-3 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-800" />
+        <div
+            class="ml-auto h-3 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-800"
+        />
     </div>
 </template>

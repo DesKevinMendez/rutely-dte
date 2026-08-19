@@ -32,9 +32,8 @@ export async function useDashboardUi() {
     const { get, isLoading } = useRequest();
 
     const loadDashboard = async (): Promise<void> => {
-        const response = await get<ApiResponse<DashboardApiData>>(
-            '/api/v1/dashboard',
-        );
+        const response =
+            await get<ApiResponse<DashboardApiData>>('/api/v1/dashboard');
 
         if (response.data.value) {
             metrics.value = mapMetrics(response.data.value.data.metrics);

@@ -93,7 +93,8 @@ const { metadata, selectedEnvironment } = defineProps<{
             </p>
             <p class="text-xs text-gray-500 dark:text-gray-400">
                 No hay ningún certificado registrado para el ambiente de
-                <strong>{{ selectedEnvironment }}</strong>.
+                <strong>{{ selectedEnvironment }}</strong
+                >.
             </p>
         </div>
     </Card>

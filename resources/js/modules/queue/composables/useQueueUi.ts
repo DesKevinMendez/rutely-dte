@@ -1,9 +1,6 @@
 import { computed, ref } from 'vue';
 import { useRequest } from '@/core/composables/useRequest';
-import type {
-    ApiResponse,
-    PaginatedApiResponse,
-} from '@/core/types/api.types';
+import type { ApiResponse, PaginatedApiResponse } from '@/core/types/api.types';
 import type {
     QueueApiTransmission,
     QueueJob,
@@ -56,7 +53,8 @@ export async function useQueueUi() {
 
         if (!response.data.value) {
             error.value =
-                response.error.value ?? 'No se pudieron reintentar las transmisiones.';
+                response.error.value ??
+                'No se pudieron reintentar las transmisiones.';
 
             return false;
         }

@@ -18,7 +18,9 @@ const fromApiEnvironment = (
     environment: CertificateApiEnvironment,
 ): CertificateEnvironment => (environment === '01' ? 'PRODUCCION' : 'PRUEBAS');
 
-const mapMetadata = (metadata: CertificateApiMetadata): CertificateMetadata => ({
+const mapMetadata = (
+    metadata: CertificateApiMetadata,
+): CertificateMetadata => ({
     id: metadata.id,
     nit: metadata.nit,
     environment: fromApiEnvironment(metadata.environment),
@@ -96,7 +98,8 @@ export async function useCertificateUi() {
         if (!response.data.value) {
             uploadSuccess.value = false;
             error.value =
-                response.error.value ?? 'No se pudo guardar el certificado digital.';
+                response.error.value ??
+                'No se pudo guardar el certificado digital.';
 
             return false;
         }

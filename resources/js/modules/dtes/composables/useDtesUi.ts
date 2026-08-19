@@ -1,9 +1,6 @@
 import { computed, ref, watch } from 'vue';
 import { useRequest } from '@/core/composables/useRequest';
-import type {
-    ApiResponse,
-    PaginatedApiResponse,
-} from '@/core/types/api.types';
+import type { ApiResponse, PaginatedApiResponse } from '@/core/types/api.types';
 import type {
     DteApiRecord,
     DteDraft,

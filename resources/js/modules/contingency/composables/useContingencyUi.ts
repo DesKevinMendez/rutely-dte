@@ -37,7 +37,8 @@ export async function useContingencyUi() {
         }
 
         error.value =
-            response.error.value ?? 'No se pudo cargar el estado de contingencia.';
+            response.error.value ??
+            'No se pudo cargar el estado de contingencia.';
 
         return false;
     };

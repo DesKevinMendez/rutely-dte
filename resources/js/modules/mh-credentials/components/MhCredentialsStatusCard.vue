@@ -77,8 +77,8 @@ const { metadata, selectedEnvironment } = defineProps<{
             <div
                 class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300"
             >
-                Las credenciales están almacenadas de forma segura y listas
-                para autenticación con el Ministerio de Hacienda.
+                Las credenciales están almacenadas de forma segura y listas para
+                autenticación con el Ministerio de Hacienda.
             </div>
         </div>
 
@@ -93,7 +93,8 @@ const { metadata, selectedEnvironment } = defineProps<{
             </p>
             <p class="text-xs text-gray-500 dark:text-gray-400">
                 No hay credenciales registradas para el ambiente de
-                <strong>{{ selectedEnvironment }}</strong>.
+                <strong>{{ selectedEnvironment }}</strong
+                >.
             </p>
         </div>
     </Card>

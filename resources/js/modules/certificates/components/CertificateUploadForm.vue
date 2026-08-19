@@ -65,7 +65,8 @@ const submit = (): void => {
                 class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
             >
                 Certificado guardado correctamente para el ambiente de
-                <strong>{{ selectedEnvironment }}</strong>.
+                <strong>{{ selectedEnvironment }}</strong
+                >.
             </div>
 
             <div>
@@ -176,7 +177,8 @@ const submit = (): void => {
                 placeholder="Ingrese la contraseña si el certificado requiere clave privada"
             />
             <p class="-mt-3 text-xs text-gray-500 dark:text-gray-400">
-                La contraseña se valida contra la clave privada antes de guardar.
+                La contraseña se valida contra la clave privada antes de
+                guardar.
             </p>
 
             <div

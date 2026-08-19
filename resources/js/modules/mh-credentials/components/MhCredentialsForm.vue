@@ -58,7 +58,8 @@ const submit = (): void => {
                 class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
             >
                 Credenciales guardadas correctamente para el ambiente de
-                <strong>{{ selectedEnvironment }}</strong>.
+                <strong>{{ selectedEnvironment }}</strong
+                >.
             </div>
 
             <div
@@ -157,9 +158,7 @@ const submit = (): void => {
                     "
                 >
                     {{
-                        isSubmitting
-                            ? 'Guardando…'
-                            : 'Guardar Credenciales MH'
+                        isSubmitting ? 'Guardando…' : 'Guardar Credenciales MH'
                     }}
                 </BaseButton>
             </div>
