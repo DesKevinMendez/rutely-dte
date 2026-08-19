@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Environment;
+use Database\Factories\MhCertificatesFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class MhCertificates extends Model
 {
-    /** @use HasFactory<\Database\Factories\MhCertificatesFactory> */
+    /** @use HasFactory<MhCertificatesFactory> */
     use HasFactory, HasUuids;
 
     /**
