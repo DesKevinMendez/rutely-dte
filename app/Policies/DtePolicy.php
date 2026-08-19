@@ -23,6 +23,11 @@ class DtePolicy
         return $this->canUseDtes($user);
     }
 
+    public function invalidate(User $user, Dte $dte): bool
+    {
+        return $this->view($user, $dte) && ! in_array($dte->status, ['INVALIDADO'], true);
+    }
+
     public function update(User $user, Dte $dte): bool
     {
         return false;
