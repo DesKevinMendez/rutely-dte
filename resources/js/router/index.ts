@@ -38,6 +38,7 @@ const router = createRouter({
                 { path: 'queue', name: 'queue', component: () => import('@/modules/queue/views/QueueView.vue') },
                 { path: 'certificates', name: 'certificates', component: () => import('@/modules/certificates/views/CertificatesView.vue') },
                 { path: 'mh-credentials', name: 'mh-credentials', component: () => import('@/modules/mh-credentials/views/MhCredentialsView.vue') },
+                { path: 'my-profile', name: 'my-profile', component: () => import('@/modules/profile/views/MyProfileView.vue') },
             ],
         },
     ],
