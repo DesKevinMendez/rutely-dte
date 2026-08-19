@@ -92,23 +92,38 @@ test('an admin can create a company and is assigned to it', function () {
     ]);
 });
 
-test('an unauthenticated user cannot create a company', function () {
-    $this->postJson(route('api.v1.companies.store'))
-        ->assertUnauthorized();
-});
-
-test('a superadmin cannot create a company', function () {
+test('a superadmin can create a company and is assigned to it', function () {
     $user = User::factory()->create([
         'role' => Role::SUPERADMIN->value,
     ]);
 
     Sanctum::actingAs($user);
 
-    $this->postJson(route('api.v1.companies.store'))
-        ->assertForbidden();
+    $payload = validCompanyPayload();
+
+    $response = $this->postJson(route('api.v1.companies.store'), $payload);
+
+    $response->assertCreated();
+
+    $companyId = $response->json('data.id');
+
+    $this->assertDatabaseHas('companies', [
+        'id' => $companyId,
+        'name' => $payload['name'],
+    ]);
+
+    $this->assertDatabaseHas('users', [
+        'id' => $user->id,
+        'company_id' => $companyId,
+    ]);
 });
 
-test('an admin with a company cannot create another company', function () {
+test('an unauthenticated user cannot create a company', function () {
+    $this->postJson(route('api.v1.companies.store'))
+        ->assertUnauthorized();
+});
+
+test('a user with a company cannot create another company', function (Role $role) {
     $payload = validCompanyPayload();
     $companyId = (string) Str::uuid();
 
@@ -118,6 +133,7 @@ test('an admin with a company cannot create another company', function () {
     ]);
 
     $user = User::factory()->create([
+        'role' => $role->value,
         'company_id' => $companyId,
     ]);
 
@@ -125,7 +141,10 @@ test('an admin with a company cannot create another company', function () {
 
     $this->postJson(route('api.v1.companies.store'))
         ->assertForbidden();
-});
+})->with([
+    'admin' => Role::ADMIN,
+    'superadmin' => Role::SUPERADMIN,
+]);
 
 test('nullable company fields may be null', function (string $field) {
     $user = User::factory()->create();
