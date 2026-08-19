@@ -39,6 +39,7 @@ return [
         'municipality_id' => 'municipio',
         'district_id' => 'distrito',
         'email' => 'correo electrónico',
+        'password' => 'contraseña',
         'mh_establishment_code' => 'código de establecimiento MH',
         'mh_pos_code' => 'código de punto de venta MH',
         'own_establishment_code' => 'código propio de establecimiento',

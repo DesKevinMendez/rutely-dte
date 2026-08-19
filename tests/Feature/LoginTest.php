@@ -62,7 +62,7 @@ test('email should be required', function () {
     ]);
 
     $response->assertUnprocessable();
-    $response->assertJsonValidationErrors(['email' => 'The email field is required.']);
+    $response->assertJsonValidationErrors(['email' => 'El campo correo electrónico es obligatorio.']);
 });
 
 test('email should be an email valid', function () {
@@ -74,7 +74,7 @@ test('email should be an email valid', function () {
     ]);
 
     $response->assertUnprocessable();
-    $response->assertJsonValidationErrors(['email' => 'The email field must be a valid email address.']);
+    $response->assertJsonValidationErrors(['email' => 'El campo correo electrónico debe ser una dirección de correo electrónico válida.']);
 });
 
 test('password should be required', function () {
@@ -86,5 +86,5 @@ test('password should be required', function () {
     ]);
 
     $response->assertUnprocessable();
-    $response->assertJsonValidationErrors(['password' => 'The password field is required.']);
+    $response->assertJsonValidationErrors(['password' => 'El campo contraseña es obligatorio.']);
 });
