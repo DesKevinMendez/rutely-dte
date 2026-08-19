@@ -29,10 +29,4 @@ class StoreDteInvalidationRequest extends FormRequest
             'numDocSolicita' => ['sometimes', 'string', 'max:50'],
         ];
     }
-
-    /** @return array<string, string> */
-    public function attributes(): array
-    {
-        return (array) trans('request_attributes.dte_invalidation');
-    }
 }
