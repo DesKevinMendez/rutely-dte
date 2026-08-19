@@ -35,10 +35,8 @@ class DashboardController extends Controller
             ->get();
 
         return new CommonResponse([
-            'data' => [
-                'metrics' => $metrics,
-                'recent_dtes' => $recentDtes,
-            ],
+            'metrics' => $metrics,
+            'recent_dtes' => $recentDtes,
         ]);
     }
 }
