@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Mh;
 
 use App\Environment;
-use App\Models\MhCertificates;
 use App\Models\Company;
+use App\Models\MhCertificates;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -39,7 +39,7 @@ class StoreMhCertificatesRequest extends FormRequest
             try {
                 $certificate = MhCertificate::fromXml(
                     $this->string('certificadoXml')->toString(),
-                    $this->input('passwordPri', ''),
+                    (string) ($this->input('passwordPri') ?? ''),
                 );
             } catch (Throwable) {
                 $validator->errors()->add('certificadoXml', 'El certificado de Hacienda no es válido o la contraseña privada es incorrecta.');
