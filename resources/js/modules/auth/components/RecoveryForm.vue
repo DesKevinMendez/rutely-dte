@@ -9,12 +9,21 @@ const { email, emailRule, successMessage, submit } = useRecovery();
 <template>
     <Card class="w-full max-w-md">
         <div class="mb-8 text-center">
-            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                <img src="/favicon.svg" alt="Rutely" class="h-9 w-9 object-contain" />
+            <div
+                class="mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+            >
+                <img
+                    src="/favicon.svg"
+                    alt="Rutely"
+                    class="h-9 w-9 object-contain"
+                />
             </div>
-            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">Recuperar Contraseña</h2>
+            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
+                Recuperar Contraseña
+            </h2>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Ingresá tu correo electrónico para recibir las instrucciones de recuperación
+                Ingresá tu correo electrónico para recibir las instrucciones de
+                recuperación
             </p>
         </div>
 
@@ -30,16 +39,27 @@ const { email, emailRule, successMessage, submit } = useRecovery();
                 :rules="emailRule"
             />
 
-            <div v-if="successMessage" class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+            <div
+                v-if="successMessage"
+                class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+            >
                 {{ successMessage }}
             </div>
 
-            <BaseButton type="submit" variant="primary" size="auto" class="w-full justify-center">
+            <BaseButton
+                type="submit"
+                variant="primary"
+                size="auto"
+                class="w-full justify-center"
+            >
                 Enviar Instrucciones
             </BaseButton>
 
             <div class="text-center">
-                <RouterLink :to="{ name: 'login' }" class="text-sm font-semibold text-primary-600 hover:underline dark:text-primary-400">
+                <RouterLink
+                    :to="{ name: 'login' }"
+                    class="text-sm font-semibold text-primary-600 hover:underline dark:text-primary-400"
+                >
                     Volver al Iniciar Sesión
                 </RouterLink>
             </div>

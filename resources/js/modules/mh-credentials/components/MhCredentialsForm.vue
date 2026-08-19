@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { BaseButton, Card, FormInput } from 'ornito';
 import { ref, watch } from 'vue';
-import type { MhCredentialsPayload, MhEnvironment } from '../types/mh-credentials.types';
+import type {
+    MhCredentialsPayload,
+    MhEnvironment,
+} from '../types/mh-credentials.types';
 
 const props = defineProps<{
     selectedEnvironment: MhEnvironment;
@@ -16,12 +19,15 @@ const emit = defineEmits<{
 const nit = ref('');
 const password = ref('');
 
-watch(() => props.saveSuccess, (success) => {
-    if (success) {
-        nit.value = '';
-        password.value = '';
-    }
-});
+watch(
+    () => props.saveSuccess,
+    (success) => {
+        if (success) {
+            nit.value = '';
+            password.value = '';
+        }
+    },
+);
 
 const submit = (): void => {
     if (nit.value.replace(/\D/g, '').length !== 14 || !password.value.trim()) {
@@ -33,30 +39,55 @@ const submit = (): void => {
 </script>
 
 <template>
-    <Card title="Credenciales Portal MH" subtitle="Configure o rote el NIT y la contraseña de autenticación para el portal del Ministerio de Hacienda.">
+    <Card
+        title="Credenciales Portal MH"
+        subtitle="Configure o rote el NIT y la contraseña de autenticación para el portal del Ministerio de Hacienda."
+    >
         <form class="space-y-5" @submit.prevent="submit">
-            <div v-if="props.saveSuccess" class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                Credenciales guardadas en la simulación UI para el ambiente de <strong>{{ props.selectedEnvironment }}</strong>.
+            <div
+                v-if="props.saveSuccess"
+                class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+            >
+                Credenciales guardadas en la simulación UI para el ambiente de
+                <strong>{{ props.selectedEnvironment }}</strong
+                >.
             </div>
 
-            <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
-                Las credenciales no admiten actualización parcial. Cada actualización requiere ingresar tanto el <strong>NIT</strong> como la <strong>contraseña</strong> completos para el ambiente seleccionado.
+            <div
+                class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
+            >
+                Las credenciales no admiten actualización parcial. Cada
+                actualización requiere ingresar tanto el
+                <strong>NIT</strong> como la
+                <strong>contraseña</strong> completos para el ambiente
+                seleccionado.
             </div>
 
             <div>
-                <p class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300">Ambiente de Destino</p>
+                <p
+                    class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300"
+                >
+                    Ambiente de Destino
+                </p>
                 <div class="grid grid-cols-2 gap-3">
                     <BaseButton
                         type="button"
                         variant="outline"
                         size="auto"
                         class="h-auto justify-start py-3 text-left"
-                        :class="props.selectedEnvironment === 'PRUEBAS' ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30' : ''"
+                        :class="
+                            props.selectedEnvironment === 'PRUEBAS'
+                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30'
+                                : ''
+                        "
                         @click="emit('environmentChange', 'PRUEBAS')"
                     >
                         <span class="flex flex-col items-start leading-tight">
                             <span class="font-semibold">Pruebas (Sandbox)</span>
-                            <span class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">Ambiente de pruebas MH</span>
+                            <span
+                                class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400"
+                                >Ambiente de pruebas MH</span
+                            >
                         </span>
                     </BaseButton>
                     <BaseButton
@@ -64,12 +95,19 @@ const submit = (): void => {
                         variant="outline"
                         size="auto"
                         class="h-auto justify-start py-3 text-left"
-                        :class="props.selectedEnvironment === 'PRODUCCION' ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30' : ''"
+                        :class="
+                            props.selectedEnvironment === 'PRODUCCION'
+                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30'
+                                : ''
+                        "
                         @click="emit('environmentChange', 'PRODUCCION')"
                     >
                         <span class="flex flex-col items-start leading-tight">
                             <span class="font-semibold">Producción</span>
-                            <span class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">Emisión real de DTEs</span>
+                            <span
+                                class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400"
+                                >Emisión real de DTEs</span
+                            >
                         </span>
                     </BaseButton>
                 </div>
@@ -95,8 +133,17 @@ const submit = (): void => {
                 help="Contraseña para la obtención de tokens de transmisión en /seguridad/auth."
             />
 
-            <div class="flex justify-end border-t border-gray-200 pt-3 dark:border-gray-700">
-                <BaseButton type="submit" variant="primary" size="auto" :disabled="nit.replace(/\D/g, '').length !== 14 || !password.trim()">
+            <div
+                class="flex justify-end border-t border-gray-200 pt-3 dark:border-gray-700"
+            >
+                <BaseButton
+                    type="submit"
+                    variant="primary"
+                    size="auto"
+                    :disabled="
+                        nit.replace(/\D/g, '').length !== 14 || !password.trim()
+                    "
+                >
                     Guardar Credenciales MH
                 </BaseButton>
             </div>

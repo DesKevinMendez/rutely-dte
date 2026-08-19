@@ -14,11 +14,9 @@ import {
     Navbar,
     Sidebar,
     UserProfileDropdown,
-    useSidebar
-    
-    
+    useSidebar,
 } from 'ornito';
-import type {DropdownMenuItem, RoutesLink} from 'ornito';
+import type { DropdownMenuItem, RoutesLink } from 'ornito';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '@/core/stores/auth';
@@ -46,10 +44,12 @@ const userName = computed(() => auth.user?.name ?? 'Usuario');
 const userInitials = computed(() => {
     const words = userName.value.trim().split(/\s+/).filter(Boolean);
 
-    return words
-        .slice(0, 2)
-        .map((word) => word.charAt(0).toUpperCase())
-        .join('') || 'U';
+    return (
+        words
+            .slice(0, 2)
+            .map((word) => word.charAt(0).toUpperCase())
+            .join('') || 'U'
+    );
 });
 const userRole = computed(() => auth.user?.role ?? 'Usuario');
 
@@ -127,7 +127,9 @@ watch(
 </script>
 
 <template>
-    <div class="relative min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+    <div
+        class="relative min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100"
+    >
         <div class="relative z-10 flex h-screen">
             <div class="hidden lg:block">
                 <Sidebar
@@ -149,7 +151,9 @@ watch(
 
             <div
                 class="fixed top-0 left-0 z-50 h-full w-64 transform transition-transform duration-300 lg:hidden"
-                :class="isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+                :class="
+                    isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                "
             >
                 <Sidebar
                     :is-collapsed="false"
@@ -163,16 +167,22 @@ watch(
                 />
             </div>
 
-            <div class="flex min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-gray-900">
+            <div
+                class="flex min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-gray-900"
+            >
                 <Navbar @toggle-mobile-sidebar="toggleMobileSidebar">
                     <template #right>
-                        <div class="hidden items-center rounded-lg border border-gray-200 bg-gray-50 p-1 text-xs dark:border-gray-700 dark:bg-gray-800 sm:flex">
+                        <div
+                            class="hidden items-center rounded-lg border border-gray-200 bg-gray-50 p-1 text-xs sm:flex dark:border-gray-700 dark:bg-gray-800"
+                        >
                             <button
                                 type="button"
                                 class="rounded-md border px-2.5 py-1.5 font-semibold transition-colors"
-                                :class="environment === 'PRUEBAS'
-                                    ? 'border-primary-500 bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                                :class="
+                                    environment === 'PRUEBAS'
+                                        ? 'border-primary-500 bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                "
                                 @click="requestEnvironmentChange('PRUEBAS')"
                             >
                                 Pruebas
@@ -180,9 +190,11 @@ watch(
                             <button
                                 type="button"
                                 class="rounded-md border px-2.5 py-1.5 font-semibold transition-colors"
-                                :class="environment === 'PRODUCCION'
-                                    ? 'border-primary-500 bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                                :class="
+                                    environment === 'PRODUCCION'
+                                        ? 'border-primary-500 bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                "
                                 @click="requestEnvironmentChange('PRODUCCION')"
                             >
                                 Producción
@@ -199,7 +211,9 @@ watch(
                     </template>
                 </Navbar>
 
-                <main class="flex-1 overflow-y-auto bg-white p-4 dark:bg-gray-900 sm:p-6">
+                <main
+                    class="flex-1 overflow-y-auto bg-white p-4 sm:p-6 dark:bg-gray-900"
+                >
                     <div class="mx-auto w-full max-w-7xl">
                         <RouterView />
                     </div>

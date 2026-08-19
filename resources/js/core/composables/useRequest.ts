@@ -27,17 +27,23 @@ export function useRequest() {
 
     const makeRequest = async <T = unknown, B = unknown>(
         url: string,
-        options: RequestOptions<B> = {}
-    ): Promise<{ data: Ref<T | null>; statusCode: Ref<number | null>; isLoading: Ref<boolean>; error: Ref<string | null> }> => {
+        options: RequestOptions<B> = {},
+    ): Promise<{
+        data: Ref<T | null>;
+        statusCode: Ref<number | null>;
+        isLoading: Ref<boolean>;
+        error: Ref<string | null>;
+    }> => {
         const { method = 'GET', body, headers: customHeaders = {} } = options;
-        const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+        const isFormData =
+            typeof FormData !== 'undefined' && body instanceof FormData;
         const fullUrl = url.startsWith('http') ? url : `${getBaseUrl()}${url}`;
 
         isLoading.value = true;
         error.value = null;
 
         const headers: Record<string, string> = {
-            'Accept': 'application/json',
+            Accept: 'application/json',
             ...customHeaders,
         };
 
@@ -45,7 +51,10 @@ export function useRequest() {
             headers['Authorization'] = `Bearer ${auth.token}`;
         }
 
-        const companyId = typeof localStorage !== 'undefined' ? localStorage.getItem('company_id') : null;
+        const companyId =
+            typeof localStorage !== 'undefined'
+                ? localStorage.getItem('company_id')
+                : null;
 
         if (companyId && !headers['X-Company-Id']) {
             headers['X-Company-Id'] = companyId;
@@ -61,7 +70,9 @@ export function useRequest() {
         };
 
         if (body && method !== 'GET') {
-            requestOptions.body = isFormData ? (body as FormData) : JSON.stringify(body);
+            requestOptions.body = isFormData
+                ? (body as FormData)
+                : JSON.stringify(body);
         }
 
         try {
@@ -92,7 +103,8 @@ export function useRequest() {
                 data.value = result;
             }
         } catch (err: unknown) {
-            error.value = err instanceof Error ? err.message : 'Error de conexión de red';
+            error.value =
+                err instanceof Error ? err.message : 'Error de conexión de red';
             data.value = null;
         } finally {
             isLoading.value = false;
@@ -109,11 +121,17 @@ export function useRequest() {
     const get = <T = unknown>(url: string, headers?: Record<string, string>) =>
         makeRequest<T>(url, { method: 'GET', headers });
 
-    const post = <T = unknown, B = unknown>(url: string, body?: B, headers?: Record<string, string>) =>
-        makeRequest<T, B>(url, { method: 'POST', body, headers });
+    const post = <T = unknown, B = unknown>(
+        url: string,
+        body?: B,
+        headers?: Record<string, string>,
+    ) => makeRequest<T, B>(url, { method: 'POST', body, headers });
 
-    const put = <T = unknown, B = unknown>(url: string, body?: B, headers?: Record<string, string>) =>
-        makeRequest<T, B>(url, { method: 'PUT', body, headers });
+    const put = <T = unknown, B = unknown>(
+        url: string,
+        body?: B,
+        headers?: Record<string, string>,
+    ) => makeRequest<T, B>(url, { method: 'PUT', body, headers });
 
     const del = <T = unknown>(url: string, headers?: Record<string, string>) =>
         makeRequest<T>(url, { method: 'DELETE', headers });

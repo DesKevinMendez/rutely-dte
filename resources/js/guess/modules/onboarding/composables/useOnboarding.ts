@@ -45,7 +45,9 @@ const companyRules = {
     departmentId: requiredText('El departamento es requerido.'),
     municipalityId: requiredText('El municipio es requerido.'),
     districtId: requiredText('El distrito es requerido.'),
-    ownEstablishmentCode: requiredText('El código de establecimiento es requerido.').max(
+    ownEstablishmentCode: requiredText(
+        'El código de establecimiento es requerido.',
+    ).max(
         4,
         'El código de establecimiento no debe contener más de 4 caracteres.',
     ),
@@ -131,7 +133,10 @@ export default function useOnboarding() {
             password_confirmation: form.passwordConfirmation,
         };
 
-        const response = await post<RegisterResponse, RegisterRequest>('/api/v1/register', payload);
+        const response = await post<RegisterResponse, RegisterRequest>(
+            '/api/v1/register',
+            payload,
+        );
         const session = response.data.value?.data;
 
         if (!session?.token || !session.user) {
@@ -163,7 +168,10 @@ export default function useOnboarding() {
             own_pos_code: form.ownPosCode,
         };
 
-        const response = await post<CompanyResponse, CompanyRequest>('/api/v1/companies', payload);
+        const response = await post<CompanyResponse, CompanyRequest>(
+            '/api/v1/companies',
+            payload,
+        );
 
         return response.data.value?.data.id ?? null;
     };

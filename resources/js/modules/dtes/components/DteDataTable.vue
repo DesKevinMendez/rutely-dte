@@ -34,11 +34,26 @@ const statusVariant = (status: string): BadgeVariant => {
 const columns: TableField<DteRecord>[] = [
     { label: 'Código Generación', key: 'codigoGeneracion', width: 260 },
     { label: 'Nº Control', key: 'numeroControl', width: 260 },
-    { label: 'Tipo DTE', key: 'tipoDte', width: 160, format: (row) => typeLabel(row.tipoDte) },
+    {
+        label: 'Tipo DTE',
+        key: 'tipoDte',
+        width: 160,
+        format: (row) => typeLabel(row.tipoDte),
+    },
     { label: 'Receptor', key: 'receptorNombre', width: 240, slot: 'recipient' },
-    { label: 'Monto Total', key: 'montoTotal', width: 140, format: (row) => `$${row.montoTotal.toFixed(2)}` },
+    {
+        label: 'Monto Total',
+        key: 'montoTotal',
+        width: 140,
+        format: (row) => `$${row.montoTotal.toFixed(2)}`,
+    },
     { label: 'Estado', key: 'estado', width: 160, slot: 'status' },
-    { label: 'Fecha', key: 'createdAt', width: 140, format: (row) => new Date(row.createdAt).toLocaleDateString('es-SV') },
+    {
+        label: 'Fecha',
+        key: 'createdAt',
+        width: 140,
+        format: (row) => new Date(row.createdAt).toLocaleDateString('es-SV'),
+    },
 ];
 </script>
 
@@ -51,8 +66,12 @@ const columns: TableField<DteRecord>[] = [
     >
         <template #recipient="{ row }">
             <div>
-                <p class="font-medium text-gray-900 dark:text-white">{{ row.receptorNombre }}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Doc: {{ row.receptorDocumento }}</p>
+                <p class="font-medium text-gray-900 dark:text-white">
+                    {{ row.receptorNombre }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    Doc: {{ row.receptorDocumento }}
+                </p>
             </div>
         </template>
 
