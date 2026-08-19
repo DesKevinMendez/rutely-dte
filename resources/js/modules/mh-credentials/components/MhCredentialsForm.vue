@@ -131,6 +131,7 @@ const submit = (): void => {
                 type="text"
                 label="NIT de la Empresa"
                 placeholder="0614-280390-112-1"
+                mask="####-######-###-#"
                 help="NIT registrado en el Ministerio de Hacienda para este ambiente."
             />
 
