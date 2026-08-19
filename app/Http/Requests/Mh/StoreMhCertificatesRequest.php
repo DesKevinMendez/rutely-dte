@@ -3,13 +3,12 @@
 namespace App\Http\Requests\Mh;
 
 use App\Environment;
-use App\Models\Company;
 use App\Models\MhCertificates;
+use App\Services\Mh\MhCertificateService;
+use DomainException;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
-use Rutely\DteSigned\Certificate\MhCertificate;
-use Throwable;
 
 class StoreMhCertificatesRequest extends FormRequest
 {
@@ -37,22 +36,13 @@ class StoreMhCertificatesRequest extends FormRequest
             }
 
             try {
-                $certificate = MhCertificate::fromXml(
+                app(MhCertificateService::class)->validateForCompany(
+                    (string) $this->user()?->company_id,
                     $this->string('certificadoXml')->toString(),
                     (string) ($this->input('passwordPri') ?? ''),
                 );
-            } catch (Throwable) {
-                $validator->errors()->add('certificadoXml', 'El certificado de Hacienda no es válido o la contraseña privada es incorrecta.');
-
-                return;
-            }
-
-            $company = Company::query()->find($this->user()?->company_id);
-            $certificateNit = preg_replace('/\D+/', '', (string) $certificate->nit) ?? '';
-            $companyNit = preg_replace('/\D+/', '', (string) $company?->nit) ?? '';
-
-            if ($certificateNit === '' || $certificateNit !== $companyNit) {
-                $validator->errors()->add('certificadoXml', 'El NIT del certificado no coincide con el NIT de la empresa.');
+            } catch (DomainException $exception) {
+                $validator->errors()->add('certificadoXml', $exception->getMessage());
             }
         }];
     }
