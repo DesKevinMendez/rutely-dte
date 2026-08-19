@@ -10,8 +10,9 @@
         "lint": "eslint . --fix",
         "lint:check": "eslint .",
         "playwright:install": "playwright install chromium",
-        "test:e2e": "playwright test",
-        "test:e2e:ui": "playwright test --ui",
+        "test:e2e:prepare": "php artisan migrate:fresh --force && php artisan db:seed --class=DeveloperSeeder --force",
+        "test:e2e": "pnpm test:e2e:prepare && playwright test",
+        "test:e2e:ui": "pnpm test:e2e:prepare && playwright test --ui",
         "types:check": "vue-tsc --noEmit"
     },
     "devDependencies": {

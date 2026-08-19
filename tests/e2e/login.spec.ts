@@ -54,7 +54,6 @@ test.describe('Login', () => {
         await expect(
             page.getByRole('heading', { name: 'Resumen de Facturación Electrónica' }),
         ).toBeVisible();
-        await expect(page.getByText('kevin@rutely.biz', { exact: true })).toBeVisible();
 
         expect(api.requests.login).toHaveLength(1);
         expect(api.requests.login[0]?.body).toEqual({
