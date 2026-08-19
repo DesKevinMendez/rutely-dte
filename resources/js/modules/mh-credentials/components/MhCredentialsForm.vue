@@ -6,9 +6,14 @@ import type {
     MhEnvironment,
 } from '../types/mh-credentials.types';
 
-const props = defineProps<{
+const {
+    selectedEnvironment,
+    saveSuccess,
+    isSubmitting = false,
+} = defineProps<{
     selectedEnvironment: MhEnvironment;
     saveSuccess: boolean;
+    isSubmitting?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -20,7 +25,7 @@ const nit = ref('');
 const password = ref('');
 
 watch(
-    () => props.saveSuccess,
+    () => saveSuccess,
     (success) => {
         if (success) {
             nit.value = '';
@@ -30,7 +35,11 @@ watch(
 );
 
 const submit = (): void => {
-    if (nit.value.replace(/\D/g, '').length !== 14 || !password.value.trim()) {
+    if (
+        nit.value.replace(/\D/g, '').length !== 14 ||
+        !password.value.trim() ||
+        isSubmitting
+    ) {
         return;
     }
 
@@ -45,12 +54,11 @@ const submit = (): void => {
     >
         <form class="space-y-5" @submit.prevent="submit">
             <div
-                v-if="props.saveSuccess"
+                v-if="saveSuccess"
                 class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
             >
-                Credenciales guardadas en la simulación UI para el ambiente de
-                <strong>{{ props.selectedEnvironment }}</strong
-                >.
+                Credenciales guardadas correctamente para el ambiente de
+                <strong>{{ selectedEnvironment }}</strong>.
             </div>
 
             <div
@@ -75,8 +83,9 @@ const submit = (): void => {
                         variant="outline"
                         size="auto"
                         class="h-auto justify-start py-3 text-left"
+                        :disabled="isSubmitting"
                         :class="
-                            props.selectedEnvironment === 'PRUEBAS'
+                            selectedEnvironment === 'PRUEBAS'
                                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30'
                                 : ''
                         "
@@ -95,8 +104,9 @@ const submit = (): void => {
                         variant="outline"
                         size="auto"
                         class="h-auto justify-start py-3 text-left"
+                        :disabled="isSubmitting"
                         :class="
-                            props.selectedEnvironment === 'PRODUCCION'
+                            selectedEnvironment === 'PRODUCCION'
                                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30'
                                 : ''
                         "
@@ -141,10 +151,16 @@ const submit = (): void => {
                     variant="primary"
                     size="auto"
                     :disabled="
-                        nit.replace(/\D/g, '').length !== 14 || !password.trim()
+                        nit.replace(/\D/g, '').length !== 14 ||
+                        !password.trim() ||
+                        isSubmitting
                     "
                 >
-                    Guardar Credenciales MH
+                    {{
+                        isSubmitting
+                            ? 'Guardando…'
+                            : 'Guardar Credenciales MH'
+                    }}
                 </BaseButton>
             </div>
         </form>

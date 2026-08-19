@@ -5,7 +5,7 @@ import type {
     MhEnvironment,
 } from '../types/mh-credentials.types';
 
-const props = defineProps<{
+const { metadata, selectedEnvironment } = defineProps<{
     metadata: MhCredentialsMetadata | null;
     selectedEnvironment: MhEnvironment;
 }>();
@@ -14,18 +14,23 @@ const props = defineProps<{
 <template>
     <Card
         title="Estado de Credenciales MH"
-        :subtitle="`Ambiente seleccionado: ${props.selectedEnvironment}`"
+        :subtitle="`Ambiente seleccionado: ${selectedEnvironment}`"
     >
-        <div v-if="props.metadata" class="space-y-5">
+        <div v-if="metadata" class="space-y-5">
             <div class="flex items-center justify-between">
                 <span
                     class="text-sm font-medium text-gray-500 dark:text-gray-400"
                     >Estado actual</span
                 >
                 <span
-                    class="rounded-full border border-emerald-200 bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400"
+                    class="rounded-full border px-3 py-1 text-xs font-bold"
+                    :class="
+                        metadata.active
+                            ? 'border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-400'
+                            : 'border-red-200 bg-red-100 text-red-700 dark:border-red-800 dark:bg-red-950/60 dark:text-red-400'
+                    "
                 >
-                    {{ props.metadata.active ? 'ACTIVO' : 'INACTIVO' }}
+                    {{ metadata.active ? 'ACTIVO' : 'INACTIVO' }}
                 </span>
             </div>
 
@@ -38,7 +43,7 @@ const props = defineProps<{
                     >
                     <span
                         class="font-mono font-bold text-gray-900 dark:text-white"
-                        >{{ props.metadata.nit }}</span
+                        >{{ metadata.nit }}</span
                     >
                 </div>
                 <div
@@ -48,7 +53,7 @@ const props = defineProps<{
                         >Ambiente:</span
                     >
                     <span class="font-semibold text-gray-900 dark:text-white">{{
-                        props.metadata.environment
+                        metadata.environment
                     }}</span>
                 </div>
                 <div
@@ -57,19 +62,23 @@ const props = defineProps<{
                     <span class="text-gray-500 dark:text-gray-400"
                         >Última actualización:</span
                     >
-                    <span class="text-right text-gray-700 dark:text-gray-300">{{
-                        new Date(props.metadata.updatedAt).toLocaleString(
-                            'es-SV',
-                        )
-                    }}</span>
+                    <span class="text-right text-gray-700 dark:text-gray-300">
+                        {{
+                            metadata.updatedAt
+                                ? new Date(metadata.updatedAt).toLocaleString(
+                                      'es-SV',
+                                  )
+                                : 'N/A'
+                        }}
+                    </span>
                 </div>
             </div>
 
             <div
                 class="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300"
             >
-                Credenciales encriptadas con seguridad
-                <strong>AES-256-GCM</strong> en la base de datos.
+                Las credenciales están almacenadas de forma segura y listas
+                para autenticación con el Ministerio de Hacienda.
             </div>
         </div>
 
@@ -84,8 +93,7 @@ const props = defineProps<{
             </p>
             <p class="text-xs text-gray-500 dark:text-gray-400">
                 No hay credenciales registradas para el ambiente de
-                <strong>{{ props.selectedEnvironment }}</strong
-                >.
+                <strong>{{ selectedEnvironment }}</strong>.
             </p>
         </div>
     </Card>
