@@ -132,7 +132,7 @@ const submit = (): void => {
                     <span
                         class="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary-50 text-primary-500 dark:bg-primary-950/40 dark:text-primary-400"
                     >
-                        <IconCloudUpload :size="24" :stroke="1.75" />
+                        <IconCloudUpload :size="24" stroke="1.75" />
                     </span>
                     <span
                         class="text-sm font-semibold text-gray-900 dark:text-white"
