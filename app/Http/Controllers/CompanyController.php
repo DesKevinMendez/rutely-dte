@@ -28,20 +28,20 @@ class CompanyController extends Controller
             return $company;
         });
 
-        return new CommonResponse(['data' => $company->refresh()], 201);
+        return new CommonResponse($company->refresh(), 201);
     }
 
     public function show(Company $company): CommonResponse
     {
         Gate::authorize('view', $company);
 
-        return new CommonResponse(['data' => $company]);
+        return new CommonResponse($company);
     }
 
     public function update(UpdateCompanyRequest $request, Company $company): CommonResponse
     {
         $company->update($request->validated());
 
-        return new CommonResponse(['data' => $company->refresh()]);
+        return new CommonResponse($company->refresh());
     }
 }
