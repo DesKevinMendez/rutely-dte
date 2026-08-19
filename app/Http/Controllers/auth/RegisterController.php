@@ -8,6 +8,7 @@ use App\Http\Resources\CommonResource;
 use App\Mail\WelcomeMail;
 use App\Models\User;
 use App\Role;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
 
 class RegisterController extends Controller
@@ -15,7 +16,7 @@ class RegisterController extends Controller
     /**
      * Handle the incoming request.
      */
-    public function __invoke(RegisterRequest $request): CommonResource
+    public function __invoke(RegisterRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
@@ -28,8 +29,13 @@ class RegisterController extends Controller
             'role' => Role::ADMIN->value,
         ]);
 
+        $token = $user->createToken('register')->plainTextToken;
+
         Mail::to($user)->send(new WelcomeMail($user));
 
-        return CommonResource::make($user);
+        return CommonResource::make([
+            'token' => $token,
+            'user' => $user,
+        ])->response()->setStatusCode(201);
     }
 }

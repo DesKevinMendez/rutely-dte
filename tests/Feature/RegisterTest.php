@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Role;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Laravel\Sanctum\PersonalAccessToken;
 
 beforeEach(function () {
     Mail::fake();
@@ -32,18 +33,22 @@ test('a user can register and is assigned the admin role', function () {
     $response->assertCreated()
         ->assertExactJson([
             'data' => [
-                'id' => $response->json('data.id'),
-                'name' => $payload['name'],
-                'email' => $payload['email'],
-                'phone' => $payload['phone'],
-                'company_id' => null,
-                'role' => Role::ADMIN->value,
-                'created_at' => $response->json('data.created_at'),
-                'updated_at' => $response->json('data.updated_at'),
+                'token' => $response->json('data.token'),
+                'user' => [
+                    'id' => $response->json('data.user.id'),
+                    'company_id' => null,
+                    'role' => Role::ADMIN->value,
+                    'phone' => $payload['phone'],
+                    'name' => $payload['name'],
+                    'email' => $payload['email'],
+                    'email_verified_at' => null,
+                    'created_at' => $response->json('data.user.created_at'),
+                    'updated_at' => $response->json('data.user.updated_at'),
+                ],
             ],
         ]);
 
-    $userId = $response->json('data.id');
+    $userId = $response->json('data.user.id');
 
     $this->assertDatabaseHas(User::class, [
         'id' => $userId,
@@ -54,10 +59,16 @@ test('a user can register and is assigned the admin role', function () {
         'role' => Role::ADMIN->value,
     ]);
     $this->assertDatabaseCount(User::class, 1);
+    $this->assertDatabaseHas(PersonalAccessToken::class, [
+        'tokenable_id' => $userId,
+        'name' => 'register',
+    ]);
+    $this->assertDatabaseCount(PersonalAccessToken::class, 1);
 
     $user = User::query()->findOrFail($userId);
 
     expect(Hash::check($payload['password'], $user->password))->toBeTrue();
+    expect($response->json('data.token'))->toBeString()->not->toBeEmpty();
 
     Mail::assertQueued(WelcomeMail::class, function (WelcomeMail $mail) use ($payload, $userId): bool {
         return $mail->hasTo($payload['email'])
