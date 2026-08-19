@@ -4,6 +4,15 @@ use App\Http\Controllers\auth\LoginController;
 use App\Http\Controllers\auth\RegisterController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyEnvironmentController;
+use App\Http\Controllers\ContingencyEventController;
+use App\Http\Controllers\ContingencyStatusController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DteController;
+use App\Http\Controllers\DteInvalidationController;
+use App\Http\Controllers\MhCertificatesController;
+use App\Http\Controllers\MhCredentialsController;
+use App\Http\Controllers\QueueController;
+use App\Http\Controllers\QueueRetryController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -19,6 +28,9 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('login', LoginController::class)->name('login');
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get('dashboard', [DashboardController::class, 'show'])
+            ->name('api.v1.dashboard.show');
+
         Route::post('companies', [CompanyController::class, 'store'])
             ->name('api.v1.companies.store');
         Route::get('companies/{company}', [CompanyController::class, 'show'])
@@ -37,5 +49,35 @@ Route::group(['prefix' => 'v1'], function () {
             'update' => 'api.v1.users.update',
             'destroy' => 'api.v1.users.destroy',
         ]);
+
+        Route::get('mh-credentials', [MhCredentialsController::class, 'show'])
+            ->name('api.v1.mh-credentials.show');
+        Route::post('mh-credentials', [MhCredentialsController::class, 'store'])
+            ->name('api.v1.mh-credentials.store');
+        Route::get('mh-certificates', [MhCertificatesController::class, 'show'])
+            ->name('api.v1.mh-certificates.show');
+        Route::post('mh-certificates', [MhCertificatesController::class, 'store'])
+            ->name('api.v1.mh-certificates.store');
+
+        Route::get('dtes', [DteController::class, 'index'])
+            ->name('api.v1.dtes.index');
+        Route::post('dtes', [DteController::class, 'store'])
+            ->name('api.v1.dtes.store');
+        Route::get('dtes/{dte}', [DteController::class, 'show'])
+            ->name('api.v1.dtes.show');
+        Route::post('dtes/{dte}/invalidations', [DteInvalidationController::class, 'store'])
+            ->name('api.v1.dtes.invalidations.store');
+
+        Route::get('contingency', [ContingencyStatusController::class, 'show'])
+            ->name('api.v1.contingency.show');
+        Route::match(['put', 'patch'], 'contingency', [ContingencyStatusController::class, 'update'])
+            ->name('api.v1.contingency.update');
+        Route::post('contingency/events', [ContingencyEventController::class, 'store'])
+            ->name('api.v1.contingency.events.store');
+
+        Route::get('queue', [QueueController::class, 'index'])
+            ->name('api.v1.queue.index');
+        Route::post('queue/retries', [QueueRetryController::class, 'store'])
+            ->name('api.v1.queue.retries.store');
     });
 });
