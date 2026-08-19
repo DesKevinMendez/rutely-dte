@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Company;
 use App\Models\Dte;
+use App\Models\DteCorrelative;
 use App\Models\User;
 use App\Role;
 use Illuminate\Database\Seeder;
@@ -118,5 +119,13 @@ class DeveloperSeeder extends Seeder
                 ],
             );
         }
+
+        DteCorrelative::query()->updateOrCreate(
+            [
+                'company_id' => $company->id,
+                'key' => '01-00010001',
+            ],
+            ['last_value' => '3'],
+        );
     }
 }
