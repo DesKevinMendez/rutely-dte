@@ -25,14 +25,18 @@ const requiredMessages = [
 async function selectSearchableOption(
     page: Page,
     fieldId: string,
-    search: string,
     option: string,
+    search?: string,
 ): Promise<void> {
     const input = page.locator(`#${fieldId}`);
     const searchableSelect = input.locator('xpath=../..');
 
+    await expect(input).toBeEnabled();
     await input.click();
-    await input.fill(search);
+
+    if (search) {
+        await input.fill(search);
+    }
 
     const optionContainer = searchableSelect
         .locator('.cursor-pointer')
@@ -83,39 +87,52 @@ test.describe('Onboarding', () => {
         await page.locator('#name').fill('Rutely, S.A. de C.V.');
         await page.locator('#commercialName').fill('Rutely');
         await page.locator('#nit').fill('06142812901015');
+
         await selectSearchableOption(
             page,
             'onboarding-economic-activity-select',
-            'Programación',
             '62010 - Programación informática',
+            'Programación',
         );
         await selectSearchableOption(
             page,
             'onboarding-establishment-type-select',
-            'Sucursal',
             'Sucursal / Agencia',
         );
+
         await page.locator('#phone').fill('78027600');
         await page.locator('#email').fill('billing@rutely.biz');
         await page.locator('#address').fill('San Salvador, El Salvador');
+
+        const municipality = page.locator('#onboarding-municipality-select');
+        const district = page.locator('#onboarding-district-select');
+
+        await expect(municipality).toBeDisabled();
+        await expect(district).toBeDisabled();
+
         await selectSearchableOption(
             page,
             'onboarding-department-select',
             'San Salvador',
-            'San Salvador',
         );
+
+        await expect(municipality).toBeEnabled();
+        await expect(district).toBeDisabled();
+
         await selectSearchableOption(
             page,
             'onboarding-municipality-select',
             'San Salvador Centro',
-            'San Salvador Centro',
         );
+
+        await expect(district).toBeEnabled();
+
         await selectSearchableOption(
             page,
             'onboarding-district-select',
             'San Salvador',
-            'San Salvador',
         );
+
         await page.locator('#ownEstablishmentCode').fill('M001');
         await page.locator('#ownPosCode').fill('P001');
 
