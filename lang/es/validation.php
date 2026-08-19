@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'confirmed' => 'La confirmación del campo :attribute no coincide.',
     'email' => 'El campo :attribute debe ser una dirección de correo electrónico válida.',
     'exists' => 'El valor seleccionado para :attribute no es válido.',
     'max' => [
@@ -24,6 +25,7 @@ return [
         'string' => 'El campo :attribute debe contener :size caracteres.',
     ],
     'string' => 'El campo :attribute debe ser una cadena de caracteres.',
+    'unique' => 'El campo :attribute ya ha sido registrado.',
     'uuid' => 'El campo :attribute debe ser un UUID válido.',
 
     'attributes' => [
