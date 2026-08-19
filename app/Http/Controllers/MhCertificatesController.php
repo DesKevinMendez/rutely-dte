@@ -7,15 +7,19 @@ use App\Http\Requests\Mh\ShowMhCertificatesRequest;
 use App\Http\Requests\Mh\StoreMhCertificatesRequest;
 use App\Models\MhCertificates;
 use App\Response\CommonResponse;
-use Rutely\DteSigned\Certificate\MhCertificate;
+use App\Services\Mh\MhCertificateService;
 
 class MhCertificatesController extends Controller
 {
-    public function store(StoreMhCertificatesRequest $request): CommonResponse
+    public function store(StoreMhCertificatesRequest $request, MhCertificateService $certificateService): CommonResponse
     {
         $data = $request->validated();
         $password = (string) ($data['passwordPri'] ?? '');
-        $certificate = MhCertificate::fromXml($data['certificadoXml'], $password);
+        $nit = $certificateService->validateForCompany(
+            (string) $request->user()->company_id,
+            $data['certificadoXml'],
+            $password,
+        );
 
         $storedCertificate = MhCertificates::query()->updateOrCreate(
             [
@@ -23,7 +27,7 @@ class MhCertificatesController extends Controller
                 'environment' => $data['environment'],
             ],
             [
-                'nit' => (string) $certificate->nit,
+                'nit' => $nit,
                 'encrypted_certificate' => $data['certificadoXml'],
                 'encrypted_private_key_password' => $password,
                 'active' => true,
