@@ -1,15 +1,4 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import {
-    ConfirmationModal,
-    Navbar,
-    Sidebar,
-    UserProfileDropdown,
-    useSidebar,
-    type DropdownMenuItem,
-    type RoutesLink,
-} from 'ornito';
 import {
     IconAlertTriangle,
     IconCertificate,
@@ -20,6 +9,18 @@ import {
     IconRefresh,
     IconUser,
 } from '@tabler/icons-vue';
+import {
+    ConfirmationModal,
+    Navbar,
+    Sidebar,
+    UserProfileDropdown,
+    useSidebar
+    
+    
+} from 'ornito';
+import type {DropdownMenuItem, RoutesLink} from 'ornito';
+import { computed, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '@/core/stores/auth';
 
 type Environment = 'PRUEBAS' | 'PRODUCCION';

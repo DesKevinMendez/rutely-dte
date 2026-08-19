@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { IconCloudUpload } from '@tabler/icons-vue';
 import { BaseButton, Card, FormInput } from 'ornito';
+import { ref } from 'vue';
 import type { CertificateEnvironment, CertificateUploadPayload } from '../types/certificate.types';
 
 const props = defineProps<{

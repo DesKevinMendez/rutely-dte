@@ -87,6 +87,7 @@ export function useDtesUi() {
     const totalPages = computed(() => Math.max(1, Math.ceil(filteredRecords.value.length / perPage.value)));
     const paginatedRecords = computed(() => {
         const start = (currentPage.value - 1) * perPage.value;
+
         return filteredRecords.value.slice(start, start + perPage.value);
     });
 

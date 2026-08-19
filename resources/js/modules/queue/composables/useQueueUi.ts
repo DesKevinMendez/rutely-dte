@@ -41,6 +41,7 @@ export function useQueueUi() {
 
     const retryJob = (jobId: string): void => {
         const job = jobs.value.find((candidate) => candidate.id === jobId);
+
         if (!job || job.status === 'COMPLETED') {
             return;
         }

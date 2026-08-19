@@ -80,6 +80,7 @@ export default defineConfigWithVueTs(
             'vendor',
             'node_modules',
             'public',
+            'playwright-report',
             'bootstrap/ssr',
             'tailwind.config.js',
             'vite.config.ts',

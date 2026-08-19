@@ -23,6 +23,7 @@ export function useMhCredentialsUi() {
 
     const saveCredentials = (payload: MhCredentialsPayload): void => {
         const normalizedNit = payload.nit.replace(/\D/g, '');
+
         if (normalizedNit.length !== 14 || !payload.password.trim()) {
             return;
         }
