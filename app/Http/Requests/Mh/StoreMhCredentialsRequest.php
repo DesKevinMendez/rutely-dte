@@ -2,28 +2,25 @@
 
 namespace App\Http\Requests\Mh;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Environment;
+use App\Models\MhCredentials;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreMhCredentialsRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return false;
+        return $this->user()?->can('create', MhCredentials::class) ?? false;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
-            //
+            'environment' => ['required', 'string', Rule::enum(Environment::class)],
+            'nit' => ['required', 'string', 'min:1', 'max:20'],
+            'pwd' => ['required', 'string', 'min:1', 'max:255'],
         ];
     }
 }
