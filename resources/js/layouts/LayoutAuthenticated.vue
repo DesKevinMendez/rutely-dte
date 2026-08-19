@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
+    ConfirmationModal,
     Navbar,
     Sidebar,
     UserProfileDropdown,
@@ -21,12 +22,15 @@ import {
 } from '@tabler/icons-vue';
 import { useAuth } from '@/core/stores/auth';
 
+type Environment = 'PRUEBAS' | 'PRODUCCION';
+
 const route = useRoute();
 const router = useRouter();
 const auth = useAuth();
 const { isCollapsed, toggleCollapse } = useSidebar();
 const isMobileSidebarOpen = ref(false);
-const environment = ref<'PRUEBAS' | 'PRODUCCION'>('PRUEBAS');
+const environment = ref<Environment>('PRUEBAS');
+const pendingEnvironment = ref<Environment | null>(null);
 
 const navigation: RoutesLink[] = [
     { route: '/dashboard', name: 'Dashboard DTE', icon: IconDashboard },
@@ -47,6 +51,43 @@ const userInitials = computed(() => {
         .join('') || 'U';
 });
 const userRole = computed(() => auth.user?.role ?? 'Usuario');
+
+const environmentConfirmationTitle = computed(() => {
+    if (pendingEnvironment.value === 'PRODUCCION') {
+        return 'Cambiar a ambiente de Producción';
+    }
+
+    return 'Cambiar a ambiente de Pruebas';
+});
+
+const environmentConfirmationSubtitle = computed(() => {
+    if (pendingEnvironment.value === 'PRODUCCION') {
+        return '¿Está seguro de cambiar a Producción? Los DTE emitidos en este ambiente corresponden a emisión real ante el Ministerio de Hacienda.';
+    }
+
+    return '¿Está seguro de cambiar a Pruebas? Las operaciones se realizarán en el ambiente de pruebas del Ministerio de Hacienda.';
+});
+
+const requestEnvironmentChange = (targetEnvironment: Environment): void => {
+    if (targetEnvironment === environment.value) {
+        return;
+    }
+
+    pendingEnvironment.value = targetEnvironment;
+};
+
+const cancelEnvironmentChange = (): void => {
+    pendingEnvironment.value = null;
+};
+
+const confirmEnvironmentChange = (): void => {
+    if (!pendingEnvironment.value) {
+        return;
+    }
+
+    environment.value = pendingEnvironment.value;
+    pendingEnvironment.value = null;
+};
 
 const logout = async (): Promise<void> => {
     auth.clearSession();
@@ -131,7 +172,7 @@ watch(
                                 :class="environment === 'PRUEBAS'
                                     ? 'border-primary-500 bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                                @click="environment = 'PRUEBAS'"
+                                @click="requestEnvironmentChange('PRUEBAS')"
                             >
                                 Pruebas
                             </button>
@@ -141,7 +182,7 @@ watch(
                                 :class="environment === 'PRODUCCION'
                                     ? 'border-primary-500 bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300'
                                     : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
-                                @click="environment = 'PRODUCCION'"
+                                @click="requestEnvironmentChange('PRODUCCION')"
                             >
                                 Producción
                             </button>
@@ -164,5 +205,13 @@ watch(
                 </main>
             </div>
         </div>
+
+        <ConfirmationModal
+            :open="pendingEnvironment !== null"
+            :title="environmentConfirmationTitle"
+            :subtitle="environmentConfirmationSubtitle"
+            @close="cancelEnvironmentChange"
+            @confirm="confirmEnvironmentChange"
+        />
     </div>
 </template>
