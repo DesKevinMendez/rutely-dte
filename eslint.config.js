@@ -81,6 +81,7 @@ export default defineConfigWithVueTs(
             'node_modules',
             'public',
             'playwright-report',
+            'dte-signed',
             'bootstrap/ssr',
             'tailwind.config.js',
             'vite.config.ts',

@@ -1,61 +1,79 @@
-import { ref } from 'vue';
-import type { QueueJob } from '../types/queue.types';
+import { computed, ref } from 'vue';
+import { useRequest } from '@/core/composables/useRequest';
+import type { ApiResponse, PaginatedApiResponse } from '@/core/types/api.types';
+import type {
+    QueueApiTransmission,
+    QueueJob,
+    QueueRetryResult,
+} from '../types/queue.types';
 
-const initialJobs: QueueJob[] = [
-    {
-        id: 'JOB-00091',
-        dteId: 'DTE-01-M001P001-000000000000182',
-        attempts: 2,
-        maxAttempts: 5,
-        nextRetryAt: '2026-08-18T21:05:00-06:00',
-        status: 'FAILED_RETRYABLE',
-        lastError: '503 Service Unavailable - Ministerio de Hacienda',
-    },
-    {
-        id: 'JOB-00090',
-        dteId: 'DTE-03-M001P001-000000000000181',
-        attempts: 1,
-        maxAttempts: 5,
-        nextRetryAt: '2026-08-18T21:02:00-06:00',
-        status: 'PENDING',
-        lastError: 'Timeout de conexión al servicio de recepción',
-    },
-    {
-        id: 'JOB-00089',
-        dteId: 'DTE-01-M001P001-000000000000180',
-        attempts: 3,
-        maxAttempts: 5,
-        nextRetryAt: null,
-        status: 'COMPLETED',
-        lastError: null,
-    },
-];
+const mapJob = (transmission: QueueApiTransmission): QueueJob => ({
+    id: transmission.id,
+    dteId: transmission.transmittable_id,
+    operation: transmission.operation,
+    attempts: transmission.attempt,
+    httpStatus: transmission.http_status,
+    status: transmission.status === 'failed' ? 'FAILED' : 'PENDING',
+    lastError: transmission.error,
+    createdAt: transmission.created_at,
+});
 
-export function useQueueUi() {
-    const jobs = ref<QueueJob[]>(initialJobs.map((job) => ({ ...job })));
+export async function useQueueUi() {
+    const jobs = ref<QueueJob[]>([]);
     const lastUpdated = ref(new Date());
+    const error = ref<string | null>(null);
+    const { get, post, isLoading } = useRequest();
 
-    const refreshQueue = (): void => {
-        lastUpdated.value = new Date();
-    };
+    const failedCount = computed(
+        () => jobs.value.filter((job) => job.status === 'FAILED').length,
+    );
 
-    const retryJob = (jobId: string): void => {
-        const job = jobs.value.find((candidate) => candidate.id === jobId);
+    const loadQueue = async (): Promise<boolean> => {
+        const response = await get<PaginatedApiResponse<QueueApiTransmission>>(
+            '/api/v1/queue?per_page=50',
+        );
 
-        if (!job || job.status === 'COMPLETED') {
-            return;
+        if (response.data.value) {
+            jobs.value = response.data.value.data.map(mapJob);
+            lastUpdated.value = new Date();
+            error.value = null;
+
+            return true;
         }
 
-        job.attempts = Math.min(job.attempts + 1, job.maxAttempts);
-        job.status = 'PENDING';
-        job.lastError = null;
-        job.nextRetryAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+        error.value = response.error.value ?? 'No se pudo cargar la cola.';
+
+        return false;
     };
+
+    const retryFailed = async (): Promise<boolean> => {
+        const response = await post<ApiResponse<QueueRetryResult>>(
+            '/api/v1/queue/retries',
+        );
+
+        if (!response.data.value) {
+            error.value =
+                response.error.value ??
+                'No se pudieron reintentar las transmisiones.';
+
+            return false;
+        }
+
+        error.value = null;
+        await loadQueue();
+
+        return true;
+    };
+
+    await loadQueue();
 
     return {
         jobs,
+        failedCount,
         lastUpdated,
-        refreshQueue,
-        retryJob,
+        isLoading,
+        error,
+        refreshQueue: loadQueue,
+        retryFailed,
     };
 }

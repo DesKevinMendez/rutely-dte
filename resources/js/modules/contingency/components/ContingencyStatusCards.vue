@@ -2,10 +2,16 @@
 import { BaseButton, Card } from 'ornito';
 import type { CircuitState } from '../types/contingency.types';
 
-defineProps<{
+const {
+    contingencyActive,
+    circuitState,
+    serviceLabel,
+    isUpdating = false,
+} = defineProps<{
     contingencyActive: boolean;
     circuitState: CircuitState;
     serviceLabel: string;
+    isUpdating?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -44,7 +50,7 @@ const emit = defineEmits<{
                         }}</strong>
                     </p>
                     <p>
-                        Modo Contingencia Automático:
+                        Modo Contingencia Manual:
                         <strong class="text-gray-900 dark:text-white">{{
                             contingencyActive ? 'ACTIVADO' : 'DESACTIVADO'
                         }}</strong>
@@ -73,12 +79,15 @@ const emit = defineEmits<{
                     <BaseButton
                         :variant="contingencyActive ? 'danger' : 'primary'"
                         size="auto"
+                        :disabled="isUpdating"
                         @click="emit('toggle')"
                     >
                         {{
-                            contingencyActive
-                                ? 'Desactivar Contingencia'
-                                : 'Activar Contingencia'
+                            isUpdating
+                                ? 'Actualizando…'
+                                : contingencyActive
+                                  ? 'Desactivar Contingencia'
+                                  : 'Activar Contingencia'
                         }}
                     </BaseButton>
                 </div>

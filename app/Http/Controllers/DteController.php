@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\DteSigningException;
 use App\Http\Requests\CatalogIndexRequest;
 use App\Http\Requests\Dte\StoreDteRequest;
 use App\Http\Resources\CommonCollection;
@@ -45,7 +46,14 @@ class DteController extends Controller
 
     public function store(StoreDteRequest $request, DteIssuanceService $issuanceService): CommonResponse
     {
-        $result = $issuanceService->issue((string) $request->user()->company_id, $request->validated());
+        try {
+            $result = $issuanceService->issue((string) $request->user()->company_id, $request->validated());
+        } catch (DteSigningException $exception) {
+            return new CommonResponse(
+                status: 400,
+                message: $exception->getMessage(),
+            );
+        }
 
         return new CommonResponse([
             'record' => $result['record'],
