@@ -9,6 +9,7 @@ use App\Models\DteInvalidation;
 use App\Models\MhTransmission;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 use Throwable;
 
 class MhTransmissionService
@@ -59,6 +60,19 @@ class MhTransmissionService
                 'documento' => $event->signed_json,
             ],
         );
+    }
+
+    /** @return array<string, mixed> */
+    public function retry(MhTransmission $transmission): array
+    {
+        $model = $transmission->transmittable;
+
+        return match (true) {
+            $model instanceof Dte => $this->transmitDte($model),
+            $model instanceof DteInvalidation => $this->transmitInvalidation($model),
+            $model instanceof ContingencyEvent => $this->transmitContingency($model),
+            default => throw new RuntimeException('El tipo de transmisión no admite reintentos.'),
+        };
     }
 
     /**
