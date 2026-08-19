@@ -166,7 +166,10 @@ test('company environment request validation returns 422', function (string $fie
 
     $this->patchJson(route('api.v1.companies.environment.update', $company), [$field => $value])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors([$field => $message]);
+        ->assertExactJson([
+            'message' => $message,
+            'errors' => [$field => [$message]],
+        ]);
 })->with([
     'environment is required' => ['environment', null, 'El campo ambiente es obligatorio.'],
     'environment must be a string' => ['environment', ['00'], 'El campo ambiente debe ser una cadena de caracteres.'],
@@ -179,7 +182,10 @@ test('update company request validation returns 422', function (string $field, m
 
     $this->patchJson(route('api.v1.companies.update', $company), [$field => $value])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors([$field => $message]);
+        ->assertExactJson([
+            'message' => $message,
+            'errors' => [$field => [$message]],
+        ]);
 })->with([
     'name cannot be null' => ['name', null, 'El campo nombre es obligatorio.'],
     'name must be a string' => ['name', ['Rutely'], 'El campo nombre debe ser una cadena de caracteres.'],
