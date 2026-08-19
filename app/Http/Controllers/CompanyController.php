@@ -47,6 +47,8 @@ class CompanyController extends Controller
             return $company;
         });
 
+        $company->refresh();
+
         return CommonResource::make($company)
             ->response()
             ->setStatusCode(201);
