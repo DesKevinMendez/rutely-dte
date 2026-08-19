@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Environment;
 use App\Http\Requests\Mh\ShowMhCredentialsRequest;
-use App\Http\Http\Requests\Mh\StoreMhCredentialsRequest;
+use App\Http\Requests\Mh\StoreMhCredentialsRequest;
 use App\Models\MhCredentials;
 use App\Response\CommonResponse;
 
