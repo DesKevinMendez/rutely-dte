@@ -30,7 +30,12 @@ Route::group(['prefix' => 'v1'], function () {
         Route::match(['put', 'patch'], 'companies/{company}/environment', [CompanyEnvironmentController::class, 'update'])
             ->name('api.v1.companies.environment.update');
 
-        Route::apiResource('users', UserController::class)
-            ->names('api.v1.users');
+        Route::apiResource('users', UserController::class)->names([
+            'index' => 'api.v1.users.index',
+            'store' => 'api.v1.users.store',
+            'show' => 'api.v1.users.show',
+            'update' => 'api.v1.users.update',
+            'destroy' => 'api.v1.users.destroy',
+        ]);
     });
 });
