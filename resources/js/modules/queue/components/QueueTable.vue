@@ -1,24 +1,17 @@
 <script setup lang="ts">
-import { Badge, BaseButton, DataTable } from 'ornito';
+import { Badge, DataTable } from 'ornito';
 import type { BadgeVariant, TableField } from 'ornito';
 import type { QueueJob } from '../types/queue.types';
 
-const props = defineProps<{
+const { jobs } = defineProps<{
     jobs: QueueJob[];
-}>();
-
-const emit = defineEmits<{
-    retry: [jobId: string];
 }>();
 
 const statusVariant = (status: string): BadgeVariant => {
     switch (status) {
-        case 'COMPLETED':
-            return 'success';
-        case 'FAILED_FATAL':
+        case 'FAILED':
             return 'danger';
         case 'PENDING':
-        case 'FAILED_RETRYABLE':
             return 'warning';
         default:
             return 'neutral';
@@ -26,55 +19,38 @@ const statusVariant = (status: string): BadgeVariant => {
 };
 
 const columns: TableField<QueueJob>[] = [
-    { label: 'ID Trabajo', key: 'id', width: 180 },
-    { label: 'DTE ID', key: 'dteId', width: 180 },
+    { label: 'ID Transmisión', key: 'id', width: 220 },
+    { label: 'DTE / Recurso', key: 'dteId', width: 220 },
+    { label: 'Operación', key: 'operation', width: 150 },
+    { label: 'Intento', key: 'attempts', width: 100 },
     {
-        label: 'Intentos',
-        key: 'attempts',
-        width: 120,
-        format: (row) => `${row.attempts} / ${row.maxAttempts}`,
+        label: 'HTTP',
+        key: 'httpStatus',
+        width: 100,
+        format: (row) => row.httpStatus?.toString() ?? 'N/A',
     },
-    {
-        label: 'Próximo Reintento',
-        key: 'nextRetryAt',
-        width: 190,
-        format: (row) =>
-            row.nextRetryAt
-                ? new Date(row.nextRetryAt).toLocaleString('es-SV')
-                : 'N/A',
-    },
-    { label: 'Estado Cola', key: 'status', width: 170, slot: 'status' },
+    { label: 'Estado Cola', key: 'status', width: 140, slot: 'status' },
     {
         label: 'Último Error',
         key: 'lastError',
-        width: 280,
+        width: 300,
         format: (row) => row.lastError || 'Ninguno',
+    },
+    {
+        label: 'Creado',
+        key: 'createdAt',
+        width: 180,
+        format: (row) => new Date(row.createdAt).toLocaleString('es-SV'),
     },
 ];
 </script>
 
 <template>
-    <DataTable
-        :columns="columns"
-        :data="props.jobs"
-        :show-search="false"
-        actions-label="Acción"
-    >
+    <DataTable :columns="columns" :data="jobs" :show-search="false">
         <template #status="{ row }">
             <Badge :variant="statusVariant(row.status)" text="xs">
                 {{ row.status }}
             </Badge>
-        </template>
-
-        <template #actions="{ row }">
-            <BaseButton
-                v-if="row.status !== 'COMPLETED'"
-                size="small"
-                variant="outline"
-                @click.stop="emit('retry', row.id)"
-            >
-                Reintentar
-            </BaseButton>
         </template>
     </DataTable>
 </template>
