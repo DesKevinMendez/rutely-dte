@@ -2,28 +2,58 @@
 
 namespace App\Http\Requests\Mh;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Environment;
+use App\Models\MhCertificates;
+use App\Models\Company;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
+use Rutely\DteSigned\Certificate\MhCertificate;
+use Throwable;
 
 class StoreMhCertificatesRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return false;
+        return $this->user()?->can('create', MhCertificates::class) ?? false;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
-            //
+            'environment' => ['required', 'string', Rule::enum(Environment::class)],
+            'certificadoXml' => ['required', 'string'],
+            'passwordPri' => ['nullable', 'string', 'max:255'],
         ];
+    }
+
+    /** @return array<int, callable> */
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            try {
+                $certificate = MhCertificate::fromXml(
+                    $this->string('certificadoXml')->toString(),
+                    $this->input('passwordPri', ''),
+                );
+            } catch (Throwable) {
+                $validator->errors()->add('certificadoXml', 'El certificado de Hacienda no es válido o la contraseña privada es incorrecta.');
+
+                return;
+            }
+
+            $company = Company::query()->find($this->user()?->company_id);
+            $certificateNit = preg_replace('/\D+/', '', (string) $certificate->nit) ?? '';
+            $companyNit = preg_replace('/\D+/', '', (string) $company?->nit) ?? '';
+
+            if ($certificateNit === '' || $certificateNit !== $companyNit) {
+                $validator->errors()->add('certificadoXml', 'El NIT del certificado no coincide con el NIT de la empresa.');
+            }
+        }];
     }
 }
