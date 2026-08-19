@@ -133,7 +133,9 @@ class MhTransmissionService
                 ];
             }
 
-            $status = ($responseBody['estado'] ?? null) === 'PROCESADO' ? 'success' : 'rejected';
+            $status = in_array($responseBody['estado'] ?? null, ['PROCESADO', 'RECIBIDO'], true)
+                ? 'success'
+                : 'rejected';
             $transmission->update([
                 'response_json' => $responseBody,
                 'http_status' => $response->status(),
