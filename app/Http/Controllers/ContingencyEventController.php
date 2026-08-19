@@ -13,11 +13,9 @@ class ContingencyEventController extends Controller
         $result = $contingencyService->create((string) $request->user()->company_id, $request->validated());
 
         return new CommonResponse([
-            'data' => [
-                'event' => $result['event'],
-                'contingency_document' => $result['document'],
-                'mh_result' => $result['mhResult'],
-            ],
+            'event' => $result['event'],
+            'contingency_document' => $result['document'],
+            'mh_result' => $result['mhResult'],
         ]);
     }
 }
