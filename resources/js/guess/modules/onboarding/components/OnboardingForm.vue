@@ -114,7 +114,8 @@ const {
                         id="nrc"
                         name="nrc"
                         label="NRC"
-                        placeholder="Ej. 123456-7"
+                        mask="########"
+                        placeholder="Ej. 12345678"
                     />
                 </div>
 
@@ -255,13 +256,15 @@ const {
                         label="Código de Establecimiento"
                         placeholder="Ej. M001"
                         maxlength="4"
+                        mask="****"
                     />
 
-                    <FormInput
+                        <FormInput
                         v-model="form.ownPosCode"
                         id="ownPosCode"
                         name="ownPosCode"
                         label="Código de Punto de Venta"
+                        mask="****"
                         placeholder="Ej. P001"
                         maxlength="4"
                     />
