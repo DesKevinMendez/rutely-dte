@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Card, StatCard } from 'ornito';
-import { useAuthUser } from '@/core/composables/useAuthUser';
+import { useAuth } from '@/core/stores/auth';
 
-const { user } = useAuthUser();
-const greetingName = computed(() => user.value?.name ?? 'Usuario');
+const auth = useAuth();
+const greetingName = computed(() => auth.user?.name ?? 'Usuario');
 </script>
 
 <template>
@@ -58,8 +58,8 @@ const greetingName = computed(() => user.value?.name ?? 'Usuario');
                 </div>
 
                 <div class="text-sm sm:text-right">
-                    <p class="font-medium">{{ user?.email }}</p>
-                    <p class="mt-1 text-gray-500 dark:text-gray-400">{{ user?.role }}</p>
+                    <p class="font-medium">{{ auth.user?.email }}</p>
+                    <p class="mt-1 text-gray-500 dark:text-gray-400">{{ auth.user?.role }}</p>
                 </div>
             </div>
         </Card>
