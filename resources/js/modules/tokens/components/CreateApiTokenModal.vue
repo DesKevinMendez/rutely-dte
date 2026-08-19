@@ -58,15 +58,6 @@ const submit = (): void => {
             />
 
             <div
-                class="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-            >
-                Este token tendrá únicamente el permiso
-                <code class="font-semibold text-gray-900 dark:text-white"
-                    >create:dte</code
-                >.
-            </div>
-
-            <div
                 class="flex justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800"
             >
                 <BaseButton

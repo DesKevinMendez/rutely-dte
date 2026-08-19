@@ -55,13 +55,6 @@ const handleOpenChange = (value: boolean): void => {
                 >
             </div>
 
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                Este token cuenta únicamente con la ability
-                <code class="font-semibold text-gray-700 dark:text-gray-200"
-                    >create:dte</code
-                >.
-            </p>
-
             <div
                 class="flex flex-col-reverse gap-2 border-t border-gray-200 pt-4 sm:flex-row sm:justify-end dark:border-gray-800"
             >
