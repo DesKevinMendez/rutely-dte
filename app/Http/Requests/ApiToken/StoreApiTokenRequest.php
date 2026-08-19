@@ -8,7 +8,7 @@ class StoreApiTokenRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->company_id !== null;
+        return true;
     }
 
     /** @return array<string, array<int, string>> */
