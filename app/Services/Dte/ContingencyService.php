@@ -5,6 +5,7 @@ namespace App\Services\Dte;
 use App\Models\Company;
 use App\Models\ContingencyEvent;
 use App\Models\Departament;
+use App\Models\Dte;
 use App\Models\Municipalities;
 use App\Services\Mh\MhTransmissionService;
 use Illuminate\Support\Carbon;
@@ -94,6 +95,14 @@ class ContingencyService
             'status' => $approved ? 'RECIBIDO' : 'RECHAZADO',
             'observations' => $observations,
         ]);
+
+        Dte::query()
+            ->where('company_id', $companyId)
+            ->whereIn(
+                'generation_code',
+                collect($payload['dtes'])->pluck('codigoGeneracion')->map(fn ($code) => strtoupper((string) $code)),
+            )
+            ->update(['contingency_event_id' => $event->id]);
 
         return [
             'event' => $event->refresh(),
