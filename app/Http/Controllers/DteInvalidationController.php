@@ -17,11 +17,9 @@ class DteInvalidationController extends Controller
         $result = $invalidationService->invalidate($dte, $request->validated());
 
         return new CommonResponse([
-            'data' => [
-                'dte' => $result['updated'],
-                'invalidation' => $result['invalidation'],
-                'mh_result' => $result['mhResult'],
-            ],
+            'dte' => $result['updated'],
+            'invalidation' => $result['invalidation'],
+            'mh_result' => $result['mhResult'],
         ]);
     }
 }
