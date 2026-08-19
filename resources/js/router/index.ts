@@ -35,6 +35,7 @@ const router = createRouter({
                 { path: 'dashboard', name: 'dashboard', component: () => import('@/modules/dashboard/views/DashboardView.vue') },
                 { path: 'dtes', name: 'dtes', component: () => import('@/modules/dtes/views/DtesView.vue') },
                 { path: 'contingency', name: 'contingency', component: () => import('@/modules/contingency/views/ContingencyView.vue') },
+                { path: 'queue', name: 'queue', component: () => import('@/modules/queue/views/QueueView.vue') },
             ],
         },
     ],
