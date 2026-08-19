@@ -80,37 +80,66 @@ test('creates a Sanctum token owned by the authenticated company', function () {
         ->and($storedToken->token)->not->toBe($plainTextToken);
 });
 
-test('requires a name when creating a company API token', function () {
+test('store API token requires a name', function () {
     $company = apiTokenTestCompany('2');
     Sanctum::actingAs(apiTokenTestUser($company));
 
     $this->postJson(route('api.v1.tokens.store'), [])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['name']);
+        ->assertJsonValidationErrors([
+            'name' => 'El campo nombre es obligatorio.',
+        ]);
 });
 
 test('lists only Sanctum tokens owned by the authenticated company', function () {
     $company = apiTokenTestCompany('3');
     $otherCompany = apiTokenTestCompany('4');
 
-    $company->createToken('ERP principal', ['create:dte']);
-    $company->createToken('Sistema contable', ['create:dte']);
+    $firstToken = $company->createToken('ERP principal', ['create:dte'])->accessToken;
+    $secondToken = $company->createToken('Sistema contable', ['create:dte'])->accessToken;
     $otherCompany->createToken('Token de otra empresa', ['create:dte']);
 
     Sanctum::actingAs(apiTokenTestUser($company));
 
-    $response = $this->getJson(route('api.v1.tokens.index', ['per_page' => 100]))
+    $this->getJson(route('api.v1.tokens.index', ['per_page' => 100]))
         ->assertOk()
-        ->assertJsonPath('pagination.total', 2)
-        ->assertJsonPath('data.0.name', 'Sistema contable')
-        ->assertJsonPath('data.1.name', 'ERP principal')
-        ->assertJsonMissing(['name' => 'Token de otra empresa']);
+        ->assertExactJson([
+            'data' => [
+                [
+                    'id' => $secondToken->getKey(),
+                    'name' => 'Sistema contable',
+                    'last_used_at' => null,
+                    'created_at' => $secondToken->created_at?->toJSON(),
+                ],
+                [
+                    'id' => $firstToken->getKey(),
+                    'name' => 'ERP principal',
+                    'last_used_at' => null,
+                    'created_at' => $firstToken->created_at?->toJSON(),
+                ],
+            ],
+            'pagination' => [
+                'total' => 2,
+                'per_page' => 100,
+                'current_page' => 1,
+                'last_page' => 1,
+                'from' => 1,
+                'to' => 2,
+            ],
+        ]);
+});
 
-    foreach ($response->json('data') as $token) {
-        expect($token)->toHaveKeys(['id', 'name', 'last_used_at', 'created_at'])
-            ->and(array_key_exists('token', $token))->toBeFalse()
-            ->and(array_key_exists('abilities', $token))->toBeFalse()
-            ->and(array_key_exists('tokenable_id', $token))->toBeFalse()
-            ->and(array_key_exists('tokenable_type', $token))->toBeFalse();
-    }
+test('API token endpoints return 404 when the authenticated user has no company', function () {
+    $user = User::factory()->create([
+        'company_id' => null,
+        'role' => Role::ADMIN->value,
+    ]);
+    Sanctum::actingAs($user);
+
+    $this->getJson(route('api.v1.tokens.index'))
+        ->assertNotFound();
+
+    $this->postJson(route('api.v1.tokens.store'), [
+        'name' => 'ERP principal',
+    ])->assertNotFound();
 });
