@@ -2,7 +2,6 @@
 
 use App\Environment;
 use App\Models\Company;
-use App\Models\MhCertificates;
 use App\Models\MhCredentials;
 use App\Models\User;
 use App\Role;
@@ -11,16 +10,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 
-function mhConfigurationCompany(array $overrides = []): Company
+function mhConfigurationCompany(): Company
 {
     $departamentId = (string) Str::uuid();
     $municipalityId = (string) Str::uuid();
 
-    DB::table('departaments')->insert([
-        'id' => $departamentId,
-        'code' => '06',
-        'name' => 'San Salvador',
-    ]);
+    DB::table('departaments')->insert(['id' => $departamentId, 'code' => '06', 'name' => 'San Salvador']);
     DB::table('municipalities')->insert([
         'id' => $municipalityId,
         'departament_id' => $departamentId,
@@ -39,7 +34,7 @@ function mhConfigurationCompany(array $overrides = []): Company
         'description' => 'Sucursal / Agencia',
     ]);
 
-    return Company::query()->create(array_merge([
+    return Company::query()->create([
         'name' => 'Rutely, S.A. de C.V.',
         'address' => 'San Salvador',
         'phone' => '22223333',
@@ -55,84 +50,52 @@ function mhConfigurationCompany(array $overrides = []): Company
         'mh_pos_code' => '0001',
         'own_establishment_code' => '0001',
         'own_pos_code' => '0001',
-    ], $overrides));
+    ]);
 }
 
 function mhConfigurationAdmin(Company $company, Role $role = Role::ADMIN): User
 {
-    return User::factory()->create([
-        'company_id' => $company->id,
-        'role' => $role->value,
-    ]);
+    return User::factory()->create(['company_id' => $company->id, 'role' => $role->value]);
 }
 
 test('admin can store and show MH credentials without exposing the password', function () {
     $company = mhConfigurationCompany();
     Sanctum::actingAs(mhConfigurationAdmin($company));
 
-    $payload = [
+    $store = $this->postJson(route('api.v1.mh-credentials.store'), [
         'environment' => Environment::SANDBOX->value,
         'nit' => $company->nit,
         'pwd' => 'mh-secret',
-    ];
-
-    $store = $this->postJson(route('api.v1.mh-credentials.store'), $payload);
+    ]);
     $id = $store->json('data.id');
     $updatedAt = $store->json('data.updated_at');
+    $expected = ['data' => [
+        'id' => $id,
+        'environment' => Environment::SANDBOX->value,
+        'nit' => $company->nit,
+        'active' => true,
+        'updated_at' => $updatedAt,
+    ]];
 
-    $store->assertOk()->assertExactJson([
-        'data' => [
-            'id' => $id,
-            'environment' => Environment::SANDBOX->value,
-            'nit' => $company->nit,
-            'active' => true,
-            'updated_at' => $updatedAt,
-        ],
-    ]);
-
-    expect(DB::table('mh_credentials')->where('id', $id)->value('password'))
-        ->not->toBe('mh-secret');
+    $store->assertOk()->assertExactJson($expected);
+    expect(DB::table('mh_credentials')->where('id', $id)->value('password'))->not->toBe('mh-secret');
 
     $this->getJson(route('api.v1.mh-credentials.show', ['environment' => Environment::SANDBOX->value]))
         ->assertOk()
-        ->assertExactJson([
-            'data' => [
-                'id' => $id,
-                'environment' => Environment::SANDBOX->value,
-                'nit' => $company->nit,
-                'active' => true,
-                'updated_at' => $updatedAt,
-            ],
-        ]);
+        ->assertExactJson($expected);
 });
 
-test('storing MH credentials updates the singleton for the same environment', function () {
+test('MH credentials are tenant isolated and update the environment singleton', function () {
     $company = mhConfigurationCompany();
-    Sanctum::actingAs(mhConfigurationAdmin($company));
-
-    $this->postJson(route('api.v1.mh-credentials.store'), [
-        'environment' => Environment::SANDBOX->value,
-        'nit' => $company->nit,
-        'pwd' => 'first-secret',
-    ])->assertOk();
-
-    $this->postJson(route('api.v1.mh-credentials.store'), [
-        'environment' => Environment::SANDBOX->value,
-        'nit' => $company->nit,
-        'pwd' => 'second-secret',
-    ])->assertOk();
-
-    expect(MhCredentials::query()->where('company_id', $company->id)->count())->toBe(1)
-        ->and(MhCredentials::query()->firstOrFail()->password)->toBe('second-secret');
-});
-
-test('MH credentials are isolated by company', function () {
-    $company = mhConfigurationCompany();
-    $otherCompany = mhConfigurationCompany([
+    $otherCompany = Company::query()->create(array_merge($company->only([
+        'address', 'phone', 'nrc', 'commercial_name', 'economic_activity_code', 'establishment_type',
+        'departament_id', 'municipality_id', 'district_id', 'mh_establishment_code', 'mh_pos_code',
+        'own_establishment_code', 'own_pos_code',
+    ]), [
         'name' => 'Other Company',
         'nit' => '06142812901016',
         'email' => 'other@rutely.biz',
-    ]);
+    ]));
 
     MhCredentials::query()->create([
         'company_id' => $otherCompany->id,
@@ -141,20 +104,33 @@ test('MH credentials are isolated by company', function () {
         'password' => 'other-secret',
         'active' => true,
     ]);
-    $own = MhCredentials::query()->create([
-        'company_id' => $company->id,
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+
+    $first = $this->postJson(route('api.v1.mh-credentials.store'), [
         'environment' => Environment::SANDBOX->value,
         'nit' => $company->nit,
-        'password' => 'own-secret',
-        'active' => true,
-    ]);
+        'pwd' => 'first-secret',
+    ])->assertOk();
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => Environment::SANDBOX->value,
+        'nit' => $company->nit,
+        'pwd' => 'second-secret',
+    ])->assertOk();
 
-    Sanctum::actingAs(mhConfigurationAdmin($company));
+    $own = MhCredentials::query()->where('company_id', $company->id)->firstOrFail();
+    expect(MhCredentials::query()->where('company_id', $company->id)->count())->toBe(1)
+        ->and($own->password)->toBe('second-secret');
 
     $this->getJson(route('api.v1.mh-credentials.show'))
         ->assertOk()
-        ->assertJsonPath('data.id', $own->id);
-})->skip('Covered by exact response test after replacing legacy assertJsonPath usage.');
+        ->assertExactJson(['data' => [
+            'id' => $first->json('data.id'),
+            'environment' => Environment::SANDBOX->value,
+            'nit' => $company->nit,
+            'active' => true,
+            'updated_at' => $own->updated_at?->toJSON(),
+        ]]);
+});
 
 test('operational user cannot manage MH credentials', function () {
     $company = mhConfigurationCompany();
@@ -177,51 +153,15 @@ test('store MH credentials request validation returns 422', function (array $pay
         ->assertUnprocessable()
         ->assertJsonValidationErrors([$field => $message]);
 })->with([
-    'environment is required' => [
-        ['nit' => '06142812901015', 'pwd' => 'secret'],
-        'environment',
-        'El campo ambiente es obligatorio.',
-    ],
-    'environment must be a string' => [
-        ['environment' => ['00'], 'nit' => '06142812901015', 'pwd' => 'secret'],
-        'environment',
-        'El campo ambiente debe ser una cadena de caracteres.',
-    ],
-    'environment must be valid' => [
-        ['environment' => '99', 'nit' => '06142812901015', 'pwd' => 'secret'],
-        'environment',
-        'El valor seleccionado para ambiente no es válido.',
-    ],
-    'nit is required' => [
-        ['environment' => '00', 'pwd' => 'secret'],
-        'nit',
-        'El campo NIT es obligatorio.',
-    ],
-    'nit must be a string' => [
-        ['environment' => '00', 'nit' => ['0614'], 'pwd' => 'secret'],
-        'nit',
-        'El campo NIT debe ser una cadena de caracteres.',
-    ],
-    'nit has a maximum length' => [
-        ['environment' => '00', 'nit' => str_repeat('1', 21), 'pwd' => 'secret'],
-        'nit',
-        'El campo NIT no debe contener más de 20 caracteres.',
-    ],
-    'password is required' => [
-        ['environment' => '00', 'nit' => '06142812901015'],
-        'pwd',
-        'El campo contraseña de Hacienda es obligatorio.',
-    ],
-    'password must be a string' => [
-        ['environment' => '00', 'nit' => '06142812901015', 'pwd' => ['secret']],
-        'pwd',
-        'El campo contraseña de Hacienda debe ser una cadena de caracteres.',
-    ],
-    'password has a maximum length' => [
-        ['environment' => '00', 'nit' => '06142812901015', 'pwd' => str_repeat('a', 256)],
-        'pwd',
-        'El campo contraseña de Hacienda no debe contener más de 255 caracteres.',
-    ],
+    'environment is required' => [['nit' => '06142812901015', 'pwd' => 'secret'], 'environment', 'El campo ambiente es obligatorio.'],
+    'environment must be a string' => [['environment' => ['00'], 'nit' => '06142812901015', 'pwd' => 'secret'], 'environment', 'El campo ambiente debe ser una cadena de caracteres.'],
+    'environment must be valid' => [['environment' => '99', 'nit' => '06142812901015', 'pwd' => 'secret'], 'environment', 'El valor seleccionado para ambiente no es válido.'],
+    'nit is required' => [['environment' => '00', 'pwd' => 'secret'], 'nit', 'El campo NIT es obligatorio.'],
+    'nit must be a string' => [['environment' => '00', 'nit' => ['0614'], 'pwd' => 'secret'], 'nit', 'El campo NIT debe ser una cadena de caracteres.'],
+    'nit has a maximum length' => [['environment' => '00', 'nit' => str_repeat('1', 21), 'pwd' => 'secret'], 'nit', 'El campo NIT no debe contener más de 20 caracteres.'],
+    'password is required' => [['environment' => '00', 'nit' => '06142812901015'], 'pwd', 'El campo contraseña de Hacienda es obligatorio.'],
+    'password must be a string' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => ['secret']], 'pwd', 'El campo contraseña de Hacienda debe ser una cadena de caracteres.'],
+    'password has a maximum length' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => str_repeat('a', 256)], 'pwd', 'El campo contraseña de Hacienda no debe contener más de 255 caracteres.'],
 ]);
 
 test('show MH credentials environment validation returns 422', function (mixed $environment, string $message) {
@@ -236,7 +176,7 @@ test('show MH credentials environment validation returns 422', function (mixed $
     'must be valid' => ['99', 'El valor seleccionado para ambiente no es válido.'],
 ]);
 
-test('admin can store and show MH certificate metadata while certificate material remains encrypted', function () {
+test('admin can store and show MH certificate metadata while material remains encrypted', function () {
     $company = mhConfigurationCompany();
     Sanctum::actingAs(mhConfigurationAdmin($company));
 
@@ -253,32 +193,22 @@ test('admin can store and show MH certificate metadata while certificate materia
     ]);
     $id = $store->json('data.id');
     $updatedAt = $store->json('data.updated_at');
+    $expected = ['data' => [
+        'id' => $id,
+        'environment' => Environment::SANDBOX->value,
+        'nit' => $company->nit,
+        'active' => true,
+        'updated_at' => $updatedAt,
+    ]];
 
-    $store->assertOk()->assertExactJson([
-        'data' => [
-            'id' => $id,
-            'environment' => Environment::SANDBOX->value,
-            'nit' => $company->nit,
-            'active' => true,
-            'updated_at' => $updatedAt,
-        ],
-    ]);
-
+    $store->assertOk()->assertExactJson($expected);
     $raw = DB::table('mh_certificates')->where('id', $id)->first();
     expect($raw->encrypted_certificate)->not->toBe('<certificado>fixture</certificado>')
         ->and($raw->encrypted_private_key_password)->not->toBe('private-secret');
 
     $this->getJson(route('api.v1.mh-certificates.show', ['environment' => Environment::SANDBOX->value]))
         ->assertOk()
-        ->assertExactJson([
-            'data' => [
-                'id' => $id,
-                'environment' => Environment::SANDBOX->value,
-                'nit' => $company->nit,
-                'active' => true,
-                'updated_at' => $updatedAt,
-            ],
-        ]);
+        ->assertExactJson($expected);
 });
 
 test('operational user cannot manage MH certificates', function () {
@@ -302,44 +232,16 @@ test('store MH certificate request validation returns 422', function (array $pay
         ->assertUnprocessable()
         ->assertJsonValidationErrors([$field => $message]);
 })->with([
-    'environment is required' => [
-        ['certificadoXml' => '<xml/>'],
-        'environment',
-        'El campo ambiente es obligatorio.',
-    ],
-    'environment must be a string' => [
-        ['environment' => ['00'], 'certificadoXml' => '<xml/>'],
-        'environment',
-        'El campo ambiente debe ser una cadena de caracteres.',
-    ],
-    'environment must be valid' => [
-        ['environment' => '99', 'certificadoXml' => '<xml/>'],
-        'environment',
-        'El valor seleccionado para ambiente no es válido.',
-    ],
-    'certificate is required' => [
-        ['environment' => '00'],
-        'certificadoXml',
-        'El campo certificado de Hacienda es obligatorio.',
-    ],
-    'certificate must be a string' => [
-        ['environment' => '00', 'certificadoXml' => ['xml']],
-        'certificadoXml',
-        'El campo certificado de Hacienda debe ser una cadena de caracteres.',
-    ],
-    'private password must be a string' => [
-        ['environment' => '00', 'certificadoXml' => '<xml/>', 'passwordPri' => ['secret']],
-        'passwordPri',
-        'El campo contraseña privada debe ser una cadena de caracteres.',
-    ],
-    'private password has a maximum length' => [
-        ['environment' => '00', 'certificadoXml' => '<xml/>', 'passwordPri' => str_repeat('a', 256)],
-        'passwordPri',
-        'El campo contraseña privada no debe contener más de 255 caracteres.',
-    ],
+    'environment is required' => [['certificadoXml' => '<xml/>'], 'environment', 'El campo ambiente es obligatorio.'],
+    'environment must be a string' => [['environment' => ['00'], 'certificadoXml' => '<xml/>'], 'environment', 'El campo ambiente debe ser una cadena de caracteres.'],
+    'environment must be valid' => [['environment' => '99', 'certificadoXml' => '<xml/>'], 'environment', 'El valor seleccionado para ambiente no es válido.'],
+    'certificate is required' => [['environment' => '00'], 'certificadoXml', 'El campo certificado de Hacienda es obligatorio.'],
+    'certificate must be a string' => [['environment' => '00', 'certificadoXml' => ['xml']], 'certificadoXml', 'El campo certificado de Hacienda debe ser una cadena de caracteres.'],
+    'private password must be a string' => [['environment' => '00', 'certificadoXml' => '<xml/>', 'passwordPri' => ['secret']], 'passwordPri', 'El campo contraseña privada debe ser una cadena de caracteres.'],
+    'private password has a maximum length' => [['environment' => '00', 'certificadoXml' => '<xml/>', 'passwordPri' => str_repeat('a', 256)], 'passwordPri', 'El campo contraseña privada no debe contener más de 255 caracteres.'],
 ]);
 
-test('invalid MH certificate material returns an exact validation error from signer adapter', function () {
+test('invalid MH certificate material returns the signer adapter validation error', function () {
     $company = mhConfigurationCompany();
     Sanctum::actingAs(mhConfigurationAdmin($company));
 
