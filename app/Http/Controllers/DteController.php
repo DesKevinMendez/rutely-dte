@@ -20,7 +20,7 @@ class DteController extends Controller
         Gate::authorize('viewAny', Dte::class);
 
         $dtes = QueryBuilder::for(Dte::query()->where('company_id', $request->user()->company_id))
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::exact('tipoDte', 'dte_type'),
                 AllowedFilter::exact('estado', 'status'),
                 AllowedFilter::exact('environment'),
@@ -35,8 +35,8 @@ class DteController extends Controller
                             ->orWhere('receiver_document', 'like', "%{$search}%");
                     });
                 }),
-            ])
-            ->allowedSorts(['created_at', 'total_amount', 'status', 'dte_type'])
+            )
+            ->allowedSorts('created_at', 'total_amount', 'status', 'dte_type')
             ->defaultSort('-created_at')
             ->paginate($request->integer('per_page', 10));
 
