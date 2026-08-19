@@ -6,52 +6,33 @@ const router = createRouter({
     history: createWebHashHistory(),
     routes: [
         {
-            path: '/',
-            redirect: () => ({ name: useAuth().isAuthenticated ? 'dashboard' : 'login' }),
-        },
-        {
             path: '/login',
             component: () => import('@/layouts/LayoutGuest.vue'),
             children: [
-                {
-                    path: '',
-                    name: 'login',
-                    component: () => import('@/modules/auth/views/LoginView.vue'),
-                },
+                { path: '', name: 'login', component: () => import('@/modules/auth/views/LoginView.vue') },
             ],
         },
         {
             path: '/recovery',
             component: () => import('@/layouts/LayoutGuest.vue'),
             children: [
-                {
-                    path: '',
-                    name: 'recovery',
-                    component: () => import('@/modules/auth/views/RecoveryPasswordView.vue'),
-                },
+                { path: '', name: 'recovery', component: () => import('@/modules/auth/views/RecoveryPasswordView.vue') },
             ],
         },
         {
             path: '/onboarding',
             component: () => import('@/layouts/LayoutGuest.vue'),
             children: [
-                {
-                    path: '',
-                    name: 'onboarding',
-                    component: () => import('@/guess/modules/onboarding/views/OnboardingView.vue'),
-                },
+                { path: '', name: 'onboarding', component: () => import('@/guess/modules/onboarding/views/OnboardingView.vue') },
             ],
         },
         {
-            path: '/dashboard',
+            path: '/',
             component: () => import('@/layouts/LayoutAuthenticated.vue'),
             meta: { requiresAuth: true },
             children: [
-                {
-                    path: '',
-                    name: 'dashboard',
-                    component: () => import('@/modules/dashboard/views/DashboardView.vue'),
-                },
+                { path: '', redirect: { name: 'dashboard' } },
+                { path: 'dashboard', name: 'dashboard', component: () => import('@/modules/dashboard/views/DashboardView.vue') },
             ],
         },
     ],
@@ -65,7 +46,7 @@ router.beforeEach(async (to) => {
         return { name: 'login' };
     }
 
-    if (to.name === 'login' && auth.isAuthenticated && await ensureSession()) {
+    if ((to.name === 'login' || to.name === 'recovery') && auth.isAuthenticated && await ensureSession()) {
         return { name: auth.user?.company_id ? 'dashboard' : 'onboarding' };
     }
 
