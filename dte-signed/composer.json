@@ -1,0 +1,36 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "rutely/dte-signed",
+    "description": "SDK PHP para firma de DTE compatible con el firmador oficial del Ministerio de Hacienda de El Salvador.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "ext-openssl": "*"
+    },
+    "require-dev": {
+        "pestphp/pest": "^5.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rutely\\DteSigned\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Rutely\\DteSigned\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "test:unit": "pest tests/Unit",
+        "test:conformance": "pest tests/Conformance"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable"
+}
