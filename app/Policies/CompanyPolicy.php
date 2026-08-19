@@ -29,7 +29,8 @@ class CompanyPolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === Role::ADMIN->value && $user->company_id === null;
+        return in_array($user->role, [Role::ADMIN->value, Role::SUPERADMIN->value], true)
+            && $user->company_id === null;
     }
 
     /**
