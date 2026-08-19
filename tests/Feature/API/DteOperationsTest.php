@@ -64,17 +64,20 @@ test('company member can invalidate a DTE through nested store endpoint', functi
         'status' => 'PROCESADO',
         'environment' => Environment::SANDBOX->value,
     ]);
-    $dte->update(['status' => 'INVALIDADO']);
 
     $this->mock(DteInvalidationService::class)
         ->shouldReceive('invalidate')
         ->once()
         ->withArgs(fn ($receivedDte, array $receivedPayload): bool => $receivedDte->is($dte) && $receivedPayload === $payload)
-        ->andReturn([
-            'updated' => $dte->fresh(),
-            'mhResult' => $mhResult,
-            'invalidation' => $invalidation,
-        ]);
+        ->andReturnUsing(function () use ($dte, $mhResult, $invalidation): array {
+            $dte->update(['status' => 'INVALIDADO']);
+
+            return [
+                'updated' => $dte->fresh(),
+                'mhResult' => $mhResult,
+                'invalidation' => $invalidation,
+            ];
+        });
     Sanctum::actingAs($user);
 
     $this->postJson(route('api.v1.dtes.invalidations.store', $dte), $payload)
@@ -209,7 +212,7 @@ test('contingency event request validation returns 422', function (array $payloa
 })->with([
     'DTE list required' => [array_diff_key(validContingencyPayload(), ['dtes' => true]), 'dtes', 'El campo DTE es obligatorio.'],
     'DTE list array' => [array_replace(validContingencyPayload(), ['dtes' => 'dte']), 'dtes', 'El campo DTE debe ser un arreglo.'],
-    'DTE list minimum' => [array_replace(validContingencyPayload(), ['dtes' => []]), 'dtes', 'El campo DTE debe contener al menos 1 elementos.'],
+    'DTE list minimum' => [array_replace(validContingencyPayload(), ['dtes' => []]), 'dtes', 'El campo DTE es obligatorio.'],
     'DTE list maximum' => [array_replace(validContingencyPayload(), ['dtes' => array_fill(0, 101, ['codigoGeneracion' => '11111111-1111-4111-8111-111111111111', 'tipoDte' => '01'])]), 'dtes', 'El campo DTE no debe contener más de 100 elementos.'],
     'generation code required' => [array_replace(validContingencyPayload(), ['dtes' => [['tipoDte' => '01']]]), 'dtes.0.codigoGeneracion', 'El campo código de generación es obligatorio.'],
     'generation code UUID' => [array_replace(validContingencyPayload(), ['dtes' => [['codigoGeneracion' => 'invalid', 'tipoDte' => '01']]]), 'dtes.0.codigoGeneracion', 'El campo código de generación debe ser un UUID válido.'],
