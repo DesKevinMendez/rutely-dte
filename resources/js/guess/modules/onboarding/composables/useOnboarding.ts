@@ -1,5 +1,4 @@
 import { computed, reactive, watch } from 'vue';
-import { useForm } from 'vee-validate';
 import { useRouter } from 'vue-router';
 import * as yup from 'yup';
 import { useRequest } from '@/core/composables/useRequest';
@@ -47,24 +46,6 @@ const rules = {
     ownPosCode: requiredText('El código de punto de venta es requerido.'),
 };
 
-const accountFields = ['userName', 'userEmail', 'password', 'passwordConfirmation'] as const;
-
-const companyFields = [
-    'name',
-    'commercialName',
-    'nit',
-    'phone',
-    'email',
-    'address',
-    'economicActivityCode',
-    'establishmentType',
-    'departmentId',
-    'municipalityId',
-    'districtId',
-    'ownEstablishmentCode',
-    'ownPosCode',
-] as const;
-
 const digitsOnly = (value: string): string => value.replace(/\D/g, '');
 
 export default function useOnboarding() {
@@ -73,69 +54,26 @@ export default function useOnboarding() {
     const { post, isLoading, error } = useRequest();
     const isAuthenticated = computed(() => auth.isAuthenticated);
 
-    const { defineField, setFieldValue, validateField } = useForm<OnboardingForm>({
-        validationSchema: yup.object(rules),
-        initialValues: {
-            userName: '',
-            userEmail: '',
-            password: '',
-            passwordConfirmation: '',
-            name: '',
-            commercialName: '',
-            nit: '',
-            nrc: '',
-            phone: '',
-            email: '',
-            address: '',
-            economicActivityCode: '',
-            establishmentType: '',
-            departmentId: '',
-            municipalityId: '',
-            districtId: '',
-            ownEstablishmentCode: '',
-            ownPosCode: '',
-        },
+    const form = reactive<OnboardingForm>({
+        userName: '',
+        userEmail: '',
+        password: '',
+        passwordConfirmation: '',
+        name: '',
+        commercialName: '',
+        nit: '',
+        nrc: '',
+        phone: '',
+        email: '',
+        address: '',
+        economicActivityCode: '',
+        establishmentType: '',
+        departmentId: '',
+        municipalityId: '',
+        districtId: '',
+        ownEstablishmentCode: '',
+        ownPosCode: '',
     });
-
-    const [userName] = defineField('userName');
-    const [userEmail] = defineField('userEmail');
-    const [password] = defineField('password');
-    const [passwordConfirmation] = defineField('passwordConfirmation');
-    const [name] = defineField('name');
-    const [commercialName] = defineField('commercialName');
-    const [nit] = defineField('nit');
-    const [nrc] = defineField('nrc');
-    const [phone] = defineField('phone');
-    const [email] = defineField('email');
-    const [address] = defineField('address');
-    const [economicActivityCode] = defineField('economicActivityCode');
-    const [establishmentType] = defineField('establishmentType');
-    const [departmentId] = defineField('departmentId');
-    const [municipalityId] = defineField('municipalityId');
-    const [districtId] = defineField('districtId');
-    const [ownEstablishmentCode] = defineField('ownEstablishmentCode');
-    const [ownPosCode] = defineField('ownPosCode');
-
-    const form = reactive({
-        userName,
-        userEmail,
-        password,
-        passwordConfirmation,
-        name,
-        commercialName,
-        nit,
-        nrc,
-        phone,
-        email,
-        address,
-        economicActivityCode,
-        establishmentType,
-        departmentId,
-        municipalityId,
-        districtId,
-        ownEstablishmentCode,
-        ownPosCode,
-    }) as OnboardingForm;
 
     const municipalityUrl = computed(() => {
         if (!form.departmentId) {
@@ -156,24 +94,17 @@ export default function useOnboarding() {
     watch(
         () => form.departmentId,
         () => {
-            setFieldValue('municipalityId', '');
-            setFieldValue('districtId', '');
+            form.municipalityId = '';
+            form.districtId = '';
         },
     );
 
     watch(
         () => form.municipalityId,
         () => {
-            setFieldValue('districtId', '');
+            form.districtId = '';
         },
     );
-
-    const validateRequiredFields = async (): Promise<boolean> => {
-        const fields = auth.isAuthenticated ? companyFields : [...accountFields, ...companyFields];
-        const results = await Promise.all(fields.map((field) => validateField(field)));
-
-        return results.every((result) => result.valid);
-    };
 
     const registerUser = async (): Promise<boolean> => {
         const payload: RegisterRequest = {
@@ -227,10 +158,6 @@ export default function useOnboarding() {
         }
 
         error.value = null;
-
-        if (!(await validateRequiredFields())) {
-            return;
-        }
 
         if (!auth.isAuthenticated && !(await registerUser())) {
             return;

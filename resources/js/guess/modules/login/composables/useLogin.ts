@@ -1,14 +1,9 @@
-import { useForm } from 'vee-validate';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import * as yup from 'yup';
 import { useRequest } from '@/core/composables/useRequest';
 import { useAuth } from '@/core/stores/auth';
 import type { LoginRequest, LoginResponse } from '../types/Login';
-
-interface LoginFormValues {
-    email: string;
-    password: string;
-}
 
 const rules = {
     email: yup
@@ -20,29 +15,12 @@ const rules = {
         .required('La contraseña es requerida.'),
 };
 
-const fields = ['email', 'password'] as const;
-
 export default function useLogin() {
     const router = useRouter();
     const auth = useAuth();
     const { post, isLoading, error } = useRequest();
-
-    const { defineField, validateField } = useForm<LoginFormValues>({
-        validationSchema: yup.object(rules),
-        initialValues: {
-            email: '',
-            password: '',
-        },
-    });
-
-    const [email] = defineField('email');
-    const [password] = defineField('password');
-
-    const validateCredentials = async (): Promise<boolean> => {
-        const results = await Promise.all(fields.map((field) => validateField(field)));
-
-        return results.every((result) => result.valid);
-    };
+    const email = ref('');
+    const password = ref('');
 
     const login = async (): Promise<void> => {
         if (isLoading.value) {
@@ -50,10 +28,6 @@ export default function useLogin() {
         }
 
         error.value = null;
-
-        if (!(await validateCredentials())) {
-            return;
-        }
 
         const payload: LoginRequest = {
             email: email.value,
