@@ -47,7 +47,7 @@ jobs:
         run: |
           vendor/bin/pint --test app/Models/MhCertificates.php app/Services/Dte/FirmadorService.php tests/Feature/Services/Dte/FirmadorServiceTest.php
           vendor/bin/phpstan analyse app/Models/MhCertificates.php app/Services/Dte/FirmadorService.php --no-progress
-          php artisan test --compact tests/Feature/Services/Dte/FirmadorServiceTest.php
+          php artisan test
 
       - name: Run Frontend Checks
         run: |
