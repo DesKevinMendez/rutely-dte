@@ -50,21 +50,27 @@ const submit = (): void => {
                         type="button"
                         variant="outline"
                         size="auto"
-                        class="justify-center"
+                        class="h-auto justify-start py-3 text-left"
                         :class="props.selectedEnvironment === 'PRUEBAS' ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30' : ''"
                         @click="emit('environmentChange', 'PRUEBAS')"
                     >
-                        Pruebas (Sandbox)
+                        <span class="flex flex-col items-start leading-tight">
+                            <span class="font-semibold">Pruebas (Sandbox)</span>
+                            <span class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">Ambiente de pruebas MH</span>
+                        </span>
                     </BaseButton>
                     <BaseButton
                         type="button"
                         variant="outline"
                         size="auto"
-                        class="justify-center"
+                        class="h-auto justify-start py-3 text-left"
                         :class="props.selectedEnvironment === 'PRODUCCION' ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30' : ''"
                         @click="emit('environmentChange', 'PRODUCCION')"
                     >
-                        Producción
+                        <span class="flex flex-col items-start leading-tight">
+                            <span class="font-semibold">Producción</span>
+                            <span class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400">Emisión real de DTEs</span>
+                        </span>
                     </BaseButton>
                 </div>
             </div>
