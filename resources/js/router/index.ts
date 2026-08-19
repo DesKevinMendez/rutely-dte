@@ -21,6 +21,17 @@ const router = createRouter({
             ],
         },
         {
+            path: '/recovery',
+            component: () => import('@/layouts/LayoutGuest.vue'),
+            children: [
+                {
+                    path: '',
+                    name: 'recovery',
+                    component: () => import('@/modules/auth/views/RecoveryPasswordView.vue'),
+                },
+            ],
+        },
+        {
             path: '/onboarding',
             component: () => import('@/layouts/LayoutGuest.vue'),
             children: [

@@ -12,3 +12,8 @@ export interface LoginResponse {
         user: AuthUser;
     };
 }
+
+export interface RecoveryState {
+    email: string;
+    successMessage: string | null;
+}
