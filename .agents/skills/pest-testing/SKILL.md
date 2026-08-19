@@ -65,6 +65,32 @@ it('returns all', function () {
 | `assertNotFound()` | `assertStatus(404)` |
 | `assertForbidden()` | `assertStatus(403)` |
 
+### Project Testing Conventions
+
+- Do not use `assertJsonPath()` for API response assertions.
+- Every endpoint must have at least one test using `assertExactJson()` to validate the complete JSON response contract. `assertJson()` may be used for additional partial assertions, but it does not replace the required `assertExactJson()` coverage.
+- Validation tests must assert both the validation field and its exact expected message using key/value syntax: `assertJsonValidationErrors([$field => $message])`. Do not assert only the field name with `assertJsonValidationErrors([$field])`.
+- Validation datasets should include the field, invalid value, and exact expected validation message. Validation messages are expected in Spanish according to the application's `lang/es` translations and default locale.
+- When an Eloquent model exists for a table, use the model class in database assertions instead of a raw table name. This applies to `assertDatabaseHas()`, `assertDatabaseMissing()`, `assertDatabaseCount()`, and equivalent database assertions that accept a model/table argument.
+
+<!-- Project Assertion Conventions -->
+```php
+$response->assertExactJson([
+    'data' => [
+        'id' => $companyId,
+        'name' => 'Rutely',
+    ],
+]);
+
+$response->assertJsonValidationErrors([
+    'name' => 'El campo nombre es obligatorio.',
+]);
+
+$this->assertDatabaseHas(Company::class, [
+    'id' => $companyId,
+]);
+```
+
 ## Mocking
 
 Import mock function before use: `use function Pest\Laravel\mock;`

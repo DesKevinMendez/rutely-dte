@@ -4,7 +4,7 @@ namespace App\Policies;
 
 use App\Models\Company;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Role;
 
 class CompanyPolicy
 {
@@ -29,7 +29,8 @@ class CompanyPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return in_array($user->role, [Role::ADMIN->value, Role::SUPERADMIN->value], true)
+            && $user->company_id === null;
     }
 
     /**

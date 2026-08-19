@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Company\StoreCompanyRequest;
 use App\Http\Requests\Company\UpdateCompanyRequest;
+use App\Http\Resources\CommonResource;
 use App\Models\Company;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class CompanyController extends Controller
 {
@@ -27,9 +31,27 @@ class CompanyController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreCompanyRequest $request)
+    public function store(StoreCompanyRequest $request): JsonResponse
     {
-        //
+        /** @var User $user */
+        $user = $request->user();
+        $validated = $request->validated();
+
+        $company = DB::transaction(function () use ($user, $validated): Company {
+            $company = Company::query()->create($validated);
+
+            $user->update([
+                'company_id' => $company->id,
+            ]);
+
+            return $company;
+        });
+
+        $company->refresh();
+
+        return CommonResource::make($company)
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
