@@ -127,16 +127,20 @@ watch(
                         <div class="hidden items-center rounded-lg border border-gray-200 bg-gray-50 p-1 text-xs dark:border-gray-700 dark:bg-gray-800 sm:flex">
                             <button
                                 type="button"
-                                class="rounded-md px-2.5 py-1.5 font-semibold transition-colors"
-                                :class="environment === 'PRUEBAS' ? 'bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300' : 'text-gray-500 dark:text-gray-400'"
+                                class="rounded-md border px-2.5 py-1.5 font-semibold transition-colors"
+                                :class="environment === 'PRUEBAS'
+                                    ? 'border-primary-500 bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
                                 @click="environment = 'PRUEBAS'"
                             >
                                 Pruebas
                             </button>
                             <button
                                 type="button"
-                                class="rounded-md px-2.5 py-1.5 font-semibold transition-colors"
-                                :class="environment === 'PRODUCCION' ? 'bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300' : 'text-gray-500 dark:text-gray-400'"
+                                class="rounded-md border px-2.5 py-1.5 font-semibold transition-colors"
+                                :class="environment === 'PRODUCCION'
+                                    ? 'border-primary-500 bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
                                 @click="environment = 'PRODUCCION'"
                             >
                                 Producción
