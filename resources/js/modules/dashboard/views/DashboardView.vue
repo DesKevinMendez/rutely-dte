@@ -10,18 +10,28 @@ const { metrics, lastUpdated, refreshMetrics } = useDashboardUi();
 
 <template>
     <div class="space-y-6">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div
+            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        >
             <div>
-                <div class="mb-2 inline-flex rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:border-primary-800 dark:bg-primary-950/40 dark:text-primary-300">
+                <div
+                    class="mb-2 inline-flex rounded-full border border-primary-200 bg-primary-50 px-2.5 py-1 text-xs font-semibold text-primary-700 dark:border-primary-800 dark:bg-primary-950/40 dark:text-primary-300"
+                >
                     Datos de demostración
                 </div>
-                <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                <h1
+                    class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+                >
                     Resumen de Facturación Electrónica (DTE)
                 </h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Métricas generales de transmisión de comprobantes fiscales al Ministerio de Hacienda
+                    Métricas generales de transmisión de comprobantes fiscales
+                    al Ministerio de Hacienda
                 </p>
-                <p v-if="auth.user?.email" class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                <p
+                    v-if="auth.user?.email"
+                    class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                     {{ auth.user.email }}
                 </p>
             </div>

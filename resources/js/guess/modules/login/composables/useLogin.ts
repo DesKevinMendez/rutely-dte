@@ -10,9 +10,7 @@ const rules = {
         .string()
         .required('El correo electrónico es requerido.')
         .email('Ingresá un correo electrónico válido.'),
-    password: yup
-        .string()
-        .required('La contraseña es requerida.'),
+    password: yup.string().required('La contraseña es requerida.'),
 };
 
 export default function useLogin() {
@@ -35,7 +33,10 @@ export default function useLogin() {
             device_name: 'rutely-dte-web',
         };
 
-        const response = await post<LoginResponse, LoginRequest>('/api/v1/login', payload);
+        const response = await post<LoginResponse, LoginRequest>(
+            '/api/v1/login',
+            payload,
+        );
         const session = response.data.value?.data;
 
         if (!session?.token || !session.user) {

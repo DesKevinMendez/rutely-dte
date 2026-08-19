@@ -8,13 +8,17 @@ export function useProfileUi() {
     const profile = computed<ProfileSummary>(() => {
         const name = auth.user?.name ?? 'Usuario';
         const words = name.trim().split(/\s+/).filter(Boolean);
-        const initials = words
-            .slice(0, 2)
-            .map((word) => word.charAt(0).toUpperCase())
-            .join('') || 'U';
-        const role = auth.user?.role === 'admin'
-            ? 'Admin'
-            : (auth.user?.role ?? 'Usuario').replace(/^./, (letter) => letter.toUpperCase());
+        const initials =
+            words
+                .slice(0, 2)
+                .map((word) => word.charAt(0).toUpperCase())
+                .join('') || 'U';
+        const role =
+            auth.user?.role === 'admin'
+                ? 'Admin'
+                : (auth.user?.role ?? 'Usuario').replace(/^./, (letter) =>
+                      letter.toUpperCase(),
+                  );
 
         return {
             name,

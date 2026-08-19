@@ -28,15 +28,28 @@ const statusVariant = (status: string): BadgeVariant => {
 const columns: TableField<QueueJob>[] = [
     { label: 'ID Trabajo', key: 'id', width: 180 },
     { label: 'DTE ID', key: 'dteId', width: 180 },
-    { label: 'Intentos', key: 'attempts', width: 120, format: (row) => `${row.attempts} / ${row.maxAttempts}` },
+    {
+        label: 'Intentos',
+        key: 'attempts',
+        width: 120,
+        format: (row) => `${row.attempts} / ${row.maxAttempts}`,
+    },
     {
         label: 'Próximo Reintento',
         key: 'nextRetryAt',
         width: 190,
-        format: (row) => row.nextRetryAt ? new Date(row.nextRetryAt).toLocaleString('es-SV') : 'N/A',
+        format: (row) =>
+            row.nextRetryAt
+                ? new Date(row.nextRetryAt).toLocaleString('es-SV')
+                : 'N/A',
     },
     { label: 'Estado Cola', key: 'status', width: 170, slot: 'status' },
-    { label: 'Último Error', key: 'lastError', width: 280, format: (row) => row.lastError || 'Ninguno' },
+    {
+        label: 'Último Error',
+        key: 'lastError',
+        width: 280,
+        format: (row) => row.lastError || 'Ninguno',
+    },
 ];
 </script>
 

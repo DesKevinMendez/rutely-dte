@@ -7,13 +7,8 @@ import { useDtesUi } from '../composables/useDtesUi';
 import type { DteDraft } from '../types/dte.types';
 
 const isCreateModalOpen = ref(false);
-const {
-    filterTipoDte,
-    filterEstado,
-    currentPage,
-    filteredRecords,
-    addRecord,
-} = useDtesUi();
+const { filterTipoDte, filterEstado, currentPage, filteredRecords, addRecord } =
+    useDtesUi();
 
 const tipoDteOptions = [
     { value: '', label: 'Todos los tipos' },
@@ -38,16 +33,33 @@ const handleCreated = (draft: DteDraft): void => {
 
 <template>
     <div class="space-y-6">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div
+            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        >
             <div>
-                <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Documentos Tributarios Electrónicos (DTEs)</h1>
+                <h1
+                    class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
+                >
+                    Documentos Tributarios Electrónicos (DTEs)
+                </h1>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Emisión, consulta y seguimiento de la transmisión de comprobantes fiscales al Ministerio de Hacienda.
+                    Emisión, consulta y seguimiento de la transmisión de
+                    comprobantes fiscales al Ministerio de Hacienda.
                 </p>
             </div>
             <div class="flex items-center gap-2.5">
-                <BaseButton variant="outline" size="auto" @click="currentPage = 1">Actualizar</BaseButton>
-                <BaseButton variant="primary" size="auto" @click="isCreateModalOpen = true">Emitir Nuevo DTE</BaseButton>
+                <BaseButton
+                    variant="outline"
+                    size="auto"
+                    @click="currentPage = 1"
+                    >Actualizar</BaseButton
+                >
+                <BaseButton
+                    variant="primary"
+                    size="auto"
+                    @click="isCreateModalOpen = true"
+                    >Emitir Nuevo DTE</BaseButton
+                >
             </div>
         </div>
 
@@ -55,10 +67,24 @@ const handleCreated = (draft: DteDraft): void => {
             <template #headerButtons>
                 <div class="flex flex-wrap items-center gap-2">
                     <div class="w-44">
-                        <FormSelect v-model="filterTipoDte" id="filter-tipo-dte" name="filterTipoDte" label="" small :options="tipoDteOptions" />
+                        <FormSelect
+                            v-model="filterTipoDte"
+                            id="filter-tipo-dte"
+                            name="filterTipoDte"
+                            label=""
+                            small
+                            :options="tipoDteOptions"
+                        />
                     </div>
                     <div class="w-44">
-                        <FormSelect v-model="filterEstado" id="filter-estado" name="filterEstado" label="" small :options="estadoOptions" />
+                        <FormSelect
+                            v-model="filterEstado"
+                            id="filter-estado"
+                            name="filterEstado"
+                            label=""
+                            small
+                            :options="estadoOptions"
+                        />
                     </div>
                 </div>
             </template>
@@ -66,6 +92,9 @@ const handleCreated = (draft: DteDraft): void => {
             <DteDataTable :records="filteredRecords" />
         </Card>
 
-        <CreateDteModal v-model:is-open="isCreateModalOpen" @created="handleCreated" />
+        <CreateDteModal
+            v-model:is-open="isCreateModalOpen"
+            @created="handleCreated"
+        />
     </div>
 </template>

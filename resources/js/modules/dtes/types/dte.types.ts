@@ -1,4 +1,5 @@
-export type DteStatus = 'PROCESADO' | 'RECHAZADO' | 'CONTINGENCIA' | 'INVALIDADO';
+export type DteStatus =
+    'PROCESADO' | 'RECHAZADO' | 'CONTINGENCIA' | 'INVALIDADO';
 
 export interface DteRecord {
     id: string;

@@ -1,10 +1,16 @@
 import { computed, ref } from 'vue';
-import type { MhCredentialsMetadata, MhCredentialsPayload, MhEnvironment } from '../types/mh-credentials.types';
+import type {
+    MhCredentialsMetadata,
+    MhCredentialsPayload,
+    MhEnvironment,
+} from '../types/mh-credentials.types';
 
 export function useMhCredentialsUi() {
     const selectedEnvironment = ref<MhEnvironment>('PRUEBAS');
     const saveSuccess = ref(false);
-    const metadataByEnvironment = ref<Record<MhEnvironment, MhCredentialsMetadata | null>>({
+    const metadataByEnvironment = ref<
+        Record<MhEnvironment, MhCredentialsMetadata | null>
+    >({
         PRUEBAS: {
             nit: '0614-280390-112-1',
             environment: 'PRUEBAS',
@@ -14,7 +20,9 @@ export function useMhCredentialsUi() {
         PRODUCCION: null,
     });
 
-    const credentialsMetadata = computed(() => metadataByEnvironment.value[selectedEnvironment.value]);
+    const credentialsMetadata = computed(
+        () => metadataByEnvironment.value[selectedEnvironment.value],
+    );
 
     const changeEnvironment = (environment: MhEnvironment): void => {
         selectedEnvironment.value = environment;

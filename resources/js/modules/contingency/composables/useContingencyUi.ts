@@ -5,7 +5,11 @@ export function useContingencyUi() {
     const contingencyActive = ref(false);
     const circuitState = ref<CircuitState>('CLOSED');
 
-    const serviceLabel = computed(() => circuitState.value === 'CLOSED' ? 'OPERATIVO (CLOSED)' : 'EN CONTINGENCIA (OPEN)');
+    const serviceLabel = computed(() =>
+        circuitState.value === 'CLOSED'
+            ? 'OPERATIVO (CLOSED)'
+            : 'EN CONTINGENCIA (OPEN)',
+    );
 
     const toggleActivation = (): void => {
         contingencyActive.value = !contingencyActive.value;

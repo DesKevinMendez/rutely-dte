@@ -1,7 +1,10 @@
 import { ref } from 'vue';
 import * as yup from 'yup';
 
-const emailRule = yup.string().required('El correo electrónico es requerido.').email('Ingresá un correo electrónico válido.');
+const emailRule = yup
+    .string()
+    .required('El correo electrónico es requerido.')
+    .email('Ingresá un correo electrónico válido.');
 
 export default function useRecovery() {
     const email = ref('');

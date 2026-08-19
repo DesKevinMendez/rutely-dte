@@ -71,20 +71,26 @@ export function useDtesUi() {
         const query = searchQuery.value.trim().toLowerCase();
 
         return records.value.filter((record) => {
-            const matchesType = !filterTipoDte.value || record.tipoDte === filterTipoDte.value;
-            const matchesStatus = !filterEstado.value || record.estado === filterEstado.value;
-            const matchesQuery = !query || [
-                record.codigoGeneracion,
-                record.numeroControl,
-                record.receptorNombre,
-                record.receptorDocumento,
-            ].some((value) => value.toLowerCase().includes(query));
+            const matchesType =
+                !filterTipoDte.value || record.tipoDte === filterTipoDte.value;
+            const matchesStatus =
+                !filterEstado.value || record.estado === filterEstado.value;
+            const matchesQuery =
+                !query ||
+                [
+                    record.codigoGeneracion,
+                    record.numeroControl,
+                    record.receptorNombre,
+                    record.receptorDocumento,
+                ].some((value) => value.toLowerCase().includes(query));
 
             return matchesType && matchesStatus && matchesQuery;
         });
     });
 
-    const totalPages = computed(() => Math.max(1, Math.ceil(filteredRecords.value.length / perPage.value)));
+    const totalPages = computed(() =>
+        Math.max(1, Math.ceil(filteredRecords.value.length / perPage.value)),
+    );
     const paginatedRecords = computed(() => {
         const start = (currentPage.value - 1) * perPage.value;
 

@@ -1,4 +1,5 @@
-export type QueueJobStatus = 'PENDING' | 'FAILED_RETRYABLE' | 'FAILED_FATAL' | 'COMPLETED';
+export type QueueJobStatus =
+    'PENDING' | 'FAILED_RETRYABLE' | 'FAILED_FATAL' | 'COMPLETED';
 
 export interface QueueJob {
     id: string;

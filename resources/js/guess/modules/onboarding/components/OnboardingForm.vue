@@ -27,7 +27,8 @@ const {
                 <div>
                     <h2 class="text-base font-bold">Cuenta de administrador</h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Creá la cuenta que utilizarás para administrar Rutely DTE.
+                        Creá la cuenta que utilizarás para administrar Rutely
+                        DTE.
                     </p>
                 </div>
 
@@ -73,11 +74,16 @@ const {
                 </div>
             </section>
 
-            <hr v-if="!isAuthenticated" class="border-gray-100 dark:border-gray-800" />
+            <hr
+                v-if="!isAuthenticated"
+                class="border-gray-100 dark:border-gray-800"
+            />
 
             <section class="space-y-4">
                 <div>
-                    <h2 class="text-base font-bold">Información fiscal y comercial</h2>
+                    <h2 class="text-base font-bold">
+                        Información fiscal y comercial
+                    </h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                         Datos generales del contribuyente emisor.
                     </p>
@@ -210,7 +216,11 @@ const {
                         id="onboarding-municipality-select"
                         name="municipalityId"
                         label="Municipio (CAT-013)"
-                        :placeholder="form.departmentId ? 'Seleccioná' : 'Elegí un departamento'"
+                        :placeholder="
+                            form.departmentId
+                                ? 'Seleccioná'
+                                : 'Elegí un departamento'
+                        "
                         :url="municipalityUrl"
                         search-by="filter[name]"
                         label-key="name"
@@ -226,7 +236,11 @@ const {
                         id="onboarding-district-select"
                         name="districtId"
                         label="Distrito (CAT-008)"
-                        :placeholder="form.municipalityId ? 'Seleccioná' : 'Elegí un municipio'"
+                        :placeholder="
+                            form.municipalityId
+                                ? 'Seleccioná'
+                                : 'Elegí un municipio'
+                        "
                         :url="districtUrl"
                         search-by="filter[name]"
                         label-key="name"
@@ -242,9 +256,12 @@ const {
 
             <section class="space-y-4">
                 <div>
-                    <h2 class="text-base font-bold">Códigos internos del establecimiento</h2>
+                    <h2 class="text-base font-bold">
+                        Códigos internos del establecimiento
+                    </h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        Estos códigos los define tu empresa y se utilizarán para construir el número de control de los DTE.
+                        Estos códigos los define tu empresa y se utilizarán para
+                        construir el número de control de los DTE.
                     </p>
                 </div>
 
@@ -259,7 +276,7 @@ const {
                         mask="****"
                     />
 
-                        <FormInput
+                    <FormInput
                         v-model="form.ownPosCode"
                         id="ownPosCode"
                         name="ownPosCode"
@@ -271,8 +288,15 @@ const {
                 </div>
             </section>
 
-            <div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 dark:border-gray-800 sm:flex-row sm:items-center sm:justify-between">
-                <BaseButton type="button" variant="outline" size="auto" @click="goToLogin">
+            <div
+                class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800"
+            >
+                <BaseButton
+                    type="button"
+                    variant="outline"
+                    size="auto"
+                    @click="goToLogin"
+                >
                     Volver al login
                 </BaseButton>
 

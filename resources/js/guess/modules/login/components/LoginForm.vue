@@ -3,7 +3,6 @@ import { BaseButton, Card, FormInput } from 'ornito';
 import { Form } from 'vee-validate';
 import useLogin from '../composables/useLogin';
 const { email, password, rules, isLoading, login } = useLogin();
-
 </script>
 
 <template>
@@ -46,7 +45,9 @@ const { email, password, rules, isLoading, login } = useLogin();
                 Acceder al Sistema
             </BaseButton>
         </Form>
-        <p class="text-center text-base block text-gray-500 dark:text-gray-400 mt-4">
+        <p
+            class="mt-4 block text-center text-base text-gray-500 dark:text-gray-400"
+        >
             ¿No tenés una cuenta?
             <RouterLink
                 :to="{ name: 'onboarding' }"
