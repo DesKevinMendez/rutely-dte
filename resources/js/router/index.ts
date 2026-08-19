@@ -33,6 +33,7 @@ const router = createRouter({
             children: [
                 { path: '', redirect: { name: 'dashboard' } },
                 { path: 'dashboard', name: 'dashboard', component: () => import('@/modules/dashboard/views/DashboardView.vue') },
+                { path: 'dtes', name: 'dtes', component: () => import('@/modules/dtes/views/DtesView.vue') },
             ],
         },
     ],
