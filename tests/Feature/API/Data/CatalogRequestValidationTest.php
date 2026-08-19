@@ -6,13 +6,8 @@ test('catalog endpoints validate per page', function (string $routeName) {
     ]));
 
     $response->assertUnprocessable()
-        ->assertExactJson([
-            'message' => 'The per page field must be an integer.',
-            'errors' => [
-                'per_page' => [
-                    'The per page field must be an integer.',
-                ],
-            ],
+        ->assertJsonValidationErrors([
+            'per_page' => 'El campo elementos por página debe ser un número entero.',
         ]);
 })->with([
     'departments' => 'api.v1.data.departments.index',

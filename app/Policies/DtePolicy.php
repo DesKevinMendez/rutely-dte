@@ -4,63 +4,53 @@ namespace App\Policies;
 
 use App\Models\Dte;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Role;
 
 class DtePolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $this->canUseDtes($user);
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
     public function view(User $user, Dte $dte): bool
     {
-        return false;
+        return $this->canUseDtes($user) && $user->company_id === $dte->company_id;
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return false;
+        return $this->canUseDtes($user);
     }
 
-    /**
-     * Determine whether the user can update the model.
-     */
+    public function invalidate(User $user, Dte $dte): bool
+    {
+        return $this->view($user, $dte) && ! in_array($dte->status, ['INVALIDADO'], true);
+    }
+
     public function update(User $user, Dte $dte): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, Dte $dte): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
     public function restore(User $user, Dte $dte): bool
     {
         return false;
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
     public function forceDelete(User $user, Dte $dte): bool
     {
         return false;
+    }
+
+    private function canUseDtes(User $user): bool
+    {
+        return $user->company_id !== null
+            && in_array($user->role, [Role::ADMIN->value, Role::USER->value, Role::SUPERADMIN->value], true);
     }
 }

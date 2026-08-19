@@ -2,65 +2,54 @@
 
 namespace App\Http\Controllers;
 
+use App\Environment;
+use App\Http\Requests\Mh\ShowMhCredentialsRequest;
 use App\Http\Requests\Mh\StoreMhCredentialsRequest;
-use App\Http\Requests\Mh\UpdateMhCredentialsRequest;
 use App\Models\MhCredentials;
+use App\Response\CommonResponse;
 
 class MhCredentialsController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function store(StoreMhCredentialsRequest $request): CommonResponse
     {
-        //
+        $data = $request->validated();
+
+        $credentials = MhCredentials::query()->updateOrCreate(
+            [
+                'company_id' => $request->user()->company_id,
+                'environment' => $data['environment'],
+            ],
+            [
+                'nit' => $data['nit'],
+                'password' => $data['pwd'],
+                'active' => true,
+            ],
+        );
+
+        return new CommonResponse($this->metadata($credentials->refresh()));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function show(ShowMhCredentialsRequest $request): CommonResponse
     {
-        //
+        $environment = $request->validated('environment', Environment::SANDBOX->value);
+        $credentials = MhCredentials::query()
+            ->where('company_id', $request->user()->company_id)
+            ->where('environment', $environment)
+            ->latest('updated_at')
+            ->firstOrFail();
+
+        return new CommonResponse($this->metadata($credentials));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreMhCredentialsRequest $request)
+    /** @return array<string, mixed> */
+    private function metadata(MhCredentials $credentials): array
     {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(MhCredentials $mhCredentials)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(MhCredentials $mhCredentials)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateMhCredentialsRequest $request, MhCredentials $mhCredentials)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(MhCredentials $mhCredentials)
-    {
-        //
+        return [
+            'id' => $credentials->id,
+            'environment' => $credentials->environment->value,
+            'nit' => $credentials->nit,
+            'active' => $credentials->active,
+            'updated_at' => $credentials->updated_at?->toJSON(),
+        ];
     }
 }

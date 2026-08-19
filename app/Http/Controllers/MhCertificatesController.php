@@ -2,65 +2,62 @@
 
 namespace App\Http\Controllers;
 
+use App\Environment;
+use App\Http\Requests\Mh\ShowMhCertificatesRequest;
 use App\Http\Requests\Mh\StoreMhCertificatesRequest;
-use App\Http\Requests\Mh\UpdateMhCertificatesRequest;
 use App\Models\MhCertificates;
+use App\Response\CommonResponse;
+use App\Services\Mh\MhCertificateService;
 
 class MhCertificatesController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function store(StoreMhCertificatesRequest $request, MhCertificateService $certificateService): CommonResponse
     {
-        //
+        $data = $request->validated();
+        $password = (string) ($data['passwordPri'] ?? '');
+        $nit = $certificateService->validateForCompany(
+            (string) $request->user()->company_id,
+            $data['certificadoXml'],
+            $password,
+        );
+
+        $storedCertificate = MhCertificates::query()->updateOrCreate(
+            [
+                'company_id' => $request->user()->company_id,
+                'environment' => $data['environment'],
+            ],
+            [
+                'nit' => $nit,
+                'encrypted_certificate' => $data['certificadoXml'],
+                'encrypted_private_key_password' => $password,
+                'active' => true,
+            ],
+        );
+
+        return new CommonResponse($this->metadata($storedCertificate->refresh()));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function show(ShowMhCertificatesRequest $request): CommonResponse
     {
-        //
+        $environment = $request->validated('environment', Environment::SANDBOX->value);
+        $certificate = MhCertificates::query()
+            ->where('company_id', $request->user()->company_id)
+            ->where('environment', $environment)
+            ->latest('updated_at')
+            ->firstOrFail();
+
+        return new CommonResponse($this->metadata($certificate));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreMhCertificatesRequest $request)
+    /** @return array<string, mixed> */
+    private function metadata(MhCertificates $certificate): array
     {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(MhCertificates $mhCertificates)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(MhCertificates $mhCertificates)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateMhCertificatesRequest $request, MhCertificates $mhCertificates)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(MhCertificates $mhCertificates)
-    {
-        //
+        return [
+            'id' => $certificate->id,
+            'environment' => $certificate->environment->value,
+            'nit' => $certificate->nit,
+            'active' => $certificate->active,
+            'updated_at' => $certificate->updated_at?->toJSON(),
+        ];
     }
 }

@@ -2,28 +2,31 @@
 
 namespace App\Http\Requests\Dte;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Models\Dte;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreDteInvalidationRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return false;
+        $dte = $this->route('dte');
+
+        return $dte instanceof Dte && ($this->user()?->can('invalidate', $dte) ?? false);
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
-            //
+            'tipoAnulacion' => ['sometimes', 'integer', Rule::in([1, 2, 3])],
+            'motivoAnulacion' => ['sometimes', 'string', 'min:5', 'max:500'],
+            'nombreResponsable' => ['sometimes', 'string', 'max:255'],
+            'tipDocResponsable' => ['sometimes', 'string', 'max:10'],
+            'numDocResponsable' => ['sometimes', 'string', 'max:50'],
+            'nombreSolicita' => ['sometimes', 'string', 'max:255'],
+            'tipDocSolicita' => ['sometimes', 'string', 'max:10'],
+            'numDocSolicita' => ['sometimes', 'string', 'max:50'],
         ];
     }
 }

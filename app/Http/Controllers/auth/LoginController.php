@@ -30,7 +30,7 @@ class LoginController extends Controller
 
         return CommonResource::make([
             'token' => $token,
-            'user' => $user,
+            'user' => $user->makeHidden('status'),
         ]);
     }
 }

@@ -2,28 +2,48 @@
 
 namespace App\Http\Requests\Mh;
 
-use Illuminate\Contracts\Validation\ValidationRule;
+use App\Environment;
+use App\Models\MhCertificates;
+use App\Services\Mh\MhCertificateService;
+use DomainException;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreMhCertificatesRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return false;
+        return $this->user()?->can('create', MhCertificates::class) ?? false;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array<mixed>|string>
-     */
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
-            //
+            'environment' => ['required', 'string', Rule::enum(Environment::class)],
+            'certificadoXml' => ['required', 'string'],
+            'passwordPri' => ['nullable', 'string', 'max:255'],
         ];
+    }
+
+    /** @return array<int, callable> */
+    public function after(): array
+    {
+        return [function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            try {
+                app(MhCertificateService::class)->validateForCompany(
+                    (string) $this->user()?->company_id,
+                    $this->string('certificadoXml')->toString(),
+                    (string) ($this->input('passwordPri') ?? ''),
+                );
+            } catch (DomainException $exception) {
+                $validator->errors()->add('certificadoXml', $exception->getMessage());
+            }
+        }];
     }
 }
