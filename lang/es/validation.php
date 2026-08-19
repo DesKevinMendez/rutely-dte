@@ -1,9 +1,13 @@
 <?php
 
 return [
+    'boolean' => 'El campo :attribute debe ser verdadero o falso.',
     'confirmed' => 'La confirmación del campo :attribute no coincide.',
     'email' => 'El campo :attribute debe ser una dirección de correo electrónico válida.',
+    'enum' => 'El valor seleccionado para :attribute no es válido.',
     'exists' => 'El valor seleccionado para :attribute no es válido.',
+    'in' => 'El valor seleccionado para :attribute no es válido.',
+    'integer' => 'El campo :attribute debe ser un número entero.',
     'max' => [
         'array' => 'El campo :attribute no debe contener más de :max elementos.',
         'file' => 'El campo :attribute no debe ser mayor que :max kilobytes.',
@@ -16,6 +20,7 @@ return [
         'numeric' => 'El campo :attribute debe ser al menos :min.',
         'string' => 'El campo :attribute debe contener al menos :min caracteres.',
     ],
+    'prohibited' => 'El campo :attribute está prohibido.',
     'regex' => 'El formato del campo :attribute no es válido.',
     'required' => 'El campo :attribute es obligatorio.',
     'size' => [
@@ -42,6 +47,11 @@ return [
         'district_id' => 'distrito',
         'email' => 'correo electrónico',
         'password' => 'contraseña',
+        'role' => 'rol',
+        'status' => 'estado',
+        'company_id' => 'empresa',
+        'environment' => 'ambiente',
+        'per_page' => 'elementos por página',
         'mh_establishment_code' => 'código de establecimiento MH',
         'mh_pos_code' => 'código de punto de venta MH',
         'own_establishment_code' => 'código propio de establecimiento',
