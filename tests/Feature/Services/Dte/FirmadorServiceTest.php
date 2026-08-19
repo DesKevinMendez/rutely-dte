@@ -5,6 +5,7 @@ use App\Models\MhCertificates;
 use App\Services\Dte\FirmadorService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Rutely\DteSigned\DteSigner;
 use Rutely\DteSigned\Tests\Support\OfficialMhFixture;
 
@@ -122,7 +123,7 @@ test('it fails closed when the company has no signing material for the environme
         Environment::SANDBOX,
         OfficialMhFixture::NIT,
     ))->toThrow(
-        \RuntimeException::class,
+        RuntimeException::class,
         'No hay material de firma configurado para la empresa y el ambiente seleccionados.',
     );
 });
@@ -136,7 +137,7 @@ test('it rejects an inactive certificate', function () {
         dteForSigning(),
         Environment::SANDBOX,
         OfficialMhFixture::NIT,
-    ))->toThrow(\RuntimeException::class, 'El certificado configurado está inactivo.');
+    ))->toThrow(RuntimeException::class, 'El certificado configurado está inactivo.');
 });
 
 test('it rejects a certificate whose NIT does not match the issuer', function () {
@@ -148,5 +149,5 @@ test('it rejects a certificate whose NIT does not match the issuer', function ()
         dteForSigning(),
         Environment::SANDBOX,
         '0614-281290-101-5',
-    ))->toThrow(\RuntimeException::class, 'El NIT del certificado no coincide con el NIT de la empresa.');
+    ))->toThrow(RuntimeException::class, 'El NIT del certificado no coincide con el NIT de la empresa.');
 });
