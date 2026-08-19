@@ -75,8 +75,16 @@ test('an admin can create a company and is assigned to it', function () {
     $response = $this->postJson(route('api.v1.companies.store'), $payload);
 
     $response->assertCreated()
-        ->assertJsonPath('data.name', $payload['name'])
-        ->assertJsonPath('data.nit', $payload['nit']);
+        ->assertExactJson([
+            'data' => [
+                'id' => $response->json('data.id'),
+                ...$payload,
+                'is_onboarded' => $response->json('data.is_onboarded'),
+                'environment' => $response->json('data.environment'),
+                'created_at' => $response->json('data.created_at'),
+                'updated_at' => $response->json('data.updated_at'),
+            ],
+        ]);
 
     $companyId = $response->json('data.id');
 
