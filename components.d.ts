@@ -11,6 +11,9 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ApiTokensContent: typeof import('./resources/js/modules/tokens/components/ApiTokensContent.vue')['default']
+    ApiTokensSkeleton: typeof import('./resources/js/modules/tokens/components/ApiTokensSkeleton.vue')['default']
+    ApiTokensView: typeof import('./resources/js/modules/tokens/views/ApiTokensView.vue')['default']
     App: typeof import('./resources/js/App.vue')['default']
     AuthHero: typeof import('./resources/js/modules/auth/components/AuthHero.vue')['default']
     CertificateRequirementsCard: typeof import('./resources/js/modules/certificates/components/CertificateRequirementsCard.vue')['default']
@@ -24,6 +27,7 @@ declare module 'vue' {
     ContingencySkeleton: typeof import('./resources/js/modules/contingency/components/ContingencySkeleton.vue')['default']
     ContingencyStatusCards: typeof import('./resources/js/modules/contingency/components/ContingencyStatusCards.vue')['default']
     ContingencyView: typeof import('./resources/js/modules/contingency/views/ContingencyView.vue')['default']
+    CreateApiTokenModal: typeof import('./resources/js/modules/tokens/components/CreateApiTokenModal.vue')['default']
     CreateDteModal: typeof import('./resources/js/modules/dtes/components/CreateDteModal.vue')['default']
     DashboardContent: typeof import('./resources/js/modules/dashboard/components/DashboardContent.vue')['default']
     DashboardMetrics: typeof import('./resources/js/modules/dashboard/components/DashboardMetrics.vue')['default']
@@ -33,6 +37,7 @@ declare module 'vue' {
     DtesContent: typeof import('./resources/js/modules/dtes/components/DtesContent.vue')['default']
     DtesSkeleton: typeof import('./resources/js/modules/dtes/components/DtesSkeleton.vue')['default']
     DtesView: typeof import('./resources/js/modules/dtes/views/DtesView.vue')['default']
+    GeneratedApiTokenModal: typeof import('./resources/js/modules/tokens/components/GeneratedApiTokenModal.vue')['default']
     LayoutAuthenticated: typeof import('./resources/js/layouts/LayoutAuthenticated.vue')['default']
     LayoutGuest: typeof import('./resources/js/layouts/LayoutGuest.vue')['default']
     LoginForm: typeof import('./resources/js/guess/modules/login/components/LoginForm.vue')['default']

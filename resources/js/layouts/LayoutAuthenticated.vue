@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
     IconAlertTriangle,
+    IconApi,
     IconCertificate,
     IconDashboard,
     IconFileText,
@@ -38,6 +39,7 @@ const navigation: RoutesLink[] = [
     { route: '/queue', name: 'Cola Reintentos', icon: IconRefresh },
     { route: '/certificates', name: 'Certificados MH', icon: IconCertificate },
     { route: '/mh-credentials', name: 'Credenciales MH', icon: IconKey },
+    { route: '/tokens', name: 'Tokens API', icon: IconApi },
 ];
 
 const userName = computed(() => auth.user?.name ?? 'Usuario');

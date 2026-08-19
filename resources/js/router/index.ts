@@ -84,6 +84,12 @@ const router = createRouter({
                         import('@/modules/mh-credentials/views/MhCredentialsView.vue'),
                 },
                 {
+                    path: 'tokens',
+                    name: 'tokens',
+                    component: () =>
+                        import('@/modules/tokens/views/ApiTokensView.vue'),
+                },
+                {
                     path: 'my-profile',
                     name: 'my-profile',
                     component: () =>
