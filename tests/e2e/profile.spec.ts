@@ -6,9 +6,11 @@ test.describe('My profile', () => {
         await authenticateDeveloper(page);
         await page.goto('/#/my-profile');
 
+        const main = page.getByRole('main');
+
         await expect(page.getByRole('heading', { name: 'Mi Perfil' })).toBeVisible();
-        await expect(page.getByText('Playwright User', { exact: true })).toBeVisible();
-        await expect(page.getByText('Admin', { exact: true })).toBeVisible();
-        await expect(page.getByText('playwright@rutely.biz', { exact: true })).toBeVisible();
+        await expect(main.getByText('Playwright User', { exact: true })).toBeVisible();
+        await expect(main.getByText('Admin', { exact: true })).toBeVisible();
+        await expect(main.getByText('playwright@rutely.biz', { exact: true })).toBeVisible();
     });
 });
