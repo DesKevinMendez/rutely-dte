@@ -7,10 +7,10 @@ test('catalog endpoints validate per page', function (string $routeName) {
 
     $response->assertUnprocessable()
         ->assertExactJson([
-            'message' => 'The per page field must be an integer.',
+            'message' => 'El campo elementos por página debe ser un número entero.',
             'errors' => [
                 'per_page' => [
-                    'The per page field must be an integer.',
+                    'El campo elementos por página debe ser un número entero.',
                 ],
             ],
         ]);
