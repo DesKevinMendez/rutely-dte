@@ -60,6 +60,26 @@ export function createLoginApiMock(): LoginApiMock {
                 body: JSON.stringify({ data }),
             });
         });
+
+        await page.route('**/api/v1/dashboard', async (route) => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    data: {
+                        metrics: {
+                            total: 0,
+                            processed: 0,
+                            rejected: 0,
+                            invalidated: 0,
+                            total_amount: 0,
+                            pending_transmissions: 0,
+                        },
+                        recent_dtes: [],
+                    },
+                }),
+            });
+        });
     };
 
     return {
