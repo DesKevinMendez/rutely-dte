@@ -12,6 +12,9 @@ use Rutely\DteSigned\DteSigner;
 
 final class FirmadorService
 {
+    /**
+     * @param  array<array-key, mixed>|object|string  $dteJson
+     */
     public function signDocument(
         string $companyId,
         array|object|string $dteJson,
@@ -37,7 +40,7 @@ final class FirmadorService
         $certificateXml = $storedCertificate->encrypted_certificate;
         $password = $storedCertificate->encrypted_private_key_password;
 
-        if (! is_string($certificateXml) || ! is_string($password)) {
+        if ($certificateXml === '' || $password === '') {
             throw new RuntimeException('El material de firma configurado no es válido.');
         }
 
