@@ -8,6 +8,7 @@ export function useAuthSession() {
     const ensureSession = async (): Promise<boolean> => {
         if (!auth.isAuthenticated) {
             auth.clearSession();
+
             return false;
         }
 
@@ -20,10 +21,12 @@ export function useAuthSession() {
 
         if (response.statusCode.value === 200 && response.data.value) {
             auth.setUser(response.data.value);
+
             return true;
         }
 
         auth.clearSession();
+
         return false;
     };
 
