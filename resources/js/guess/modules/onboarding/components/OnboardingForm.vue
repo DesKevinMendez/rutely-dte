@@ -1,16 +1,79 @@
 <script setup lang="ts">
-import { ErrorMessage } from 'vee-validate';
 import { BaseButton, Card, FormInput, SearchableSelect } from 'ornito';
+import { Form } from 'vee-validate';
 import useOnboarding from '../composables/useOnboarding';
 
-const { form, rules, municipalityUrl, districtUrl, continueFlow, goToLogin } = useOnboarding();
-
-const errorClass = 'mt-1 text-sm text-danger-600 dark:text-danger-400';
+const {
+    form,
+    rules,
+    municipalityUrl,
+    districtUrl,
+    isAuthenticated,
+    isLoading,
+    continueFlow,
+    goToLogin,
+} = useOnboarding();
 </script>
 
 <template>
     <Card class="border-gray-200 dark:border-gray-800">
-        <form id="onboarding-form" class="space-y-8" @submit.prevent="continueFlow">
+        <Form id="onboarding-form" class="space-y-8" @submit="continueFlow">
+            <section v-if="!isAuthenticated" class="space-y-4">
+                <div>
+                    <h2 class="text-base font-bold">Cuenta de administrador</h2>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        Creá la cuenta que utilizarás para administrar Rutely DTE.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormInput
+                        v-model="form.userName"
+                        id="userName"
+                        name="userName"
+                        label="Nombre"
+                        placeholder="Ej. Kevin Mendez"
+                        autocomplete="name"
+                        :rules="rules.userName"
+                    />
+
+                    <FormInput
+                        v-model="form.userEmail"
+                        id="userEmail"
+                        name="userEmail"
+                        type="email"
+                        label="Correo Electrónico"
+                        placeholder="admin@rutely.biz"
+                        autocomplete="email"
+                        :rules="rules.userEmail"
+                    />
+
+                    <FormInput
+                        v-model="form.password"
+                        id="password"
+                        name="password"
+                        type="password"
+                        label="Contraseña"
+                        placeholder="••••••••"
+                        autocomplete="new-password"
+                        :rules="rules.password"
+                    />
+
+                    <FormInput
+                        v-model="form.passwordConfirmation"
+                        id="passwordConfirmation"
+                        name="passwordConfirmation"
+                        type="password"
+                        label="Confirmar Contraseña"
+                        placeholder="••••••••"
+                        autocomplete="new-password"
+                        :rules="rules.passwordConfirmation"
+                    />
+                </div>
+            </section>
+
+            <hr v-if="!isAuthenticated" class="border-gray-100 dark:border-gray-800" />
+
             <section class="space-y-4">
                 <div>
                     <h2 class="text-base font-bold">Información fiscal y comercial</h2>
@@ -58,40 +121,34 @@ const errorClass = 'mt-1 text-sm text-danger-600 dark:text-danger-400';
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                        <SearchableSelect
-                            v-model="form.economicActivityCode"
-                            id="economicActivityCode"
-                            name="economicActivityCode"
-                            label="Actividad Económica (CAT-019)"
-                            placeholder="Buscá por descripción"
-                            url="/api/v1/data/economic-activities?per_page=25"
-                            search-by="filter[description]"
-                            label-key="{code} - {description}"
-                            value-key="code"
-                            subtitle-key="code"
-                            :rules="rules.economicActivityCode"
-                        />
-                        <ErrorMessage name="economicActivityCode" :class="errorClass" />
-                    </div>
+                    <SearchableSelect
+                        v-model="form.economicActivityCode"
+                        id="economicActivityCode"
+                        name="economicActivityCode"
+                        label="Actividad Económica (CAT-019)"
+                        placeholder="Buscá por descripción"
+                        url="/api/v1/data/economic-activities?per_page=25"
+                        search-by="filter[description]"
+                        label-key="{code} - {description}"
+                        value-key="code"
+                        subtitle-key="code"
+                        :rules="rules.economicActivityCode"
+                    />
 
-                    <div>
-                        <SearchableSelect
-                            v-model="form.establishmentType"
-                            id="establishmentType"
-                            name="establishmentType"
-                            label="Tipo de Establecimiento (CAT-009)"
-                            placeholder="Seleccioná un tipo"
-                            url="/api/v1/data/establishment-types?per_page=100"
-                            search-by="filter[description]"
-                            label-key="description"
-                            value-key="code"
-                            subtitle-key="code"
-                            local-search-first
-                            :rules="rules.establishmentType"
-                        />
-                        <ErrorMessage name="establishmentType" :class="errorClass" />
-                    </div>
+                    <SearchableSelect
+                        v-model="form.establishmentType"
+                        id="establishmentType"
+                        name="establishmentType"
+                        label="Tipo de Establecimiento (CAT-009)"
+                        placeholder="Seleccioná un tipo"
+                        url="/api/v1/data/establishment-types?per_page=100"
+                        search-by="filter[description]"
+                        label-key="description"
+                        value-key="code"
+                        subtitle-key="code"
+                        local-search-first
+                        :rules="rules.establishmentType"
+                    />
                 </div>
             </section>
 
@@ -139,63 +196,54 @@ const errorClass = 'mt-1 text-sm text-danger-600 dark:text-danger-400';
                 />
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    <div>
-                        <SearchableSelect
-                            v-model="form.departmentId"
-                            id="departmentId"
-                            name="departmentId"
-                            label="Departamento (CAT-012)"
-                            placeholder="Seleccioná"
-                            url="/api/v1/data/departments?per_page=100"
-                            search-by="filter[name]"
-                            label-key="name"
-                            value-key="id"
-                            subtitle-key="code"
-                            local-search-first
-                            :rules="rules.departmentId"
-                        />
-                        <ErrorMessage name="departmentId" :class="errorClass" />
-                    </div>
+                    <SearchableSelect
+                        v-model="form.departmentId"
+                        id="departmentId"
+                        name="departmentId"
+                        label="Departamento (CAT-012)"
+                        placeholder="Seleccioná"
+                        url="/api/v1/data/departments?per_page=100"
+                        search-by="filter[name]"
+                        label-key="name"
+                        value-key="id"
+                        subtitle-key="code"
+                        local-search-first
+                        :rules="rules.departmentId"
+                    />
 
-                    <div>
-                        <SearchableSelect
-                            :key="form.departmentId || 'municipality-empty'"
-                            v-model="form.municipalityId"
-                            id="municipalityId"
-                            name="municipalityId"
-                            label="Municipio (CAT-013)"
-                            :placeholder="form.departmentId ? 'Seleccioná' : 'Elegí un departamento'"
-                            :url="municipalityUrl"
-                            search-by="filter[name]"
-                            label-key="name"
-                            value-key="id"
-                            subtitle-key="code"
-                            :disabled="!form.departmentId"
-                            local-search-first
-                            :rules="rules.municipalityId"
-                        />
-                        <ErrorMessage name="municipalityId" :class="errorClass" />
-                    </div>
+                    <SearchableSelect
+                        :key="form.departmentId || 'municipality-empty'"
+                        v-model="form.municipalityId"
+                        id="municipalityId"
+                        name="municipalityId"
+                        label="Municipio (CAT-013)"
+                        :placeholder="form.departmentId ? 'Seleccioná' : 'Elegí un departamento'"
+                        :url="municipalityUrl"
+                        search-by="filter[name]"
+                        label-key="name"
+                        value-key="id"
+                        subtitle-key="code"
+                        :disabled="!form.departmentId"
+                        local-search-first
+                        :rules="rules.municipalityId"
+                    />
 
-                    <div>
-                        <SearchableSelect
-                            :key="form.municipalityId || 'district-empty'"
-                            v-model="form.districtId"
-                            id="districtId"
-                            name="districtId"
-                            label="Distrito (CAT-008)"
-                            :placeholder="form.municipalityId ? 'Seleccioná' : 'Elegí un municipio'"
-                            :url="districtUrl"
-                            search-by="filter[name]"
-                            label-key="name"
-                            value-key="id"
-                            subtitle-key="code"
-                            :disabled="!form.municipalityId"
-                            local-search-first
-                            :rules="rules.districtId"
-                        />
-                        <ErrorMessage name="districtId" :class="errorClass" />
-                    </div>
+                    <SearchableSelect
+                        :key="form.municipalityId || 'district-empty'"
+                        v-model="form.districtId"
+                        id="districtId"
+                        name="districtId"
+                        label="Distrito (CAT-008)"
+                        :placeholder="form.municipalityId ? 'Seleccioná' : 'Elegí un municipio'"
+                        :url="districtUrl"
+                        search-by="filter[name]"
+                        label-key="name"
+                        value-key="id"
+                        subtitle-key="code"
+                        :disabled="!form.municipalityId"
+                        local-search-first
+                        :rules="rules.districtId"
+                    />
                 </div>
             </section>
 
@@ -235,10 +283,15 @@ const errorClass = 'mt-1 text-sm text-danger-600 dark:text-danger-400';
                     Volver al login
                 </BaseButton>
 
-                <BaseButton form="onboarding-form" type="submit" variant="primary" size="auto">
+                <BaseButton
+                    type="submit"
+                    variant="primary"
+                    size="auto"
+                    :loading="isLoading"
+                >
                     Continuar
                 </BaseButton>
             </div>
-        </form>
+        </Form>
     </Card>
 </template>
