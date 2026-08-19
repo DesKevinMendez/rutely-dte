@@ -14,9 +14,7 @@ class CompanyEnvironmentController extends Controller
         Gate::authorize('view', $company);
 
         return new CommonResponse([
-            'data' => [
-                'environment' => $company->environment,
-            ],
+            'environment' => $company->environment,
         ]);
     }
 
@@ -25,9 +23,7 @@ class CompanyEnvironmentController extends Controller
         $company->forceFill($request->validated())->save();
 
         return new CommonResponse([
-            'data' => [
-                'environment' => $company->refresh()->environment,
-            ],
+            'environment' => $company->refresh()->environment,
         ]);
     }
 }
