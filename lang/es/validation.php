@@ -76,5 +76,13 @@ return [
         'mh_pos_code' => 'código de punto de venta MH',
         'own_establishment_code' => 'código propio de establecimiento',
         'own_pos_code' => 'código propio de punto de venta',
+        'tipoAnulacion' => 'tipo de anulación',
+        'motivoAnulacion' => 'motivo de anulación',
+        'nombreResponsable' => 'nombre del responsable',
+        'tipDocResponsable' => 'tipo de documento del responsable',
+        'numDocResponsable' => 'número de documento del responsable',
+        'nombreSolicita' => 'nombre del solicitante',
+        'tipDocSolicita' => 'tipo de documento del solicitante',
+        'numDocSolicita' => 'número de documento del solicitante',
     ],
 ];
