@@ -20,11 +20,11 @@ class QueueController extends Controller
                 ->where('company_id', $request->user()->company_id)
                 ->whereIn('status', ['pending', 'failed']),
         )
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('operation'),
-            ])
-            ->allowedSorts(['created_at', 'attempt', 'status', 'operation'])
+            )
+            ->allowedSorts('created_at', 'attempt', 'status', 'operation')
             ->defaultSort('-created_at')
             ->paginate($request->integer('per_page', 50));
 
