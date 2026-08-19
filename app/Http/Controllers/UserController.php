@@ -21,13 +21,13 @@ class UserController extends Controller
         Gate::authorize('viewAny', User::class);
 
         $users = QueryBuilder::for(User::query()->where('company_id', $request->user()->company_id))
-            ->allowedFilters([
+            ->allowedFilters(
                 AllowedFilter::partial('name'),
                 AllowedFilter::partial('email'),
                 AllowedFilter::exact('role'),
                 AllowedFilter::exact('status'),
-            ])
-            ->allowedSorts(['name', 'email', 'role', 'status', 'created_at'])
+            )
+            ->allowedSorts('name', 'email', 'role', 'status', 'created_at')
             ->defaultSort('name')
             ->paginate($request->integer('per_page', 10));
 
@@ -43,7 +43,7 @@ class UserController extends Controller
 
         $user = User::query()->create($data);
 
-        return new CommonResponse($user, 201);
+        return new CommonResponse($user->refresh(), 201);
     }
 
     public function show(User $user): CommonResponse
