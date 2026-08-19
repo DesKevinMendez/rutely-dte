@@ -1,8 +1,14 @@
 <?php
 
+use App\Mail\WelcomeMail;
 use App\Models\User;
 use App\Role;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+
+beforeEach(function () {
+    Mail::fake();
+});
 
 function validRegisterPayload(): array
 {
@@ -52,6 +58,27 @@ test('a user can register and is assigned the admin role', function () {
     $user = User::query()->findOrFail($userId);
 
     expect(Hash::check($payload['password'], $user->password))->toBeTrue();
+
+    Mail::assertQueued(WelcomeMail::class, function (WelcomeMail $mail) use ($payload, $userId): bool {
+        return $mail->hasTo($payload['email'])
+            && $mail->user->id === $userId
+            && $mail->user->email === $payload['email'];
+    });
+});
+
+test('welcome email contains the registered user information', function () {
+    $user = User::factory()->make([
+        'name' => 'Kevin Mendez',
+        'email' => 'kevin@example.com',
+    ]);
+
+    $mailable = new WelcomeMail($user);
+
+    $mailable->assertHasSubject('Bienvenido a Rutely')
+        ->assertSeeInHtml('Kevin Mendez')
+        ->assertSeeInHtml('kevin@example.com')
+        ->assertSeeInText('Kevin Mendez')
+        ->assertSeeInText('kevin@example.com');
 });
 
 test('phone may be null when registering', function () {
