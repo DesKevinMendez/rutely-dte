@@ -7,9 +7,14 @@ import type {
     CertificateUploadPayload,
 } from '../types/certificate.types';
 
-const props = defineProps<{
+const {
+    selectedEnvironment,
+    uploadSuccess,
+    isSubmitting = false,
+} = defineProps<{
     selectedEnvironment: CertificateEnvironment;
     uploadSuccess: boolean;
+    isSubmitting?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -17,11 +22,13 @@ const emit = defineEmits<{
     upload: [payload: CertificateUploadPayload];
 }>();
 
+const selectedFile = ref<File | null>(null);
 const fileName = ref('');
 const password = ref('');
 const isDragging = ref(false);
 
 const setFile = (file?: File): void => {
+    selectedFile.value = file ?? null;
     fileName.value = file?.name ?? '';
 };
 
@@ -36,11 +43,14 @@ const handleDrop = (event: DragEvent): void => {
 };
 
 const submit = (): void => {
-    if (!fileName.value) {
+    if (!selectedFile.value || isSubmitting) {
         return;
     }
 
-    emit('upload', { fileName: fileName.value, password: password.value });
+    emit('upload', {
+        file: selectedFile.value,
+        password: password.value,
+    });
 };
 </script>
 
@@ -51,12 +61,11 @@ const submit = (): void => {
     >
         <form class="space-y-5" @submit.prevent="submit">
             <div
-                v-if="props.uploadSuccess"
+                v-if="uploadSuccess"
                 class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
             >
-                Certificado cargado en la simulación UI para el ambiente de
-                <strong>{{ props.selectedEnvironment }}</strong
-                >.
+                Certificado guardado correctamente para el ambiente de
+                <strong>{{ selectedEnvironment }}</strong>.
             </div>
 
             <div>
@@ -71,8 +80,9 @@ const submit = (): void => {
                         variant="outline"
                         size="auto"
                         class="h-auto justify-start py-3 text-left"
+                        :disabled="isSubmitting"
                         :class="
-                            props.selectedEnvironment === 'PRUEBAS'
+                            selectedEnvironment === 'PRUEBAS'
                                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30'
                                 : ''
                         "
@@ -91,8 +101,9 @@ const submit = (): void => {
                         variant="outline"
                         size="auto"
                         class="h-auto justify-start py-3 text-left"
+                        :disabled="isSubmitting"
                         :class="
-                            props.selectedEnvironment === 'PRODUCCION'
+                            selectedEnvironment === 'PRODUCCION'
                                 ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30'
                                 : ''
                         "
@@ -151,6 +162,7 @@ const submit = (): void => {
                     type="file"
                     class="sr-only"
                     accept=".xml,.crt,.txt"
+                    :disabled="isSubmitting"
                     @change="handleFileChange"
                 />
             </div>
@@ -164,8 +176,7 @@ const submit = (): void => {
                 placeholder="Ingrese la contraseña si el certificado requiere clave privada"
             />
             <p class="-mt-3 text-xs text-gray-500 dark:text-gray-400">
-                La contraseña se valida contra el hash de la clave privada antes
-                de guardar.
+                La contraseña se valida contra la clave privada antes de guardar.
             </p>
 
             <div
@@ -175,9 +186,14 @@ const submit = (): void => {
                     type="submit"
                     variant="primary"
                     size="auto"
-                    :disabled="!fileName"
-                    >Guardar y Encriptar Certificado</BaseButton
+                    :disabled="!selectedFile || isSubmitting"
                 >
+                    {{
+                        isSubmitting
+                            ? 'Guardando…'
+                            : 'Guardar y Encriptar Certificado'
+                    }}
+                </BaseButton>
             </div>
         </form>
     </Card>
