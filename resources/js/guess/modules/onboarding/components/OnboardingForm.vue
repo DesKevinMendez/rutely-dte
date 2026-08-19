@@ -121,7 +121,7 @@ const {
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <SearchableSelect
                         v-model="form.economicActivityCode"
-                        id="economicActivityCode"
+                        id="onboarding-economic-activity-select"
                         name="economicActivityCode"
                         label="Actividad Económica (CAT-019)"
                         placeholder="Buscá por descripción"
@@ -134,7 +134,7 @@ const {
 
                     <SearchableSelect
                         v-model="form.establishmentType"
-                        id="establishmentType"
+                        id="onboarding-establishment-type-select"
                         name="establishmentType"
                         label="Tipo de Establecimiento (CAT-009)"
                         placeholder="Seleccioná un tipo"
@@ -191,7 +191,7 @@ const {
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <SearchableSelect
                         v-model="form.departmentId"
-                        id="departmentId"
+                        id="onboarding-department-select"
                         name="departmentId"
                         label="Departamento (CAT-012)"
                         placeholder="Seleccioná"
@@ -206,7 +206,7 @@ const {
                     <SearchableSelect
                         :key="form.departmentId || 'municipality-empty'"
                         v-model="form.municipalityId"
-                        id="municipalityId"
+                        id="onboarding-municipality-select"
                         name="municipalityId"
                         label="Municipio (CAT-013)"
                         :placeholder="form.departmentId ? 'Seleccioná' : 'Elegí un departamento'"
@@ -222,7 +222,7 @@ const {
                     <SearchableSelect
                         :key="form.municipalityId || 'district-empty'"
                         v-model="form.districtId"
-                        id="districtId"
+                        id="onboarding-district-select"
                         name="districtId"
                         label="Distrito (CAT-008)"
                         :placeholder="form.municipalityId ? 'Seleccioná' : 'Elegí un municipio'"
