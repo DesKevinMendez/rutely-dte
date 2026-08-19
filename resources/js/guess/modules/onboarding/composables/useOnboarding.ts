@@ -45,8 +45,14 @@ const companyRules = {
     departmentId: requiredText('El departamento es requerido.'),
     municipalityId: requiredText('El municipio es requerido.'),
     districtId: requiredText('El distrito es requerido.'),
-    ownEstablishmentCode: requiredText('El código de establecimiento es requerido.'),
-    ownPosCode: requiredText('El código de punto de venta es requerido.'),
+    ownEstablishmentCode: requiredText('El código de establecimiento es requerido.').max(
+        4,
+        'El código de establecimiento no debe contener más de 4 caracteres.',
+    ),
+    ownPosCode: requiredText('El código de punto de venta es requerido.').max(
+        4,
+        'El código de punto de venta no debe contener más de 4 caracteres.',
+    ),
 };
 
 const digitsOnly = (value: string): string => value.replace(/\D/g, '');

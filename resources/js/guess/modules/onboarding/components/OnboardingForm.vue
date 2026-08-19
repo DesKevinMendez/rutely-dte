@@ -254,6 +254,7 @@ const {
                         name="ownEstablishmentCode"
                         label="Código de Establecimiento"
                         placeholder="Ej. M001"
+                        maxlength="4"
                     />
 
                     <FormInput
@@ -262,6 +263,7 @@ const {
                         name="ownPosCode"
                         label="Código de Punto de Venta"
                         placeholder="Ej. P001"
+                        maxlength="4"
                     />
                 </div>
             </section>
