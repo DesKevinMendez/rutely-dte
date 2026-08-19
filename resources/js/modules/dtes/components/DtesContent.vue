@@ -8,8 +8,7 @@ import CreateDteModal from './CreateDteModal.vue';
 
 const isCreateModalOpen = ref(false);
 const tableKey = ref(0);
-const { filterTipoDte, filterEstado, isLoading, error, createDte } =
-    await useDtesUi();
+const { filterTipoDte, filterEstado, isLoading, error, createDte } = useDtesUi();
 
 const tipoDteOptions = [
     { value: '', label: 'Todos los tipos' },
@@ -36,6 +35,23 @@ const typeLabels: Record<string, string> = {
     '14': 'Sujeto Excluido (14)',
 };
 
+const formatEmissionDateTime = (record: DteApiRecord): string => {
+    const emissionDate = record.original_json?.identificacion?.fecEmi;
+    const emissionTime = record.original_json?.identificacion?.horEmi;
+
+    if (emissionDate) {
+        const [year, month, day] = emissionDate.split('-');
+        const formattedDate =
+            year && month && day ? `${day}/${month}/${year}` : emissionDate;
+
+        return emissionTime ? `${formattedDate} ${emissionTime}` : formattedDate;
+    }
+
+    return new Date(record.created_at).toLocaleString('es-SV', {
+        timeZone: 'America/El_Salvador',
+    });
+};
+
 const columns: TableField<DteApiRecord>[] = [
     { label: 'Código Generación', key: 'generation_code' },
     { label: 'Nº Control', key: 'control_number' },
@@ -52,9 +68,9 @@ const columns: TableField<DteApiRecord>[] = [
     },
     { label: 'Estado', key: 'status', slot: 'status' },
     {
-        label: 'Fecha',
+        label: 'Emisión',
         key: 'created_at',
-        format: (row) => new Date(row.created_at).toLocaleDateString('es-SV'),
+        format: formatEmissionDateTime,
     },
 ];
 
