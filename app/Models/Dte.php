@@ -27,7 +27,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'observations',
     'mh_response_json',
     'receiver_id',
-    'contingency_event_id',
 ])]
 class Dte extends Model
 {
