@@ -22,13 +22,13 @@ require __DIR__.'/guess.php';
 
 Route::get('/user', function (Request $request) {
     return $request->user();
-})->middleware('auth:sanctum');
+})->middleware(['auth:sanctum', 'user-token']);
 
 Route::group(['prefix' => 'v1'], function () {
     Route::post('register', RegisterController::class)->name('register');
     Route::post('login', LoginController::class)->name('login');
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'user-token'])->group(function () {
         Route::get('dashboard', [DashboardController::class, 'show'])
             ->name('api.v1.dashboard.show');
 

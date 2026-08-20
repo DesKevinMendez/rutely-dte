@@ -64,11 +64,6 @@ const closeGeneratedToken = (): void => {
                 >
                     Tokens de API
                 </h1>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Genere tokens para integraciones externas. Cada token tendrá
-                    únicamente la ability
-                    <code class="font-semibold">create:dte</code>.
-                </p>
             </div>
             <BaseButton
                 variant="primary"
