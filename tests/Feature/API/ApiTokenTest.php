@@ -191,6 +191,19 @@ test('token is forbidden when create dte is one of multiple explicit abilities',
         ->assertForbidden();
 });
 
+test('company API token without rejected ability is forbidden from internal endpoints', function () {
+    $company = apiTokenTestCompany('9');
+    $token = $company->createToken('External without ability', [])->plainTextToken;
+
+    $this->withToken($token)
+        ->getJson('/api/user')
+        ->assertForbidden();
+
+    $this->withToken($token)
+        ->getJson(route('api.v1.tokens.index'))
+        ->assertForbidden();
+});
+
 test('internal endpoints still require authentication', function () {
     $this->getJson('/api/user')
         ->assertUnauthorized();
