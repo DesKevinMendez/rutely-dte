@@ -144,7 +144,7 @@ test('API token endpoints return 404 when the authenticated user has no company'
     ])->assertNotFound();
 });
 
-test('company API token with create dte ability is forbidden from internal endpoints', function () {
+test('company token with create dte ability is forbidden from internal endpoints', function () {
     $company = apiTokenTestCompany('5');
     $token = $company->createToken('External ERP', ['create:dte'])->plainTextToken;
 
@@ -157,8 +157,21 @@ test('company API token with create dte ability is forbidden from internal endpo
         ->assertForbidden();
 });
 
-test('dashboard wildcard token can access internal endpoints', function () {
+test('company token without abilities is forbidden from internal endpoints', function () {
     $company = apiTokenTestCompany('6');
+    $token = $company->createToken('External without abilities', [])->plainTextToken;
+
+    $this->withToken($token)
+        ->getJson('/api/user')
+        ->assertForbidden();
+
+    $this->withToken($token)
+        ->getJson(route('api.v1.tokens.index'))
+        ->assertForbidden();
+});
+
+test('dashboard wildcard user token can access internal endpoints', function () {
+    $company = apiTokenTestCompany('7');
     $user = apiTokenTestUser($company);
     $token = $user->createToken('Dashboard')->plainTextToken;
 
@@ -168,40 +181,15 @@ test('dashboard wildcard token can access internal endpoints', function () {
         ->assertJsonPath('id', $user->id);
 });
 
-test('token without rejected ability can access internal endpoints', function () {
-    $company = apiTokenTestCompany('7');
+test('user token abilities do not restrict internal endpoints', function () {
+    $company = apiTokenTestCompany('8');
     $user = apiTokenTestUser($company);
-    $token = $user->createToken('Read only', ['read:dte'])->plainTextToken;
+    $token = $user->createToken('Explicit ability', ['create:dte'])->plainTextToken;
 
     $this->withToken($token)
         ->getJson('/api/user')
         ->assertOk()
         ->assertJsonPath('id', $user->id);
-});
-
-test('token is forbidden when create dte is one of multiple explicit abilities', function () {
-    $company = apiTokenTestCompany('8');
-    $token = $company->createToken('External ERP', [
-        'read:dte',
-        'create:dte',
-    ])->plainTextToken;
-
-    $this->withToken($token)
-        ->getJson('/api/user')
-        ->assertForbidden();
-});
-
-test('company API token without rejected ability is forbidden from internal endpoints', function () {
-    $company = apiTokenTestCompany('9');
-    $token = $company->createToken('External without ability', [])->plainTextToken;
-
-    $this->withToken($token)
-        ->getJson('/api/user')
-        ->assertForbidden();
-
-    $this->withToken($token)
-        ->getJson(route('api.v1.tokens.index'))
-        ->assertForbidden();
 });
 
 test('internal endpoints still require authentication', function () {
