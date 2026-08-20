@@ -7,7 +7,7 @@
                 class="mx-auto mb-6 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
             >
                 <img
-                    src="/favicon.svg"
+                    src="/logo.png"
                     alt="Rutely"
                     class="h-9 w-9 object-contain"
                 />

@@ -136,7 +136,7 @@ watch(
             <div class="hidden lg:block">
                 <Sidebar
                     :is-collapsed="isCollapsed"
-                    logo="/favicon.svg"
+                    logo="/logo.png"
                     title="Rutely DTE"
                     subtitle="Facturación Electrónica MH"
                     version="1.0.0"
@@ -159,7 +159,7 @@ watch(
             >
                 <Sidebar
                     :is-collapsed="false"
-                    logo="/favicon.svg"
+                    logo="/logo.png"
                     title="Rutely DTE"
                     subtitle="Facturación Electrónica MH"
                     version="1.0.0"
