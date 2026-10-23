@@ -9,4 +9,7 @@ Route::prefix('v1/superadmin')
     ->group(function (): void {
         Route::get('companies', [CompanyController::class, 'index'])
             ->name('companies.index');
+
+        Route::post('companies', [CompanyController::class, 'store'])
+            ->name('companies.store');
     });
