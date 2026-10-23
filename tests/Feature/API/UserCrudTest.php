@@ -154,7 +154,7 @@ test('an admin can create a user and company is assigned from authentication con
             'name' => $payload['name'],
             'email' => $payload['email'],
             'email_verified_at' => null,
-            'phone' => $payload['phone'],
+            'phone' => '+50377778888',
             'company_id' => $company->id,
             'roles' => $response->json('data.roles'),
             'status' => true,

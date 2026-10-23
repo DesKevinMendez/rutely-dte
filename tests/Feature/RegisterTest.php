@@ -38,7 +38,7 @@ test('a user can register and is assigned the admin role', function () {
                     'id' => $response->json('data.user.id'),
                     'company_id' => null,
                     'roles' => $response->json('data.user.roles'),
-                    'phone' => $payload['phone'],
+                    'phone' => '+50377778888',
                     'name' => $payload['name'],
                     'email' => $payload['email'],
                     'created_at' => $response->json('data.user.created_at'),
@@ -54,7 +54,7 @@ test('a user can register and is assigned the admin role', function () {
         'id' => $userId,
         'name' => $payload['name'],
         'email' => $payload['email'],
-        'phone' => $payload['phone'],
+        'phone' => '+50377778888',
         'company_id' => null,
     ]);
     $this->assertDatabaseCount(User::class, 1);
