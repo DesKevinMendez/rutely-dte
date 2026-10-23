@@ -127,7 +127,7 @@ watch(
                 <main
                     class="flex-1 overflow-y-auto bg-white p-4 sm:p-6 dark:bg-gray-900"
                 >
-                    <div class="mx-auto w-full max-w-7xl">
+                    <div class="mx-auto w-full">
                         <RouterView />
                     </div>
                 </main>
