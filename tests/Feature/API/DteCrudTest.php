@@ -1,9 +1,8 @@
 <?php
 
-use App\Environment;
-use App\Models\Dte;
 use App\Role;
 use App\Services\Dte\DteIssuanceService;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
 
@@ -17,7 +16,7 @@ test('company member can list DTEs with Spatie filters and common collection', f
     $user = DteApiTestData::user($company, $role);
     $dte = DteApiTestData::dte($company, ['dte_type' => '01', 'status' => 'PROCESADO']);
     DteApiTestData::dte($company, [
-        'generation_code' => strtoupper((string) Illuminate\Support\Str::uuid()),
+        'generation_code' => strtoupper((string) Str::uuid()),
         'control_number' => 'DTE-03-00010001-000000000000002',
         'dte_type' => '03',
         'status' => 'RECHAZADO',
@@ -54,7 +53,7 @@ test('DTE list is tenant isolated', function () {
     ]);
     $own = DteApiTestData::dte($company);
     DteApiTestData::dte($otherCompany, [
-        'generation_code' => strtoupper((string) Illuminate\Support\Str::uuid()),
+        'generation_code' => strtoupper((string) Str::uuid()),
         'control_number' => 'DTE-01-00010001-000000000000002',
     ]);
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
@@ -72,6 +71,44 @@ test('DTE list is tenant isolated', function () {
                 'to' => 1,
             ],
         ]);
+});
+
+test('company API token with list dte ability can list only its own DTEs', function () {
+    $company = DteApiTestData::company();
+    $otherCompany = DteApiTestData::company([
+        'name' => 'Other Company',
+        'nit' => '06142812901016',
+        'email' => 'other@rutely.biz',
+    ]);
+    $own = DteApiTestData::dte($company);
+    DteApiTestData::dte($otherCompany, [
+        'control_number' => 'DTE-01-00010001-000000000000002',
+    ]);
+    $token = $company->createToken('External ERP', ['list:dte'])->plainTextToken;
+
+    $this->withToken($token)
+        ->getJson(route('api.v1.dtes.index'))
+        ->assertOk()
+        ->assertExactJson([
+            'data' => [$own->fresh()->toArray()],
+            'pagination' => [
+                'total' => 1,
+                'per_page' => 10,
+                'current_page' => 1,
+                'last_page' => 1,
+                'from' => 1,
+                'to' => 1,
+            ],
+        ]);
+});
+
+test('company API token without list dte ability cannot list DTEs', function () {
+    $company = DteApiTestData::company();
+    $token = $company->createToken('External ERP', ['create:dte'])->plainTextToken;
+
+    $this->withToken($token)
+        ->getJson(route('api.v1.dtes.index'))
+        ->assertForbidden();
 });
 
 test('company member can create a DTE through issuance service with common response', function (Role $role) {

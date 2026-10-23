@@ -135,6 +135,11 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 === laravel/core rules ===
 
+# Conventions
+
+- Always use assertDataBaseHas, Missing, etc for validate values in the database, for example  expect(DB::table('personal_access_tokens'))... use instead of assertDatabaseHas...
+- Always write one test by rule validation, for example: if a request recieve email and the email has 'required|email|...' then, you going to write a test for each rule, for requerid, email and anothers rules.
+
 # Do Things the Laravel Way
 
 - Use `php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.). You can list available Artisan commands using `php artisan list` and check their parameters with `php artisan [command] --help`.
@@ -180,3 +185,8 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Do NOT delete tests without approval.
 
 </laravel-boost-guidelines>
+
+
+## UI ornito
+
+Before to create a table, select, input, card, or any another ui elements, review the ornito documentation, if you dont find anything about you find, asking me. Do you need use checkbox? Find in the ornito doc, and if you dont have anything there, asking me about the element. 

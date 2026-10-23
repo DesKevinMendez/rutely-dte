@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IconBuilding, IconUser, IconUsers } from '@tabler/icons-vue';
+import { IconBuilding, IconKey, IconUser, IconUsers } from '@tabler/icons-vue';
 import { Breadcrumb, Card, SidebarNav, ViewHeader } from 'ornito';
 import type { BreadcrumbItem } from 'ornito';
 import { computed, watch } from 'vue';
@@ -34,6 +34,11 @@ const sidebarItems = computed(() => [
         name: 'Usuarios',
         icon: IconUsers,
         to: `/superadmin/companies/${route.params.id}/users`,
+    },
+    {
+        name: 'Tokens de API',
+        icon: IconKey,
+        to: `/superadmin/companies/${route.params.id}/tokens`,
     },
 ]);
 

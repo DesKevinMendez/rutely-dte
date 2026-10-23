@@ -1,22 +1,51 @@
 <script setup lang="ts">
-import { IconPlus } from '@tabler/icons-vue';
-import { Alert, BaseButton, Card, DataTable } from 'ornito';
+import { IconPlus, IconTrash } from '@tabler/icons-vue';
+import {
+    Alert,
+    BaseButton,
+    Card,
+    ConfirmationModal,
+    DataTable,
+    IconButton,
+} from 'ornito';
 import type { TableField } from 'ornito';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useApiTokensUi } from '../composables/useApiTokensUi';
-import type { ApiTokenApiRecord } from '../types/api-token.types';
+import type {
+    ApiTokenApiRecord,
+    ApiTokenAbility,
+} from '../types/api-token.types';
 import CreateApiTokenModal from './CreateApiTokenModal.vue';
 import GeneratedApiTokenModal from './GeneratedApiTokenModal.vue';
 
+const { companyId } = defineProps<{
+    companyId?: string;
+}>();
+
 const isCreateModalOpen = ref(false);
+const tokenPendingRevocation = ref<ApiTokenApiRecord | null>(null);
 const tableKey = ref(0);
+const tokensUrl = computed(() =>
+    companyId
+        ? `/api/v1/superadmin/companies/${encodeURIComponent(companyId)}/tokens`
+        : '/api/v1/tokens',
+);
 const {
     generatedToken,
     isLoading,
     error,
     createToken,
     clearGeneratedToken,
-} = useApiTokensUi();
+    revokeToken,
+} = useApiTokensUi(tokensUrl);
+
+const revokeConfirmationSubtitle = computed(() => {
+    if (!tokenPendingRevocation.value) {
+        return '';
+    }
+
+    return `Revocar “${tokenPendingRevocation.value.name}” hará que deje de funcionar. Escribe “Confirmar” para continuar.`;
+});
 
 const formatDateTime = (value: string): string =>
     new Date(value).toLocaleString('es-SV', {
@@ -28,7 +57,12 @@ const formatLastUsedAt = (value: string | null): string =>
 
 const columns: TableField<ApiTokenApiRecord>[] = [
     { label: 'Nombre', key: 'name' },
-    { label: 'Token', key: 'id', slot: 'token' },
+    {
+        label: 'Permisos',
+        key: 'abilities',
+        format: (row) => row.abilities.join(', '),
+    },
+    { label: 'Token', key: 'token_preview', slot: 'token' },
     {
         label: 'Último uso',
         key: 'last_used_at',
@@ -41,8 +75,11 @@ const columns: TableField<ApiTokenApiRecord>[] = [
     },
 ];
 
-const handleCreate = async (name: string): Promise<void> => {
-    if (await createToken(name)) {
+const handleCreate = async (
+    name: string,
+    abilities: ApiTokenAbility[],
+): Promise<void> => {
+    if (await createToken(name, abilities)) {
         isCreateModalOpen.value = false;
         tableKey.value += 1;
     }
@@ -51,45 +88,75 @@ const handleCreate = async (name: string): Promise<void> => {
 const closeGeneratedToken = (): void => {
     clearGeneratedToken();
 };
+
+const requestTokenRevocation = (token: ApiTokenApiRecord): void => {
+    tokenPendingRevocation.value = token;
+};
+
+const closeTokenRevocation = (): void => {
+    if (isLoading.value) {
+        return;
+    }
+
+    tokenPendingRevocation.value = null;
+};
+
+const confirmTokenRevocation = async (): Promise<void> => {
+    const token = tokenPendingRevocation.value;
+
+    if (!companyId || !token || isLoading.value) {
+        return;
+    }
+
+    if (await revokeToken(token.id)) {
+        tokenPendingRevocation.value = null;
+        tableKey.value += 1;
+    }
+};
 </script>
 
 <template>
     <div class="space-y-6">
-        <div
-            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-            <div>
-                <h1
-                    class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
-                >
-                    Tokens de API
-                </h1>
-            </div>
-            <BaseButton
-                variant="primary"
-                size="auto"
-                :disabled="isLoading"
-                @click="isCreateModalOpen = true"
-            >
-                <IconPlus class="mr-2 h-4 w-4" />
-                Crear token
-            </BaseButton>
-        </div>
-
         <Alert v-if="error" type="danger">
             {{ error }}
         </Alert>
 
         <Card title="Tokens de acceso">
+            <template v-if="companyId" #headerButtons>
+                <BaseButton
+                    variant="outline"
+                    size="auto"
+                    :icon="IconPlus"
+                    icon-position="left"
+                    :disabled="isLoading"
+                    @click="isCreateModalOpen = true"
+                >
+                    Crear token
+                </BaseButton>
+            </template>
+
             <DataTable
-                :key="tableKey"
+                :key="`${tokensUrl}-${tableKey}`"
                 :columns="columns"
-                url="/api/v1/tokens"
+                :url="tokensUrl"
+                actions-label="Acciones"
             >
-                <template #token>
+                <template #token="{ row }">
                     <code class="font-mono text-gray-500 dark:text-gray-400">
-                        ********************
+                        {{ row.token_preview }}
                     </code>
+                </template>
+                <template v-if="companyId" #actions="{ row }">
+                    <IconButton
+                        type="button"
+                        :icon="IconTrash"
+                        color="danger"
+                        rounded
+                        outline
+                        :disabled="isLoading"
+                        :aria-label="`Revocar token ${row.name}`"
+                        @click="requestTokenRevocation(row)"
+                    />
                 </template>
             </DataTable>
         </Card>
@@ -104,6 +171,15 @@ const closeGeneratedToken = (): void => {
             :open="generatedToken !== null"
             :token="generatedToken ?? ''"
             @close="closeGeneratedToken"
+        />
+
+        <ConfirmationModal
+            :open="tokenPendingRevocation !== null"
+            :loading="isLoading"
+            title="Revocar token de API"
+            :subtitle="revokeConfirmationSubtitle"
+            @close="closeTokenRevocation"
+            @confirm="confirmTokenRevocation"
         />
     </div>
 </template>

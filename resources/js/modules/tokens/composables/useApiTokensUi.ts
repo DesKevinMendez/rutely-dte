@@ -1,24 +1,32 @@
+import { useMessages } from 'ornito';
 import { ref } from 'vue';
+import type { ComputedRef } from 'vue';
 import { useRequest } from '@/core/composables/useRequest';
 import type { ApiResponse } from '@/core/types/api.types';
 import type {
     ApiTokenStorePayload,
     ApiTokenStoreResult,
 } from '../types/api-token.types';
+import type { ApiTokenAbility } from '../types/api-token.types';
 
-export function useApiTokensUi() {
+export function useApiTokensUi(tokensUrl: ComputedRef<string>) {
     const generatedToken = ref<string | null>(null);
     const error = ref<string | null>(null);
-    const { post, isLoading } = useRequest();
+    const { pushMessage } = useMessages();
+    const { post, del, isLoading } = useRequest();
 
-    const createToken = async (name: string): Promise<boolean> => {
+    const createToken = async (
+        name: string,
+        abilities: ApiTokenAbility[],
+    ): Promise<boolean> => {
         const payload: ApiTokenStorePayload = {
             name: name.trim(),
+            abilities,
         };
         const response = await post<
             ApiResponse<ApiTokenStoreResult>,
             ApiTokenStorePayload
-        >('/api/v1/tokens', payload);
+        >(tokensUrl.value, payload);
 
         if (!response.data.value) {
             error.value =
@@ -37,11 +45,30 @@ export function useApiTokensUi() {
         generatedToken.value = null;
     };
 
+    const revokeToken = async (tokenId: number): Promise<boolean> => {
+        const response = await del(`${tokensUrl.value}/${tokenId}`);
+
+        if (response.statusCode.value !== 202) {
+            pushMessage(
+                response.error.value ?? 'No se pudo revocar el token de API.',
+                true,
+            );
+
+            return false;
+        }
+
+        error.value = null;
+        pushMessage('Token revocado correctamente.');
+
+        return true;
+    };
+
     return {
         generatedToken,
         isLoading,
         error,
         createToken,
         clearGeneratedToken,
+        revokeToken,
     };
 }

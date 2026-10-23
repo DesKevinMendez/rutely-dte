@@ -27,6 +27,7 @@ declare module 'vue' {
     CompanyEditView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyEditView.vue')['default']
     CompanyProfileView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyProfileView.vue')['default']
     CompanyShowView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyShowView.vue')['default']
+    CompanyTokensView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyTokensView.vue')['default']
     CompanyUserForm: typeof import('./resources/js/modules/superadmin/companies/components/CompanyUserForm.vue')['default']
     CompanyUserFormModal: typeof import('./resources/js/modules/superadmin/companies/components/CompanyUserFormModal.vue')['default']
     CompanyUsersView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyUsersView.vue')['default']
