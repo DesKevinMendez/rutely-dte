@@ -45,7 +45,12 @@ export default function useLogin() {
 
         auth.setSession(session.token, session.user);
         await router.push({
-            name: session.user.company_id ? 'dashboard' : 'onboarding',
+            name:
+                session.user.role === 'superadmin'
+                    ? 'superadmin-dashboard'
+                    : session.user.company_id
+                      ? 'dashboard'
+                      : 'onboarding',
         });
     };
 

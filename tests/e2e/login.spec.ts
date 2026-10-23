@@ -9,7 +9,9 @@ test.describe('Login', () => {
         await page.goto('/#/login');
     });
 
-    test('does not contact the server when credentials are empty', async ({ page }) => {
+    test('does not contact the server when credentials are empty', async ({
+        page,
+    }) => {
         let loginRequests = 0;
 
         page.on('request', (request) => {
@@ -20,12 +22,18 @@ test.describe('Login', () => {
 
         await page.getByRole('button', { name: 'Acceder al Sistema' }).click();
 
-        await expect(page.getByText('El correo electrónico es requerido.')).toBeVisible();
-        await expect(page.getByText('La contraseña es requerida.')).toBeVisible();
+        await expect(
+            page.getByText('El correo electrónico es requerido.'),
+        ).toBeVisible();
+        await expect(
+            page.getByText('La contraseña es requerida.'),
+        ).toBeVisible();
         expect(loginRequests).toBe(0);
     });
 
-    test('does not contact the server when the email is invalid', async ({ page }) => {
+    test('does not contact the server when the email is invalid', async ({
+        page,
+    }) => {
         let loginRequests = 0;
 
         page.on('request', (request) => {
@@ -38,11 +46,15 @@ test.describe('Login', () => {
         await page.locator('#password').fill('secret123');
         await page.getByRole('button', { name: 'Acceder al Sistema' }).click();
 
-        await expect(page.getByText('Ingresá un correo electrónico válido.')).toBeVisible();
+        await expect(
+            page.getByText('Ingresá un correo electrónico válido.'),
+        ).toBeVisible();
         expect(loginRequests).toBe(0);
     });
 
-    test('logs in once, stores the session and shows the dashboard', async ({ page }) => {
+    test('logs in once, stores the session and shows the dashboard', async ({
+        page,
+    }) => {
         const api = createLoginApiMock();
         await api.mock(page);
 
@@ -52,7 +64,9 @@ test.describe('Login', () => {
 
         await expect(page).toHaveURL(/\/#\/dashboard$/);
         await expect(
-            page.getByRole('heading', { name: 'Resumen de Facturación Electrónica' }),
+            page.getByRole('heading', {
+                name: 'Resumen de Facturación Electrónica',
+            }),
         ).toBeVisible();
 
         expect(api.requests.login).toHaveLength(1);
@@ -71,5 +85,25 @@ test.describe('Login', () => {
             token: api.data.token,
             user: api.data.user,
         });
+    });
+
+    test('logs in superadmins to the empty superadmin dashboard', async ({
+        page,
+    }) => {
+        const api = createLoginApiMock('superadmin');
+        await api.mock(page);
+
+        await page.locator('#email').fill('superadmin@rutely.biz');
+        await page.locator('#password').fill('secret123');
+        await page.getByRole('button', { name: 'Acceder al Sistema' }).click();
+
+        await expect(page).toHaveURL(/\/#\/superadmin\/dashboard$/);
+        await expect(
+            page.getByRole('link', { name: 'Dashboard', exact: true }).first(),
+        ).toBeVisible();
+        await expect(
+            page.getByRole('link', { name: 'Documentos DTE' }),
+        ).toHaveCount(0);
+        await expect(page.locator('main h1')).toHaveCount(0);
     });
 });

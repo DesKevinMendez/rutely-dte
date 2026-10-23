@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 
 interface LoginUser {
     id: string;
-    company_id: string;
+    company_id: string | null;
     role: string;
     phone: string | null;
     name: string;
@@ -28,13 +28,16 @@ export interface LoginApiMock {
     mock: (page: Page) => Promise<void>;
 }
 
-export function createLoginApiMock(): LoginApiMock {
+export function createLoginApiMock(role: string = 'admin'): LoginApiMock {
     const data = {
         token: faker.string.alphanumeric(40),
         user: {
             id: faker.string.uuid({ version: 4 }),
-            company_id: faker.string.uuid({ version: 4 }),
-            role: 'admin',
+            company_id:
+                role === 'superadmin'
+                    ? null
+                    : faker.string.uuid({ version: 4 }),
+            role,
             phone: null,
             name: 'Kevin Mendez',
             email: 'kevin@rutely.biz',

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Role;
 
 test('an user can do login', function () {
     $user = User::factory()->create();
@@ -15,20 +16,42 @@ test('an user can do login', function () {
     $response->assertOk();
 
     $response->assertExactJson([
-        "data" => [
-            "token" => $response->json('data.token'),
-            "user" => [
-                "id" => $response->json('data.user.id'),
-                "company_id" => $user->company_id,
-                "role" => $response->json('data.user.role'),
-                "phone" => $response->json('data.user.phone'),
-                "name" => $response->json('data.user.name'),
-                "email" => $response->json('data.user.email'),
-                "email_verified_at" => $response->json('data.user.email_verified_at'),
-                "created_at" => $response->json('data.user.created_at'),
-                "updated_at" => $response->json('data.user.updated_at')
-            ]
-        ]
+        'data' => [
+            'token' => $response->json('data.token'),
+            'user' => [
+                'id' => $response->json('data.user.id'),
+                'company_id' => $user->company_id,
+                'role' => $response->json('data.user.role'),
+                'phone' => $response->json('data.user.phone'),
+                'name' => $response->json('data.user.name'),
+                'email' => $response->json('data.user.email'),
+                'email_verified_at' => $response->json('data.user.email_verified_at'),
+                'created_at' => $response->json('data.user.created_at'),
+                'updated_at' => $response->json('data.user.updated_at'),
+            ],
+        ],
+    ]);
+});
+
+test('a superadmin can log in without a company', function () {
+    $superadmin = User::factory()->create([
+        'company_id' => null,
+        'role' => Role::SUPERADMIN->value,
+    ]);
+
+    $response = $this->post(route('login'), [
+        'email' => $superadmin->email,
+        'password' => 'password',
+        'device_name' => 'test-device',
+    ]);
+
+    $response->assertOk()->assertJson([
+        'data' => [
+            'user' => [
+                'company_id' => null,
+                'role' => Role::SUPERADMIN->value,
+            ],
+        ],
     ]);
 });
 
@@ -44,12 +67,12 @@ test('an user cannot do login with wrong credentials', function () {
 
     $response->assertUnprocessable()
         ->assertExactJson([
-            "message" => "Tus credenciales no coinciden con nuestros registros",
-            "errors" => [
-                "email" => [
-                    "Tus credenciales no coinciden con nuestros registros"
-                ]
-            ]
+            'message' => 'Tus credenciales no coinciden con nuestros registros',
+            'errors' => [
+                'email' => [
+                    'Tus credenciales no coinciden con nuestros registros',
+                ],
+            ],
         ]);
 });
 
