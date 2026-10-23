@@ -59,15 +59,19 @@ const companyRules = {
 
 const digitsOnly = (value: string): string => value.replace(/\D/g, '');
 
-export default function useOnboarding() {
+export default function useOnboarding(
+    mode: 'onboarding' | 'superadmin' = 'onboarding',
+) {
     const router = useRouter();
     const auth = useAuth();
     const { post, isLoading, error } = useRequest();
-    const isAuthenticated = computed(() => auth.isAuthenticated);
+    const showAccountFields = computed(
+        () => mode === 'onboarding' && !auth.isAuthenticated,
+    );
 
     const validationSchema = computed(() =>
         yup.object({
-            ...(auth.isAuthenticated ? {} : accountRules),
+            ...(showAccountFields.value ? accountRules : {}),
             ...companyRules,
         }),
     );
@@ -148,7 +152,7 @@ export default function useOnboarding() {
         return true;
     };
 
-    const createCompany = async (): Promise<string | null> => {
+    const createCompany = async (url: string): Promise<string | null> => {
         const payload: CompanyRequest = {
             name: form.name,
             address: form.address,
@@ -169,7 +173,7 @@ export default function useOnboarding() {
         };
 
         const response = await post<CompanyResponse, CompanyRequest>(
-            '/api/v1/companies',
+            url,
             payload,
         );
 
@@ -183,11 +187,23 @@ export default function useOnboarding() {
 
         error.value = null;
 
+        if (mode === 'superadmin') {
+            const companyId = await createCompany(
+                '/api/v1/superadmin/companies',
+            );
+
+            if (companyId) {
+                await router.push({ name: 'superadmin-companies' });
+            }
+
+            return;
+        }
+
         if (!auth.isAuthenticated && !(await registerUser())) {
             return;
         }
 
-        const companyId = await createCompany();
+        const companyId = await createCompany('/api/v1/companies');
         const currentUser = auth.user;
 
         if (!companyId || !currentUser) {
@@ -202,7 +218,13 @@ export default function useOnboarding() {
         await router.push({ name: 'dashboard' });
     };
 
-    const goToLogin = async (): Promise<void> => {
+    const cancelFlow = async (): Promise<void> => {
+        if (mode === 'superadmin') {
+            await router.push({ name: 'superadmin-companies' });
+
+            return;
+        }
+
         auth.clearSession();
         await router.push({ name: 'login' });
     };
@@ -212,10 +234,10 @@ export default function useOnboarding() {
         validationSchema,
         municipalityUrl,
         districtUrl,
-        isAuthenticated,
+        showAccountFields,
         isLoading,
         error,
         continueFlow,
-        goToLogin,
+        cancelFlow,
     };
 }

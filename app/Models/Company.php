@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,9 +26,10 @@ use Laravel\Sanctum\HasApiTokens;
     'mh_pos_code',
     'own_establishment_code',
     'own_pos_code',
+    'is_onboarded',
 ])]
 class Company extends Model
 {
-    /** @use HasFactory<\Database\Factories\CompanyFactory> */
+    /** @use HasFactory<CompanyFactory> */
     use HasApiTokens, HasFactory, HasUuids;
 }

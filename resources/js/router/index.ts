@@ -109,6 +109,20 @@ const router = createRouter({
                     component: () =>
                         import('@/modules/superadmin/views/SuperadminDashboardView.vue'),
                 },
+                {
+                    path: 'companies',
+                    name: 'superadmin-companies',
+                    meta: { title: 'Empresas' },
+                    component: () =>
+                        import('@/modules/superadmin/companies/views/CompaniesIndexView.vue'),
+                },
+                {
+                    path: 'companies/create',
+                    name: 'superadmin-company-create',
+                    meta: { title: 'Nueva empresa' },
+                    component: () =>
+                        import('@/modules/superadmin/companies/views/CompanyCreateView.vue'),
+                },
             ],
         },
     ],

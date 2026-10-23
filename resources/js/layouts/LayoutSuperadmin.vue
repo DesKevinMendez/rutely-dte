@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IconDashboard, IconLock } from '@tabler/icons-vue';
+import { IconBuildingStore, IconDashboard, IconLock } from '@tabler/icons-vue';
 import { Navbar, Sidebar, UserProfileDropdown, useSidebar } from 'ornito';
 import type { DropdownMenuItem, RoutesLink } from 'ornito';
 import { computed, ref, watch } from 'vue';
@@ -17,6 +17,11 @@ const navigation: RoutesLink[] = [
         route: '/superadmin/dashboard',
         name: 'Dashboard',
         icon: IconDashboard,
+    },
+    {
+        route: '/superadmin/companies',
+        name: 'Empresas',
+        icon: IconBuildingStore,
     },
 ];
 
