@@ -72,9 +72,8 @@ test('superadmin company creation validates every input', function (string $fiel
     $payload = validSuperadminCompanyPayload($existingCompany);
     $payload[$field] = $value;
 
-    Sanctum::actingAs(User::factory()->create([
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
-        'role' => Role::SUPERADMIN->value,
     ]));
 
     $this->postJson(route('api.v1.superadmin.companies.store'), $payload)

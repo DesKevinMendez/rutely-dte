@@ -4,7 +4,6 @@ use App\Models\Company;
 use App\Models\User;
 use App\Role;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 
@@ -102,9 +101,7 @@ test('an admin can create a company and is assigned to it', function () {
 });
 
 test('a superadmin can create a company and is assigned to it', function () {
-    $user = User::factory()->create([
-        'role' => Role::SUPERADMIN->value,
-    ]);
+    $user = User::factory()->withRole(Role::SUPERADMIN)->create();
 
     Sanctum::actingAs($user);
 
@@ -141,8 +138,7 @@ test('a user with a company cannot create another company', function (Role $role
         ...$payload,
     ]);
 
-    $user = User::factory()->create([
-        'role' => $role->value,
+    $user = User::factory()->withRole($role)->create([
         'company_id' => $companyId,
     ]);
 

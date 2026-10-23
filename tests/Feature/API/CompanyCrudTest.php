@@ -71,7 +71,7 @@ function createCompanyCrudCompany(): Company
 
 test('company members can show their company with common response', function (Role $role) {
     $company = createCompanyCrudCompany();
-    $user = User::factory()->create(['company_id' => $company->id, 'role' => $role->value]);
+    $user = User::factory()->withRole($role)->create(['company_id' => $company->id]);
     Sanctum::actingAs($user);
 
     $this->getJson(route('api.v1.companies.show', $company))
@@ -85,7 +85,7 @@ test('company members can show their company with common response', function (Ro
 
 test('admin and superadmin can update their company', function (Role $role) {
     $company = createCompanyCrudCompany();
-    Sanctum::actingAs(User::factory()->create(['company_id' => $company->id, 'role' => $role->value]));
+    Sanctum::actingAs(User::factory()->withRole($role)->create(['company_id' => $company->id]));
 
     $response = $this->patchJson(route('api.v1.companies.update', $company), [
         'name' => 'Rutely DTE',
@@ -102,7 +102,7 @@ test('admin and superadmin can update their company', function (Role $role) {
 
 test('operational user can read but cannot update company', function () {
     $company = createCompanyCrudCompany();
-    Sanctum::actingAs(User::factory()->create(['company_id' => $company->id, 'role' => Role::USER->value]));
+    Sanctum::actingAs(User::factory()->withRole(Role::USER)->create(['company_id' => $company->id]));
 
     $this->getJson(route('api.v1.companies.show', $company))->assertOk();
     $this->patchJson(route('api.v1.companies.update', $company), ['name' => 'Nope'])->assertForbidden();
@@ -120,7 +120,7 @@ test('company access is tenant isolated', function () {
         'nit' => '06142812901016',
         'email' => 'other@rutely.biz',
     ]);
-    Sanctum::actingAs(User::factory()->create(['company_id' => $company->id, 'role' => Role::ADMIN->value]));
+    Sanctum::actingAs(User::factory()->withRole(Role::ADMIN)->create(['company_id' => $company->id]));
 
     $this->getJson(route('api.v1.companies.show', $otherCompany))->assertForbidden();
     $this->patchJson(route('api.v1.companies.update', $otherCompany), ['name' => 'Nope'])->assertForbidden();
@@ -135,7 +135,7 @@ test('company show and update require authentication', function () {
 
 test('company members can read environment and only privileged roles can update it', function (Role $role, bool $canUpdate) {
     $company = createCompanyCrudCompany();
-    $user = User::factory()->create(['company_id' => $company->id, 'role' => $role->value]);
+    $user = User::factory()->withRole($role)->create(['company_id' => $company->id]);
     Sanctum::actingAs($user);
 
     $this->getJson(route('api.v1.companies.environment.show', $company))
@@ -162,7 +162,7 @@ test('company members can read environment and only privileged roles can update 
 
 test('company environment request validation returns 422', function (string $field, mixed $value, string $message) {
     $company = createCompanyCrudCompany();
-    Sanctum::actingAs(User::factory()->create(['company_id' => $company->id, 'role' => Role::ADMIN->value]));
+    Sanctum::actingAs(User::factory()->withRole(Role::ADMIN)->create(['company_id' => $company->id]));
 
     $this->patchJson(route('api.v1.companies.environment.update', $company), [$field => $value])
         ->assertUnprocessable()
@@ -175,7 +175,7 @@ test('company environment request validation returns 422', function (string $fie
 
 test('update company request validation returns 422', function (string $field, mixed $value, string $message) {
     $company = createCompanyCrudCompany();
-    Sanctum::actingAs(User::factory()->create(['company_id' => $company->id, 'role' => Role::ADMIN->value]));
+    Sanctum::actingAs(User::factory()->withRole(Role::ADMIN)->create(['company_id' => $company->id]));
 
     $this->patchJson(route('api.v1.companies.update', $company), [$field => $value])
         ->assertUnprocessable()

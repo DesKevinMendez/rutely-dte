@@ -45,7 +45,7 @@ class UserPolicy
     private function canManageUsers(User $user): bool
     {
         return $user->company_id !== null
-            && in_array($user->role, [Role::ADMIN->value, Role::SUPERADMIN->value], true);
+            && $user->hasAnyRole([Role::ADMIN->value, Role::SUPERADMIN->value]);
     }
 
     private function canManage(User $user, User $model): bool
@@ -54,6 +54,6 @@ class UserPolicy
             return false;
         }
 
-        return $user->role === Role::SUPERADMIN->value || $model->role !== Role::SUPERADMIN->value;
+        return $user->hasRole(Role::SUPERADMIN->value) || ! $model->hasRole(Role::SUPERADMIN->value);
     }
 }

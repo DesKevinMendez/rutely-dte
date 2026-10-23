@@ -22,7 +22,7 @@ function roleMiddlewareRequest(?Authenticatable $user): Request
 }
 
 test('allows users with the required Spatie role', function () {
-    $user = User::factory()->create(['role' => Role::SUPERADMIN->value]);
+    $user = User::factory()->withRole(Role::SUPERADMIN)->create();
     $request = roleMiddlewareRequest($user);
     $response = new Response('authorized');
     $nextWasCalled = false;
@@ -39,7 +39,7 @@ test('allows users with the required Spatie role', function () {
 });
 
 test('rejects users without the required Spatie role', function (Role $role) {
-    $user = User::factory()->create(['role' => $role->value]);
+    $user = User::factory()->withRole($role)->create();
     $request = roleMiddlewareRequest($user);
     $nextWasCalled = false;
 

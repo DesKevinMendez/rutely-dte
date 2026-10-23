@@ -46,6 +46,6 @@ class MhCertificatesPolicy
     private function canManage(User $user): bool
     {
         return $user->company_id !== null
-            && in_array($user->role, [Role::ADMIN->value, Role::SUPERADMIN->value], true);
+            && $user->hasAnyRole([Role::ADMIN->value, Role::SUPERADMIN->value]);
     }
 }

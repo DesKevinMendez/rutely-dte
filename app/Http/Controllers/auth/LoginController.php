@@ -27,6 +27,7 @@ class LoginController extends Controller
         }
 
         $token = $user->createToken($validate['device_name'])->plainTextToken;
+        $user->load('roles');
 
         return CommonResource::make([
             'token' => $token,

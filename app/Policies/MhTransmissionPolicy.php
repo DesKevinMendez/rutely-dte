@@ -11,13 +11,13 @@ class MhTransmissionPolicy
     public function viewAny(User $user): bool
     {
         return $user->company_id !== null
-            && in_array($user->role, [Role::ADMIN->value, Role::USER->value, Role::SUPERADMIN->value], true);
+            && $user->hasAnyRole([Role::ADMIN->value, Role::USER->value, Role::SUPERADMIN->value]);
     }
 
     public function retry(User $user): bool
     {
         return $user->company_id !== null
-            && in_array($user->role, [Role::ADMIN->value, Role::SUPERADMIN->value], true);
+            && $user->hasAnyRole([Role::ADMIN->value, Role::SUPERADMIN->value]);
     }
 
     public function view(User $user, MhTransmission $transmission): bool

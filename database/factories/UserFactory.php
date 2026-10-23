@@ -7,7 +7,6 @@ use App\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role as PermissionRole;
 
 /**
  * @extends Factory<User>
@@ -18,15 +17,6 @@ class UserFactory extends Factory
      * The current password being used by the factory.
      */
     protected static ?string $password;
-
-    public function configure(): static
-    {
-        return $this->afterCreating(function (User $user): void {
-            $role = PermissionRole::findOrCreate($user->role, 'web');
-
-            $user->assignRole($role);
-        });
-    }
 
     /**
      * Define the model's default state.
@@ -41,11 +31,22 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'phone' => fake()->unique()->e164PhoneNumber(),
             'company_id' => null,
-            'role' => Role::ADMIN->value,
             'status' => true,
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->withRole(Role::ADMIN);
+    }
+
+    public function withRole(Role $role): static
+    {
+        return $this->afterCreating(function (User $user) use ($role): void {
+            $user->syncRoles($role->value);
+        });
     }
 
     /**

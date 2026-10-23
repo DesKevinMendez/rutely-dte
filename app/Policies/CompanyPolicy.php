@@ -16,19 +16,19 @@ class CompanyPolicy
     public function view(User $user, Company $company): bool
     {
         return $user->company_id === $company->id
-            && in_array($user->role, [Role::ADMIN->value, Role::USER->value, Role::SUPERADMIN->value], true);
+            && $user->hasAnyRole([Role::ADMIN->value, Role::USER->value, Role::SUPERADMIN->value]);
     }
 
     public function create(User $user): bool
     {
-        return in_array($user->role, [Role::ADMIN->value, Role::SUPERADMIN->value], true)
+        return $user->hasAnyRole([Role::ADMIN->value, Role::SUPERADMIN->value])
             && $user->company_id === null;
     }
 
     public function update(User $user, Company $company): bool
     {
         return $user->company_id === $company->id
-            && in_array($user->role, [Role::ADMIN->value, Role::SUPERADMIN->value], true);
+            && $user->hasAnyRole([Role::ADMIN->value, Role::SUPERADMIN->value]);
     }
 
     public function delete(User $user, Company $company): bool

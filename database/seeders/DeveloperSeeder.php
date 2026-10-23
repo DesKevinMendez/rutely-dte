@@ -72,38 +72,38 @@ class DeveloperSeeder extends Seeder
         );
         $adminCompany->forceFill(['environment' => '00'])->save();
 
-        User::query()->updateOrCreate(
+        $playwrightUser = User::query()->updateOrCreate(
             ['email' => 'playwright@rutely.biz'],
             [
                 'name' => 'Playwright User',
                 'password' => 'password',
-                'role' => Role::ADMIN->value,
                 'status' => true,
                 'company_id' => $company->id,
             ],
         );
+        $playwrightUser->syncRoles(Role::ADMIN->value);
 
-        User::query()->updateOrCreate(
+        $superadminUser = User::query()->updateOrCreate(
             ['email' => 'superadmin@dte.com'],
             [
                 'name' => 'Super Admin',
                 'password' => 'password',
-                'role' => Role::SUPERADMIN->value,
                 'status' => true,
                 'company_id' => null,
             ],
         );
+        $superadminUser->syncRoles(Role::SUPERADMIN->value);
 
-        User::query()->updateOrCreate(
+        $adminUser = User::query()->updateOrCreate(
             ['email' => 'admin@dte.com'],
             [
                 'name' => 'DTE Admin',
                 'password' => 'password',
-                'role' => Role::ADMIN->value,
                 'status' => true,
                 'company_id' => $adminCompany->id,
             ],
         );
+        $adminUser->syncRoles(Role::ADMIN->value);
 
         $this->seedDashboardDtes($company);
     }
