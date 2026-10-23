@@ -54,6 +54,30 @@ class DeveloperSeeder extends Seeder
             'environment' => '00',
         ])->save();
 
+        $adminCompany = Company::query()->updateOrCreate(
+            ['nit' => '06142812901016'],
+            [
+                'name' => 'Rutely DTE Admin, S.A. de C.V.',
+                'address' => 'San Salvador Centro',
+                'phone' => '22224444',
+                'nrc' => '7654321',
+                'commercial_name' => 'Rutely DTE Admin',
+                'economic_activity_code' => '62010',
+                'establishment_type' => '01',
+                'departament_id' => $departamentId,
+                'municipality_id' => $municipalityId,
+                'email' => 'admin@dte.com',
+                'mh_establishment_code' => '0002',
+                'mh_pos_code' => '0002',
+                'own_establishment_code' => '0002',
+                'own_pos_code' => '0002',
+            ],
+        );
+        $adminCompany->forceFill([
+            'is_onboarded' => '1',
+            'environment' => '00',
+        ])->save();
+
         User::query()->updateOrCreate(
             ['email' => 'playwright@rutely.biz'],
             [
@@ -62,6 +86,28 @@ class DeveloperSeeder extends Seeder
                 'role' => Role::ADMIN->value,
                 'status' => true,
                 'company_id' => $company->id,
+            ],
+        );
+
+        User::query()->updateOrCreate(
+            ['email' => 'superadmin@dte.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => 'password',
+                'role' => Role::SUPERADMIN->value,
+                'status' => true,
+                'company_id' => null,
+            ],
+        );
+
+        User::query()->updateOrCreate(
+            ['email' => 'admin@dte.com'],
+            [
+                'name' => 'DTE Admin',
+                'password' => 'password',
+                'role' => Role::ADMIN->value,
+                'status' => true,
+                'company_id' => $adminCompany->id,
             ],
         );
 
