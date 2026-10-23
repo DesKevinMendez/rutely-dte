@@ -180,3 +180,8 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Do NOT delete tests without approval.
 
 </laravel-boost-guidelines>
+
+
+## UI ornito
+
+Before to create a table, select, input, card, or any another ui elements, review the ornito documentation, if you dont find anything about you find, asking me. Do you need use checkbox? Find in the ornito doc, and if you dont have anything there, asking me about the element. 
