@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use App\Role;
+use Spatie\Permission\Models\Role as PermissionRole;
 
 /**
  * @extends Factory<User>
@@ -17,6 +18,15 @@ class UserFactory extends Factory
      * The current password being used by the factory.
      */
     protected static ?string $password;
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            $role = PermissionRole::findOrCreate($user->role, 'web');
+
+            $user->assignRole($role);
+        });
+    }
 
     /**
      * Define the model's default state.
