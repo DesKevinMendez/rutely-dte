@@ -106,7 +106,9 @@ test.describe('Superadmin company API tokens', () => {
 
         await confirmButton.click();
         await expect(
-            confirmationDialog.getByText('La confirmación es requerida'),
+            confirmationDialog.getByText(
+                "Debes escribir 'Confirmar' exactamente",
+            ),
         ).toBeVisible();
         expect(deleteRequests).toBe(0);
 
