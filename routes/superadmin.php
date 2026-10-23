@@ -12,4 +12,10 @@ Route::prefix('v1/superadmin')
 
         Route::post('companies', [CompanyController::class, 'store'])
             ->name('companies.store');
+
+        Route::get('companies/{company}', [CompanyController::class, 'show'])
+            ->name('companies.show');
+
+        Route::match(['put', 'patch'], 'companies/{company}', [CompanyController::class, 'update'])
+            ->name('companies.update');
     });

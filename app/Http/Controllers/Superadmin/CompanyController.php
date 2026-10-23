@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Superadmin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CatalogIndexRequest;
 use App\Http\Requests\Company\StoreSuperadminCompanyRequest;
+use App\Http\Requests\Company\UpdateSuperadminCompanyRequest;
 use App\Http\Resources\CommonCollection;
 use App\Models\Company;
 use App\Response\CommonResponse;
@@ -31,5 +32,17 @@ class CompanyController extends Controller
         ]);
 
         return new CommonResponse($company->refresh(), 201);
+    }
+
+    public function show(Company $company): CommonResponse
+    {
+        return new CommonResponse($company);
+    }
+
+    public function update(UpdateSuperadminCompanyRequest $request, Company $company): CommonResponse
+    {
+        $company->update($request->validated());
+
+        return new CommonResponse($company->refresh());
     }
 }

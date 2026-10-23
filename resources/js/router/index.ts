@@ -123,6 +123,44 @@ const router = createRouter({
                     component: () =>
                         import('@/modules/superadmin/companies/views/CompanyCreateView.vue'),
                 },
+                {
+                    path: 'companies/:id',
+                    name: 'superadmin-company-show',
+                    meta: { title: 'Empresa' },
+                    component: () =>
+                        import('@/modules/superadmin/companies/views/CompanyShowView.vue'),
+                    children: [
+                        {
+                            path: '',
+                            name: 'superadmin-company-show-redirect',
+                            redirect: (to) => ({
+                                name: 'superadmin-company-profile',
+                                params: to.params,
+                            }),
+                        },
+                        {
+                            path: 'profile',
+                            name: 'superadmin-company-profile',
+                            meta: { title: 'Perfil de la empresa' },
+                            component: () =>
+                                import('@/modules/superadmin/companies/views/CompanyProfileView.vue'),
+                        },
+                        {
+                            path: 'profile/edit',
+                            name: 'superadmin-company-profile-edit',
+                            meta: { title: 'Editar perfil' },
+                            component: () =>
+                                import('@/modules/superadmin/companies/views/CompanyEditView.vue'),
+                        },
+                        {
+                            path: 'users',
+                            name: 'superadmin-company-users',
+                            meta: { title: 'Usuarios' },
+                            component: () =>
+                                import('@/modules/superadmin/companies/views/CompanyUsersView.vue'),
+                        },
+                    ],
+                },
             ],
         },
     ],

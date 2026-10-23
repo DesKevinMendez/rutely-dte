@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { IconPlus } from '@tabler/icons-vue';
-import { Badge, BaseButton, Card, DataTable, ViewHeader } from 'ornito';
+import { IconEye, IconPlus } from '@tabler/icons-vue';
+import {
+    Badge,
+    BaseButton,
+    Card,
+    DataTable,
+    IconButton,
+    ViewHeader,
+} from 'ornito';
 import type { TableField } from 'ornito';
 import { useRouter } from 'vue-router';
 import type { Company } from '@/modules/superadmin/companies/types/company.types';
@@ -49,6 +56,7 @@ const isOnboarded = (value: Company['is_onboarded']): boolean =>
                 :columns="columns"
                 search-by="filter[name]"
                 search-placeholder="Buscar empresa..."
+                actions-label="Opciones"
             >
                 <template #onboarding="{ value }">
                     <Badge
@@ -57,6 +65,20 @@ const isOnboarded = (value: Company['is_onboarded']): boolean =>
                     >
                         {{ isOnboarded(value) ? 'Completado' : 'Pendiente' }}
                     </Badge>
+                </template>
+
+                <template #actions="{ row }">
+                    <IconButton
+                        :icon="IconEye"
+                        :to="{
+                            name: 'superadmin-company-profile',
+                            params: { id: row.id },
+                        }"
+                        color="primary"
+                        rounded
+                        outline
+                        aria-label="Ver perfil de la empresa"
+                    />
                 </template>
             </DataTable>
         </Card>
