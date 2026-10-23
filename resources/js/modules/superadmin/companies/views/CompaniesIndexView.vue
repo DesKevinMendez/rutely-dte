@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Badge, Card, DataTable, ViewHeader } from 'ornito';
+import { IconPlus } from '@tabler/icons-vue';
+import { Badge, BaseButton, Card, DataTable, ViewHeader } from 'ornito';
 import type { TableField } from 'ornito';
 import type { Company } from '@/modules/superadmin/companies/types/company.types';
 
@@ -21,7 +22,18 @@ const isOnboarded = (value: Company['is_onboarded']): boolean =>
         <ViewHeader
             title="Empresas"
             subtitle="Consulta las empresas registradas y su estado de configuración."
-        />
+        >
+            <template #right>
+                <BaseButton
+                    variant="primary"
+                    size="auto"
+                    :icon="IconPlus"
+                    icon-position="left"
+                >
+                    Nueva empresa
+                </BaseButton>
+            </template>
+        </ViewHeader>
 
         <Card>
             <DataTable
