@@ -36,7 +36,7 @@ const userInitials = computed(() => {
             .join('') || 'S'
     );
 });
-const userRole = computed(() => auth.user?.role ?? 'superadmin');
+const userRole = computed(() => auth.user?.roles[0]?.name ?? 'superadmin');
 
 const logout = async (): Promise<void> => {
     auth.clearSession();

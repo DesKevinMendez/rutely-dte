@@ -13,10 +13,11 @@ export function useProfileUi() {
                 .slice(0, 2)
                 .map((word) => word.charAt(0).toUpperCase())
                 .join('') || 'U';
+        const roleName = auth.user?.roles[0]?.name;
         const role =
-            auth.user?.role === 'admin'
+            roleName === 'admin'
                 ? 'Admin'
-                : (auth.user?.role ?? 'Usuario').replace(/^./, (letter) =>
+                : (roleName ?? 'Usuario').replace(/^./, (letter) =>
                       letter.toUpperCase(),
                   );
 
