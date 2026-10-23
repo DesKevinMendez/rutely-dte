@@ -30,6 +30,19 @@ test.describe('Superadmin company API tokens', () => {
         });
 
         await page.route(
+            `**/api/v1/superadmin/companies/${companyId}`,
+            async (route) => {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        data: { id: companyId, name: 'Empresa de pruebas' },
+                    }),
+                });
+            },
+        );
+
+        await page.route(
             '**/api/v1/superadmin/companies/**/tokens**',
             async (route) => {
                 const request = route.request();
@@ -78,22 +91,26 @@ test.describe('Superadmin company API tokens', () => {
             .getByRole('button', { name: `Revocar token ${token.name}` })
             .click();
 
-        await expect(
-            page.getByRole('heading', { name: 'Revocar token de API' }),
-        ).toBeVisible();
+        const confirmationDialog = page.getByRole('dialog');
+        await expect(confirmationDialog).toBeVisible();
+        await expect(confirmationDialog).toContainText('Revocar token de API');
         expect(deleteRequests).toBe(0);
 
-        const confirmationInput = page.getByRole('textbox', {
+        const confirmationInput = confirmationDialog.getByRole('textbox', {
             name: 'Confirmación',
         });
-        const confirmButton = page.getByRole('button', {
+        const confirmButton = confirmationDialog.getByRole('button', {
             name: 'Confirmar',
             exact: true,
         });
 
-        await expect(confirmButton).toBeDisabled();
+        await confirmButton.click();
+        await expect(
+            confirmationDialog.getByText('La confirmación es requerida'),
+        ).toBeVisible();
+        expect(deleteRequests).toBe(0);
+
         await confirmationInput.fill('Confirmar');
-        await expect(confirmButton).toBeEnabled();
 
         const deleteResponsePromise = page.waitForResponse(
             (response) =>
