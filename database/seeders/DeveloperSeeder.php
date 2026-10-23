@@ -106,6 +106,7 @@ class DeveloperSeeder extends Seeder
         $adminUser->syncRoles(Role::ADMIN->value);
 
         $this->seedDashboardDtes($company);
+        $this->call(DteSeeder::class);
     }
 
     private function seedDashboardDtes(Company $company): void
