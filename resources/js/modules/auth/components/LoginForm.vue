@@ -22,7 +22,8 @@ const { email, password, rules, isLoading, error, login } = useLogin();
                 Iniciar Sesión
             </h2>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Ingresá tus credenciales autorizadas de administrador
+                Ingresá tus credenciales autorizadas de administrador o
+                superadmin
             </p>
         </div>
 

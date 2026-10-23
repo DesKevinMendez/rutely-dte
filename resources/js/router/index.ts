@@ -97,6 +97,20 @@ const router = createRouter({
                 },
             ],
         },
+        {
+            path: '/superadmin',
+            component: () => import('@/layouts/LayoutSuperadmin.vue'),
+            meta: { requiresAuth: true, superadminOnly: true },
+            children: [
+                { path: '', redirect: { name: 'superadmin-dashboard' } },
+                {
+                    path: 'dashboard',
+                    name: 'superadmin-dashboard',
+                    component: () =>
+                        import('@/modules/superadmin/views/SuperadminDashboardView.vue'),
+                },
+            ],
+        },
     ],
 });
 
@@ -108,11 +122,31 @@ router.beforeEach(async (to) => {
         return { name: 'login' };
     }
 
+    const isSuperadminRoute = to.matched.some(
+        (matchedRoute) => matchedRoute.meta.superadminOnly === true,
+    );
+
+    if (
+        to.meta.requiresAuth &&
+        auth.user?.role === 'superadmin' &&
+        !isSuperadminRoute
+    ) {
+        return { name: 'superadmin-dashboard' };
+    }
+
+    if (isSuperadminRoute && auth.user?.role !== 'superadmin') {
+        return { name: 'dashboard' };
+    }
+
     if (
         (to.name === 'login' || to.name === 'recovery') &&
         auth.isAuthenticated &&
         (await ensureSession())
     ) {
+        if (auth.user?.role === 'superadmin') {
+            return { name: 'superadmin-dashboard' };
+        }
+
         return { name: auth.user?.company_id ? 'dashboard' : 'onboarding' };
     }
 

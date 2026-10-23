@@ -33,13 +33,13 @@ declare module 'vue' {
     DashboardMetrics: typeof import('./resources/js/modules/dashboard/components/DashboardMetrics.vue')['default']
     DashboardSkeleton: typeof import('./resources/js/modules/dashboard/components/DashboardSkeleton.vue')['default']
     DashboardView: typeof import('./resources/js/modules/dashboard/views/DashboardView.vue')['default']
-    DteDataTable: typeof import('./resources/js/modules/dtes/components/DteDataTable.vue')['default']
     DtesContent: typeof import('./resources/js/modules/dtes/components/DtesContent.vue')['default']
     DtesSkeleton: typeof import('./resources/js/modules/dtes/components/DtesSkeleton.vue')['default']
     DtesView: typeof import('./resources/js/modules/dtes/views/DtesView.vue')['default']
     GeneratedApiTokenModal: typeof import('./resources/js/modules/tokens/components/GeneratedApiTokenModal.vue')['default']
     LayoutAuthenticated: typeof import('./resources/js/layouts/LayoutAuthenticated.vue')['default']
     LayoutGuest: typeof import('./resources/js/layouts/LayoutGuest.vue')['default']
+    LayoutSuperadmin: typeof import('./resources/js/layouts/LayoutSuperadmin.vue')['default']
     LoginForm: typeof import('./resources/js/guess/modules/login/components/LoginForm.vue')['default']
     LoginView: typeof import('./resources/js/guess/modules/login/views/LoginView.vue')['default']
     MhCredentialsContent: typeof import('./resources/js/modules/mh-credentials/components/MhCredentialsContent.vue')['default']
@@ -59,5 +59,6 @@ declare module 'vue' {
     RecoveryPasswordView: typeof import('./resources/js/modules/auth/views/RecoveryPasswordView.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SuperadminDashboardView: typeof import('./resources/js/modules/superadmin/views/SuperadminDashboardView.vue')['default']
   }
 }
