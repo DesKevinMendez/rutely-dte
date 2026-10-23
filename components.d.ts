@@ -23,6 +23,7 @@ declare module 'vue' {
     CertificatesView: typeof import('./resources/js/modules/certificates/views/CertificatesView.vue')['default']
     CertificateUploadForm: typeof import('./resources/js/modules/certificates/components/CertificateUploadForm.vue')['default']
     CompaniesIndexView: typeof import('./resources/js/modules/superadmin/companies/views/CompaniesIndexView.vue')['default']
+    CompanyCreateView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyCreateView.vue')['default']
     ContingencyContent: typeof import('./resources/js/modules/contingency/components/ContingencyContent.vue')['default']
     ContingencyGuide: typeof import('./resources/js/modules/contingency/components/ContingencyGuide.vue')['default']
     ContingencySkeleton: typeof import('./resources/js/modules/contingency/components/ContingencySkeleton.vue')['default']

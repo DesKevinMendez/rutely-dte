@@ -3,27 +3,41 @@ import { BaseButton, Card, FormInput, SearchableSelect } from 'ornito';
 import { Form } from 'vee-validate';
 import useOnboarding from '../composables/useOnboarding';
 
+const props = withDefaults(
+    defineProps<{
+        mode?: 'onboarding' | 'superadmin';
+    }>(),
+    {
+        mode: 'onboarding',
+    },
+);
+
 const {
     form,
     validationSchema,
     municipalityUrl,
     districtUrl,
-    isAuthenticated,
+    showAccountFields,
     isLoading,
+    error,
     continueFlow,
-    goToLogin,
-} = useOnboarding();
+    cancelFlow,
+} = useOnboarding(props.mode);
 </script>
 
 <template>
     <Card class="border-gray-200 dark:border-gray-800">
         <Form
-            id="onboarding-form"
+            :id="
+                props.mode === 'superadmin'
+                    ? 'superadmin-company-form'
+                    : 'onboarding-form'
+            "
             class="space-y-8"
             :validation-schema="validationSchema"
             @submit="continueFlow"
         >
-            <section v-if="!isAuthenticated" class="space-y-4">
+            <section v-if="showAccountFields" class="space-y-4">
                 <div>
                     <h2 class="text-base font-bold">Cuenta de administrador</h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -32,7 +46,9 @@ const {
                     </p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div
+                    class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                >
                     <FormInput
                         v-model="form.userName"
                         id="userName"
@@ -75,7 +91,7 @@ const {
             </section>
 
             <hr
-                v-if="!isAuthenticated"
+                v-if="showAccountFields"
                 class="border-gray-100 dark:border-gray-800"
             />
 
@@ -89,7 +105,9 @@ const {
                     </p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div
+                    class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                >
                     <FormInput
                         v-model="form.name"
                         id="name"
@@ -125,7 +143,9 @@ const {
                     />
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div
+                    class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                >
                     <SearchableSelect
                         v-model="form.economicActivityCode"
                         id="onboarding-economic-activity-select"
@@ -165,7 +185,9 @@ const {
                     </p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div
+                    class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                >
                     <FormInput
                         v-model="form.phone"
                         id="phone"
@@ -185,17 +207,21 @@ const {
                         placeholder="facturacion@rutely.biz"
                         autocomplete="email"
                     />
+
+                    <div class="sm:col-span-2 xl:col-span-1">
+                        <FormInput
+                            v-model="form.address"
+                            id="address"
+                            name="address"
+                            label="Complemento de Dirección"
+                            placeholder="Calle, avenida, número de local y referencias"
+                        />
+                    </div>
                 </div>
 
-                <FormInput
-                    v-model="form.address"
-                    id="address"
-                    name="address"
-                    label="Complemento de Dirección"
-                    placeholder="Calle, avenida, número de local y referencias"
-                />
-
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div
+                    class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                >
                     <SearchableSelect
                         v-model="form.departmentId"
                         id="onboarding-department-select"
@@ -265,7 +291,9 @@ const {
                     </p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div
+                    class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3"
+                >
                     <FormInput
                         v-model="form.ownEstablishmentCode"
                         id="ownEstablishmentCode"
@@ -295,9 +323,13 @@ const {
                     type="button"
                     variant="outline"
                     size="auto"
-                    @click="goToLogin"
+                    @click="cancelFlow"
                 >
-                    Volver al login
+                    {{
+                        props.mode === 'superadmin'
+                            ? 'Cancelar'
+                            : 'Volver al login'
+                    }}
                 </BaseButton>
 
                 <BaseButton
@@ -306,9 +338,21 @@ const {
                     size="auto"
                     :loading="isLoading"
                 >
-                    Continuar
+                    {{
+                        props.mode === 'superadmin'
+                            ? 'Crear empresa'
+                            : 'Continuar'
+                    }}
                 </BaseButton>
             </div>
+
+            <p
+                v-if="error"
+                class="text-sm text-red-600 dark:text-red-400"
+                role="alert"
+            >
+                {{ error }}
+            </p>
         </Form>
     </Card>
 </template>

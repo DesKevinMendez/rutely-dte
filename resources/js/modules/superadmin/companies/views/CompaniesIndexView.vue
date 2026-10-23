@@ -2,7 +2,14 @@
 import { IconPlus } from '@tabler/icons-vue';
 import { Badge, BaseButton, Card, DataTable, ViewHeader } from 'ornito';
 import type { TableField } from 'ornito';
+import { useRouter } from 'vue-router';
 import type { Company } from '@/modules/superadmin/companies/types/company.types';
+
+const router = useRouter();
+
+const createCompany = async (): Promise<void> => {
+    await router.push({ name: 'superadmin-company-create' });
+};
 
 const columns: TableField<Company>[] = [
     { label: 'Empresa', key: 'name' },
@@ -29,6 +36,7 @@ const isOnboarded = (value: Company['is_onboarded']): boolean =>
                     size="auto"
                     :icon="IconPlus"
                     icon-position="left"
+                    @click="createCompany"
                 >
                     Nueva empresa
                 </BaseButton>
