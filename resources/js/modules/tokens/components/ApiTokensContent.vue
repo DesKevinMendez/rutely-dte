@@ -75,32 +75,24 @@ const closeGeneratedToken = (): void => {
 
 <template>
     <div class="space-y-6">
-        <div
-            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-        >
-            <div>
-                <h1
-                    class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white"
-                >
-                    Tokens de API
-                </h1>
-            </div>
-            <BaseButton
-                variant="primary"
-                size="auto"
-                :disabled="isLoading"
-                @click="isCreateModalOpen = true"
-            >
-                <IconPlus class="mr-2 h-4 w-4" />
-                Crear token
-            </BaseButton>
-        </div>
-
         <Alert v-if="error" type="danger">
             {{ error }}
         </Alert>
 
         <Card title="Tokens de acceso">
+            <template v-if="companyId" #headerButtons>
+                <BaseButton
+                    variant="outline"
+                    size="auto"
+                    :icon="IconPlus"
+                    icon-position="left"
+                    :disabled="isLoading"
+                    @click="isCreateModalOpen = true"
+                >
+                    Crear token
+                </BaseButton>
+            </template>
+
             <DataTable
                 :key="`${tokensUrl}-${tableKey}`"
                 :columns="columns"
