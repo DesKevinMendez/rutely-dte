@@ -1,3 +1,4 @@
+import { useMessages } from 'ornito';
 import { ref } from 'vue';
 import type { ComputedRef } from 'vue';
 import { useRequest } from '@/core/composables/useRequest';
@@ -11,7 +12,8 @@ import type { ApiTokenAbility } from '../types/api-token.types';
 export function useApiTokensUi(tokensUrl: ComputedRef<string>) {
     const generatedToken = ref<string | null>(null);
     const error = ref<string | null>(null);
-    const { post, isLoading } = useRequest();
+    const { pushMessage } = useMessages();
+    const { post, del, isLoading } = useRequest();
 
     const createToken = async (
         name: string,
@@ -43,11 +45,30 @@ export function useApiTokensUi(tokensUrl: ComputedRef<string>) {
         generatedToken.value = null;
     };
 
+    const revokeToken = async (tokenId: number): Promise<boolean> => {
+        const response = await del(`${tokensUrl.value}/${tokenId}`);
+
+        if (response.statusCode.value !== 202) {
+            pushMessage(
+                response.error.value ?? 'No se pudo revocar el token de API.',
+                true,
+            );
+
+            return false;
+        }
+
+        error.value = null;
+        pushMessage('Token revocado correctamente.');
+
+        return true;
+    };
+
     return {
         generatedToken,
         isLoading,
         error,
         createToken,
         clearGeneratedToken,
+        revokeToken,
     };
 }
