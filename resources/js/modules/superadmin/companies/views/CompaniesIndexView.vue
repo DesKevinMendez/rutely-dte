@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { IconEye, IconPlus } from '@tabler/icons-vue';
 import {
-    Badge,
     BaseButton,
     Card,
     DataTable,
@@ -24,11 +23,7 @@ const columns: TableField<Company>[] = [
     { label: 'NIT', key: 'nit' },
     { label: 'Correo', key: 'email' },
     { label: 'Teléfono', key: 'phone' },
-    { label: 'Onboarding', key: 'is_onboarded', slot: 'onboarding' },
 ];
-
-const isOnboarded = (value: Company['is_onboarded']): boolean =>
-    value === true || value === 1 || value === '1' || value === 'true';
 </script>
 
 <template>
@@ -58,15 +53,6 @@ const isOnboarded = (value: Company['is_onboarded']): boolean =>
                 search-placeholder="Buscar empresa..."
                 actions-label="Opciones"
             >
-                <template #onboarding="{ value }">
-                    <Badge
-                        :variant="isOnboarded(value) ? 'success' : 'neutral'"
-                        text="xs"
-                    >
-                        {{ isOnboarded(value) ? 'Completado' : 'Pendiente' }}
-                    </Badge>
-                </template>
-
                 <template #actions="{ row }">
                     <IconButton
                         :icon="IconEye"

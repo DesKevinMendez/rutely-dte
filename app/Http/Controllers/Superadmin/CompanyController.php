@@ -26,10 +26,7 @@ class CompanyController extends Controller
 
     public function store(StoreSuperadminCompanyRequest $request): CommonResponse
     {
-        $company = Company::query()->create([
-            ...$request->validated(),
-            'is_onboarded' => true,
-        ]);
+        $company = Company::query()->create($request->validated());
 
         return new CommonResponse($company->refresh(), 201);
     }

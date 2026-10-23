@@ -30,7 +30,7 @@ function validSuperadminCompanyPayload(Company $company): array
     ]);
 }
 
-test('superadmin can create an onboarded company without being assigned to it', function () {
+test('superadmin can create a company without being assigned to it', function () {
     $assignedCompany = DteApiTestData::company();
     $superadmin = DteApiTestData::user($assignedCompany, Role::SUPERADMIN);
     Sanctum::actingAs($superadmin);
@@ -40,7 +40,6 @@ test('superadmin can create an onboarded company without being assigned to it', 
         'nit' => '06142812901016',
         'commercial_name' => 'Nueva empresa',
         'email' => 'nueva@example.com',
-        'is_onboarded' => false,
     ]);
 
     $response = $this->postJson(route('api.v1.superadmin.companies.store'), $payload);
@@ -50,10 +49,7 @@ test('superadmin can create an onboarded company without being assigned to it', 
 
     $response->assertExactJson(['data' => $company->fresh()->toArray()]);
 
-    $this->assertDatabaseHas(Company::class, [
-        'id' => $company->id,
-        'is_onboarded' => '1',
-    ]);
+    $this->assertModelExists($company);
     $this->assertSame($assignedCompany->id, $superadmin->fresh()->company_id);
 });
 

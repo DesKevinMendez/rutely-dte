@@ -29,7 +29,6 @@ return new class extends Migration
             $table->string('mh_pos_code');
             $table->string('own_establishment_code');
             $table->string('own_pos_code');
-            $table->string('is_onboarded')->default(false);
             $table->string('environment')->default('00');
 
             $table->timestamps();

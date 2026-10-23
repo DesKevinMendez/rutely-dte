@@ -18,7 +18,6 @@ export interface Company {
     mh_pos_code: string;
     own_establishment_code: string;
     own_pos_code: string;
-    is_onboarded: boolean | number | string;
     environment: string;
     created_at: string;
     updated_at: string;

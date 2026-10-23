@@ -4,6 +4,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Role;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 
@@ -80,7 +81,6 @@ test('an admin can create a company and is assigned to it', function () {
             'data' => [
                 'id' => $response->json('data.id'),
                 ...$payload,
-                'is_onboarded' => $response->json('data.is_onboarded'),
                 'environment' => $response->json('data.environment'),
                 'created_at' => $response->json('data.created_at'),
                 'updated_at' => $response->json('data.updated_at'),
