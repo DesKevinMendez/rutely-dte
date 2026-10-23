@@ -169,16 +169,14 @@ router.beforeEach(async (to) => {
     const isSuperadminRoute = to.matched.some(
         (matchedRoute) => matchedRoute.meta.superadminOnly === true,
     );
+    const isSuperadmin =
+        auth.user?.roles.some((role) => role.name === 'superadmin') ?? false;
 
-    if (
-        to.meta.requiresAuth &&
-        auth.user?.role === 'superadmin' &&
-        !isSuperadminRoute
-    ) {
+    if (to.meta.requiresAuth && isSuperadmin && !isSuperadminRoute) {
         return { name: 'superadmin-dashboard' };
     }
 
-    if (isSuperadminRoute && auth.user?.role !== 'superadmin') {
+    if (isSuperadminRoute && !isSuperadmin) {
         return { name: 'dashboard' };
     }
 
@@ -187,7 +185,7 @@ router.beforeEach(async (to) => {
         auth.isAuthenticated &&
         (await ensureSession())
     ) {
-        if (auth.user?.role === 'superadmin') {
+        if (isSuperadmin) {
             return { name: 'superadmin-dashboard' };
         }
 

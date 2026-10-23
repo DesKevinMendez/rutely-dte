@@ -59,9 +59,8 @@ function createUserCrudCompany(): Company
 
 function userCrudAdmin(Company $company, Role $role = Role::ADMIN): User
 {
-    return User::factory()->create([
+    return User::factory()->withRole($role)->create([
         'company_id' => $company->id,
-        'role' => $role->value,
     ]);
 }
 
@@ -80,9 +79,8 @@ function validUserPayload(): array
 test('an admin can list users from its company with common collection', function () {
     $company = createUserCrudCompany();
     $admin = userCrudAdmin($company);
-    $member = User::factory()->create([
+    $member = User::factory()->withRole(Role::USER)->create([
         'company_id' => $company->id,
-        'role' => Role::USER->value,
         'name' => 'Ana Operadora',
         'email' => 'ana@example.com',
     ]);
@@ -92,7 +90,7 @@ test('an admin can list users from its company with common collection', function
     $response = $this->getJson(route('api.v1.users.index', ['filter' => ['role' => Role::USER->value]]));
 
     $response->assertOk()->assertExactJson([
-        'data' => [$member->fresh()->toArray()],
+        'data' => [$member->fresh()->load('roles')->toArray()],
         'pagination' => [
             'total' => 1,
             'per_page' => 10,
@@ -104,17 +102,37 @@ test('an admin can list users from its company with common collection', function
     ]);
 });
 
+test('users can be sorted by their Spatie role relation', function () {
+    $company = createUserCrudCompany();
+    $admin = userCrudAdmin($company);
+    $member = User::factory()->withRole(Role::USER)->create([
+        'company_id' => $company->id,
+    ]);
+
+    Sanctum::actingAs($admin);
+
+    $this->getJson(route('api.v1.users.index', ['sort' => 'role']))
+        ->assertOk()
+        ->assertJsonPath('data.0.id', $admin->id)
+        ->assertJsonPath('data.1.id', $member->id);
+
+    $this->getJson(route('api.v1.users.index', ['sort' => '-role']))
+        ->assertOk()
+        ->assertJsonPath('data.0.id', $member->id)
+        ->assertJsonPath('data.1.id', $admin->id);
+});
+
 test('user list never leaks users from another company', function () {
     $company = createUserCrudCompany();
     $admin = userCrudAdmin($company);
-    User::factory()->create(['company_id' => $company->id, 'role' => Role::USER->value]);
+    User::factory()->withRole(Role::USER)->create(['company_id' => $company->id]);
 
     $otherCompany = Company::query()->create($company->only([
         'name', 'address', 'phone', 'nit', 'nrc', 'commercial_name', 'economic_activity_code',
         'establishment_type', 'departament_id', 'municipality_id', 'district_id', 'email',
         'mh_establishment_code', 'mh_pos_code', 'own_establishment_code', 'own_pos_code',
     ]) + ['name' => 'Other Company', 'nit' => '06142812901016', 'email' => 'other@rutely.biz']);
-    User::factory()->create(['company_id' => $otherCompany->id, 'role' => Role::USER->value]);
+    User::factory()->withRole(Role::USER)->create(['company_id' => $otherCompany->id]);
 
     Sanctum::actingAs($admin);
 
@@ -138,19 +156,21 @@ test('an admin can create a user and company is assigned from authentication con
             'email_verified_at' => null,
             'phone' => $payload['phone'],
             'company_id' => $company->id,
-            'role' => $payload['role'],
+            'roles' => $response->json('data.roles'),
             'status' => true,
             'created_at' => $response->json('data.created_at'),
             'updated_at' => $response->json('data.updated_at'),
         ],
     ]);
+    $response->assertJsonPath('data.roles.0.name', Role::USER->value);
 
     $this->assertDatabaseHas(User::class, [
         'email' => $payload['email'],
         'company_id' => $company->id,
-        'role' => Role::USER->value,
         'status' => true,
     ]);
+
+    expect(User::query()->where('email', $payload['email'])->firstOrFail()->hasRole(Role::USER->value))->toBeTrue();
 });
 
 test('user role and status use secure defaults', function () {
@@ -163,23 +183,23 @@ test('user role and status use secure defaults', function () {
     $response = $this->postJson(route('api.v1.users.store'), $payload);
 
     $response->assertCreated();
-    expect($response->json('data.role'))->toBe(Role::USER->value)
+    expect($response->json('data.roles.0.name'))->toBe(Role::USER->value)
         ->and($response->json('data.status'))->toBeTrue();
 });
 
 test('an admin can show update and delete a company user', function () {
     $company = createUserCrudCompany();
     $admin = userCrudAdmin($company);
-    $member = User::factory()->create(['company_id' => $company->id, 'role' => Role::USER->value]);
+    $member = User::factory()->withRole(Role::USER)->create(['company_id' => $company->id]);
     Sanctum::actingAs($admin);
 
     $this->getJson(route('api.v1.users.show', $member))
         ->assertOk()
-        ->assertExactJson(['data' => $member->fresh()->toArray()]);
+        ->assertExactJson(['data' => $member->fresh()->load('roles')->toArray()]);
 
     $update = ['name' => 'Usuario actualizado', 'status' => false];
     $response = $this->patchJson(route('api.v1.users.update', $member), $update);
-    $member->refresh();
+    $member->refresh()->load('roles');
 
     $response->assertOk()->assertExactJson(['data' => $member->toArray()]);
     expect($member->name)->toBe('Usuario actualizado')->and($member->status)->toBeFalse();
@@ -209,7 +229,7 @@ test('user management requires authentication', function (string $method, string
 
 test('an operational user cannot manage users', function () {
     $company = createUserCrudCompany();
-    Sanctum::actingAs(User::factory()->create(['company_id' => $company->id, 'role' => Role::USER->value]));
+    Sanctum::actingAs(User::factory()->withRole(Role::USER)->create(['company_id' => $company->id]));
 
     $this->getJson(route('api.v1.users.index'))->assertForbidden();
     $this->postJson(route('api.v1.users.store'), validUserPayload())->assertForbidden();
@@ -223,7 +243,7 @@ test('an admin cannot access a user from another company', function () {
         'establishment_type', 'departament_id', 'municipality_id', 'district_id', 'email',
         'mh_establishment_code', 'mh_pos_code', 'own_establishment_code', 'own_pos_code',
     ]) + ['name' => 'Other Company', 'nit' => '06142812901016', 'email' => 'other@rutely.biz']);
-    $otherUser = User::factory()->create(['company_id' => $otherCompany->id, 'role' => Role::USER->value]);
+    $otherUser = User::factory()->withRole(Role::USER)->create(['company_id' => $otherCompany->id]);
     Sanctum::actingAs($admin);
 
     $this->getJson(route('api.v1.users.show', $otherUser))->assertForbidden();
@@ -282,7 +302,7 @@ test('store user request validation returns 422', function (string $field, mixed
 test('update user request validation returns 422', function (string $field, mixed $value, string $message) {
     $company = createUserCrudCompany();
     $admin = userCrudAdmin($company);
-    $member = User::factory()->create(['company_id' => $company->id, 'role' => Role::USER->value]);
+    $member = User::factory()->withRole(Role::USER)->create(['company_id' => $company->id]);
     Sanctum::actingAs($admin);
 
     if ($field === 'email' && $value === 'existing@rutely.biz') {

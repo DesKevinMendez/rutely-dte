@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 require __DIR__.'/guess.php';
 
 Route::get('/user', function (Request $request) {
-    return $request->user();
+    return $request->user()->load('roles');
 })->middleware(['auth:sanctum', 'user-token']);
 
 Route::group(['prefix' => 'v1'], function () {

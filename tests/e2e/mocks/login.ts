@@ -4,7 +4,7 @@ import type { Page } from '@playwright/test';
 interface LoginUser {
     id: string;
     company_id: string | null;
-    role: string;
+    roles: Array<{ name: string }>;
     phone: string | null;
     name: string;
     email: string;
@@ -37,7 +37,7 @@ export function createLoginApiMock(role: string = 'admin'): LoginApiMock {
                 role === 'superadmin'
                     ? null
                     : faker.string.uuid({ version: 4 }),
-            role,
+            roles: [{ name: role }],
             phone: null,
             name: 'Kevin Mendez',
             email: 'kevin@rutely.biz',

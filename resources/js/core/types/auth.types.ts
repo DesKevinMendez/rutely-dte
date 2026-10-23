@@ -1,7 +1,7 @@
 export interface AuthUser {
     id: string;
     company_id: string | null;
-    role: string;
+    roles: Array<{ name: string }>;
     phone: string | null;
     name: string;
     email: string;

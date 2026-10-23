@@ -44,11 +44,11 @@ export default function useLogin() {
         }
 
         auth.setSession(session.token, session.user);
+        const isSuperadmin = session.user.roles.some(
+            (role) => role.name === 'superadmin',
+        );
         await router.push({
-            name:
-                session.user.role === 'superadmin'
-                    ? 'superadmin-dashboard'
-                    : 'dashboard',
+            name: isSuperadmin ? 'superadmin-dashboard' : 'dashboard',
         });
     };
 

@@ -21,7 +21,7 @@ test('an user can do login', function () {
             'user' => [
                 'id' => $response->json('data.user.id'),
                 'company_id' => $user->company_id,
-                'role' => $response->json('data.user.role'),
+                'roles' => $response->json('data.user.roles'),
                 'phone' => $response->json('data.user.phone'),
                 'name' => $response->json('data.user.name'),
                 'email' => $response->json('data.user.email'),
@@ -31,12 +31,12 @@ test('an user can do login', function () {
             ],
         ],
     ]);
+    $response->assertJsonPath('data.user.roles.0.name', Role::ADMIN->value);
 });
 
 test('a superadmin can log in without a company', function () {
-    $superadmin = User::factory()->create([
+    $superadmin = User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
-        'role' => Role::SUPERADMIN->value,
     ]);
 
     $response = $this->post(route('login'), [
@@ -49,10 +49,9 @@ test('a superadmin can log in without a company', function () {
         'data' => [
             'user' => [
                 'company_id' => null,
-                'role' => Role::SUPERADMIN->value,
             ],
         ],
-    ]);
+    ])->assertJsonPath('data.user.roles.0.name', Role::SUPERADMIN->value);
 });
 
 test('an user cannot do login with wrong credentials', function () {

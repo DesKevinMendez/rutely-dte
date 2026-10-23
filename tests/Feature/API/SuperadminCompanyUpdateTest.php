@@ -7,9 +7,8 @@ use Tests\Support\DteApiTestData;
 
 test('superadmin can update a company that is not assigned to their account', function (): void {
     $company = DteApiTestData::company();
-    $superadmin = User::factory()->create([
+    $superadmin = User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
-        'role' => Role::SUPERADMIN->value,
     ]);
     Sanctum::actingAs($superadmin);
 
@@ -56,9 +55,8 @@ test('updating a company requires authentication', function (): void {
 
 test('superadmin company update accepts an empty partial payload', function (): void {
     $company = DteApiTestData::company();
-    Sanctum::actingAs(User::factory()->create([
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
-        'role' => Role::SUPERADMIN->value,
     ]));
 
     $this->patchJson(route('api.v1.superadmin.companies.update', $company), [])
@@ -68,9 +66,8 @@ test('superadmin company update accepts an empty partial payload', function (): 
 
 test('superadmin company update allows null optional fields', function (): void {
     $company = DteApiTestData::company();
-    Sanctum::actingAs(User::factory()->create([
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
-        'role' => Role::SUPERADMIN->value,
     ]));
 
     $this->patchJson(
@@ -84,9 +81,8 @@ test('superadmin company update allows null optional fields', function (): void 
 
 test('superadmin company update validates each request rule', function (string $field, mixed $value, string $message): void {
     $company = DteApiTestData::company();
-    Sanctum::actingAs(User::factory()->create([
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
-        'role' => Role::SUPERADMIN->value,
     ]));
 
     $this->patchJson(route('api.v1.superadmin.companies.update', $company), [$field => $value])

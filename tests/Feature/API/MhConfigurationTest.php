@@ -55,7 +55,7 @@ function mhConfigurationCompany(): Company
 
 function mhConfigurationAdmin(Company $company, Role $role = Role::ADMIN): User
 {
-    return User::factory()->create(['company_id' => $company->id, 'role' => $role->value]);
+    return User::factory()->withRole($role)->create(['company_id' => $company->id]);
 }
 
 test('admin can store and show MH credentials without exposing the password', function () {

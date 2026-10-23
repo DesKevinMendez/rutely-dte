@@ -37,7 +37,7 @@ test('a user can register and is assigned the admin role', function () {
                 'user' => [
                     'id' => $response->json('data.user.id'),
                     'company_id' => null,
-                    'role' => Role::ADMIN->value,
+                    'roles' => $response->json('data.user.roles'),
                     'phone' => $payload['phone'],
                     'name' => $payload['name'],
                     'email' => $payload['email'],
@@ -46,6 +46,7 @@ test('a user can register and is assigned the admin role', function () {
                 ],
             ],
         ]);
+    $response->assertJsonPath('data.user.roles.0.name', Role::ADMIN->value);
 
     $userId = $response->json('data.user.id');
 
@@ -55,7 +56,6 @@ test('a user can register and is assigned the admin role', function () {
         'email' => $payload['email'],
         'phone' => $payload['phone'],
         'company_id' => null,
-        'role' => Role::ADMIN->value,
     ]);
     $this->assertDatabaseCount(User::class, 1);
     $this->assertDatabaseHas(PersonalAccessToken::class, [
@@ -67,6 +67,7 @@ test('a user can register and is assigned the admin role', function () {
     $user = User::query()->findOrFail($userId);
 
     expect(Hash::check($payload['password'], $user->password))->toBeTrue();
+    expect($user->hasRole(Role::ADMIN->value))->toBeTrue();
     expect($response->json('data.token'))->toBeString()->not->toBeEmpty();
 
     Mail::assertQueued(WelcomeMail::class, function (WelcomeMail $mail) use ($payload, $userId): bool {
@@ -102,8 +103,9 @@ test('phone may be null when registering', function () {
     $this->assertDatabaseHas(User::class, [
         'email' => $payload['email'],
         'phone' => null,
-        'role' => Role::ADMIN->value,
     ]);
+
+    expect(User::query()->where('email', $payload['email'])->firstOrFail()->hasRole(Role::ADMIN->value))->toBeTrue();
 });
 
 test('email must be unique when registering', function () {

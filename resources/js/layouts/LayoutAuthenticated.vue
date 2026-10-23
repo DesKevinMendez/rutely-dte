@@ -53,7 +53,7 @@ const userInitials = computed(() => {
             .join('') || 'U'
     );
 });
-const userRole = computed(() => auth.user?.role ?? 'Usuario');
+const userRole = computed(() => auth.user?.roles[0]?.name ?? 'Usuario');
 
 const environmentConfirmationTitle = computed(() => {
     if (pendingEnvironment.value === 'PRODUCCION') {

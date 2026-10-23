@@ -9,9 +9,8 @@ use Tests\Support\DteApiTestData;
 test('superadmin can show a company that is not assigned to their account', function (): void {
     $company = DteApiTestData::company();
 
-    Sanctum::actingAs(User::factory()->create([
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
-        'role' => Role::SUPERADMIN->value,
     ]));
 
     $this->getJson(route('api.v1.superadmin.companies.show', $company))
@@ -38,9 +37,8 @@ test('showing a company requires authentication', function (): void {
 });
 
 test('superadmin company show returns not found for an unknown company', function (): void {
-    Sanctum::actingAs(User::factory()->create([
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
-        'role' => Role::SUPERADMIN->value,
     ]));
 
     $this->getJson(route('api.v1.superadmin.companies.show', Str::uuid()))

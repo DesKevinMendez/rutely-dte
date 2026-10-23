@@ -46,9 +46,8 @@ function apiTokenTestCompany(string $suffix = ''): Company
 
 function apiTokenTestUser(Company $company): User
 {
-    return User::factory()->create([
+    return User::factory()->withRole(Role::ADMIN)->create([
         'company_id' => $company->id,
-        'role' => Role::ADMIN->value,
     ]);
 }
 
@@ -130,9 +129,8 @@ test('lists only Sanctum tokens owned by the authenticated company', function ()
 });
 
 test('API token endpoints return 404 when the authenticated user has no company', function () {
-    $user = User::factory()->create([
+    $user = User::factory()->withRole(Role::ADMIN)->create([
         'company_id' => null,
-        'role' => Role::ADMIN->value,
     ]);
     Sanctum::actingAs($user);
 

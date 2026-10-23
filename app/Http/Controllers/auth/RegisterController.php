@@ -26,8 +26,9 @@ class RegisterController extends Controller
             'phone' => $validated['phone'] ?? null,
             'password' => $validated['password'],
             'company_id' => null,
-            'role' => Role::ADMIN->value,
         ]);
+        $user->assignRole(Role::ADMIN->value);
+        $user->load('roles');
 
         $token = $user->createToken('register')->plainTextToken;
 

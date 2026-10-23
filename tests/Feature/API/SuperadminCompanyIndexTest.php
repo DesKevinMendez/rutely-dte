@@ -17,9 +17,8 @@ test('superadmin can list all companies with the common paginated response', fun
         'email' => 'zamora@example.com',
     ]);
 
-    Sanctum::actingAs(User::factory()->create([
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
-        'role' => Role::SUPERADMIN->value,
     ]));
 
     $this->getJson(route('api.v1.superadmin.companies.index', ['per_page' => 1]))
@@ -49,9 +48,8 @@ test('superadmin can filter companies by a partial name', function () {
         'email' => 'zamora@example.com',
     ]);
 
-    Sanctum::actingAs(User::factory()->create([
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
-        'role' => Role::SUPERADMIN->value,
     ]));
 
     $this->getJson(route('api.v1.superadmin.companies.index', [
@@ -72,9 +70,7 @@ test('superadmin can filter companies by a partial name', function () {
 });
 
 test('company listing is restricted to superadmins', function (Role $role) {
-    Sanctum::actingAs(User::factory()->create([
-        'role' => $role->value,
-    ]));
+    Sanctum::actingAs(User::factory()->withRole($role)->create());
 
     $this->getJson(route('api.v1.superadmin.companies.index'))->assertForbidden();
 })->with([

@@ -77,9 +77,8 @@ class DteApiTestData
 
     public static function user(Company $company, Role $role = Role::ADMIN): User
     {
-        return User::factory()->create([
+        return User::factory()->withRole($role)->create([
             'company_id' => $company->id,
-            'role' => $role->value,
         ]);
     }
 

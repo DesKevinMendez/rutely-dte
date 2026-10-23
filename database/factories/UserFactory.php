@@ -3,10 +3,10 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\Role;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use App\Role;
 
 /**
  * @extends Factory<User>
@@ -31,11 +31,22 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'phone' => fake()->unique()->e164PhoneNumber(),
             'company_id' => null,
-            'role' => Role::ADMIN->value,
             'status' => true,
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->withRole(Role::ADMIN);
+    }
+
+    public function withRole(Role $role): static
+    {
+        return $this->afterCreating(function (User $user) use ($role): void {
+            $user->syncRoles($role->value);
+        });
     }
 
     /**

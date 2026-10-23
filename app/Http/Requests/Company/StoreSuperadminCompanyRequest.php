@@ -11,6 +11,6 @@ class StoreSuperadminCompanyRequest extends StoreCompanyRequest
     {
         $user = $this->user();
 
-        return $user instanceof User && $user->role === Role::SUPERADMIN->value;
+        return $user instanceof User && $user->hasRole(Role::SUPERADMIN->value);
     }
 }
