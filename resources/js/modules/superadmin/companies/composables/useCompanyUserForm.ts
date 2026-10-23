@@ -22,9 +22,11 @@ export default function useCompanyUserForm() {
     const phoneRules = yup
         .string()
         .test(
-            'phone-min',
-            'El teléfono debe contener al menos 8 caracteres.',
-            (value) => !value || value.length >= 8,
+            'phone-length',
+            'El teléfono debe contener 8 dígitos después del prefijo +503.',
+            (value) =>
+                !value ||
+                value.replace(/^\+503\s*/, '').replace(/\D/g, '').length === 8,
         )
         .max(30, 'El teléfono no debe contener más de 30 caracteres.');
 
