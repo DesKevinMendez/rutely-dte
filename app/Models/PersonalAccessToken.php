@@ -10,6 +10,6 @@ class PersonalAccessToken extends SanctumPersonalAccessToken
     /** @return Attribute<string, never> */
     protected function tokenPreview(): Attribute
     {
-        return Attribute::get(fn (): string => $this->getKey().'|'.substr($this->token, 0, 4).'***'.substr($this->token, -4));
+        return Attribute::get(fn (): string => $this->getKey().'|'.substr($this->token, 0, 2).'***'.substr($this->token, -4));
     }
 }

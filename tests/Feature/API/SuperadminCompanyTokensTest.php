@@ -82,7 +82,7 @@ test('superadmin can create a token for the selected company with selected abili
         ->and($response->json('data.plain_text_token'))->toBeString()->not->toBeEmpty()
         ->and($storedToken)->not->toBeNull()
         ->and($response->json('data.record.token_preview'))
-        ->toBe($tokenId.'|'.substr($storedToken->token, 0, 4).'***'.substr($storedToken->token, -4))
+        ->toBe($tokenId.'|'.substr($storedToken->token, 0, 2).'***'.substr($storedToken->token, -4))
         ->and($storedToken->tokenable_type)->toBe($company->getMorphClass())
         ->and($storedToken->tokenable_id)->toBe($company->id)
         ->and($storedToken->name)->toBe('ERP de lectura')

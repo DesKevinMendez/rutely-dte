@@ -79,7 +79,7 @@ test('creates a Sanctum token owned by the authenticated company', function () {
         ->and($storedToken->token)->toBe(hash('sha256', $secret))
         ->and($storedToken->token)->not->toBe($plainTextToken)
         ->and($response->json('data.record.token_preview'))
-        ->toBe($tokenId.'|'.substr($storedToken->token, 0, 4).'***'.substr($storedToken->token, -4));
+        ->toBe($tokenId.'|'.substr($storedToken->token, 0, 2).'***'.substr($storedToken->token, -4));
 });
 
 test('creates an API token with only the requested abilities', function () {
@@ -96,7 +96,7 @@ test('creates an API token with only the requested abilities', function () {
 
     expect($response->json('data.record.abilities'))->toBe(['list:dte'])
         ->and($response->json('data.record.token_preview'))
-        ->toBe($tokenId.'|'.substr($storedToken->token, 0, 4).'***'.substr($storedToken->token, -4))
+        ->toBe($tokenId.'|'.substr($storedToken->token, 0, 2).'***'.substr($storedToken->token, -4))
         ->and(json_decode($storedToken->abilities, true))->toBe(['list:dte']);
 });
 
