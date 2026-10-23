@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Dte;
 
 use App\Environment;
+use App\Models\Company;
 use App\Models\Dte;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -11,7 +12,13 @@ class StoreDteRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('create', Dte::class) ?? false;
+        $principal = $this->user();
+
+        if ($principal instanceof Company) {
+            return $principal->currentAccessToken()?->can('create:dte') ?? false;
+        }
+
+        return $principal?->can('create', Dte::class) ?? false;
     }
 
     /** @return array<string, mixed> */

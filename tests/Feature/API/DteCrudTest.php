@@ -111,6 +111,43 @@ test('company API token without list dte ability cannot list DTEs', function () 
         ->assertForbidden();
 });
 
+test('company API token with create dte ability can create a DTE for its company', function () {
+    $company = DteApiTestData::company();
+    $token = $company->createToken('External ERP', ['create:dte'])->plainTextToken;
+    $payload = DteApiTestData::validDtePayload();
+    $record = DteApiTestData::dte($company);
+    $mhResult = [
+        'estado' => 'PROCESADO',
+        'selloRecibido' => 'SELLO-MH',
+        'observaciones' => [],
+    ];
+
+    $this->mock(DteIssuanceService::class)
+        ->shouldReceive('issue')
+        ->once()
+        ->with($company->id, $payload)
+        ->andReturn(['record' => $record, 'mhResult' => $mhResult]);
+
+    $this->withToken($token)
+        ->postJson(route('api.v1.dtes.store'), $payload)
+        ->assertCreated()
+        ->assertExactJson([
+            'data' => [
+                'record' => $record->toArray(),
+                'mh_result' => $mhResult,
+            ],
+        ]);
+});
+
+test('company API token without create dte ability cannot create a DTE', function () {
+    $company = DteApiTestData::company();
+    $token = $company->createToken('External ERP', ['list:dte'])->plainTextToken;
+
+    $this->withToken($token)
+        ->postJson(route('api.v1.dtes.store'), DteApiTestData::validDtePayload())
+        ->assertForbidden();
+});
+
 test('company member can create a DTE through issuance service with common response', function (Role $role) {
     $company = DteApiTestData::company();
     $user = DteApiTestData::user($company, $role);
@@ -164,6 +201,42 @@ test('DTE show rejects cross-company access', function () {
     Sanctum::actingAs(DteApiTestData::user($company));
 
     $this->getJson(route('api.v1.dtes.show', $dte))->assertForbidden();
+});
+
+test('company API token with list dte ability can obtain its DTE', function () {
+    $company = DteApiTestData::company();
+    $dte = DteApiTestData::dte($company);
+    $token = $company->createToken('External ERP', ['list:dte'])->plainTextToken;
+
+    $this->withToken($token)
+        ->getJson(route('api.v1.dtes.show', $dte))
+        ->assertOk()
+        ->assertExactJson(['data' => $dte->fresh()->toArray()]);
+});
+
+test('company API token cannot obtain a DTE from another company', function () {
+    $company = DteApiTestData::company();
+    $otherCompany = DteApiTestData::company([
+        'name' => 'Other Company',
+        'nit' => '06142812901016',
+        'email' => 'other@rutely.biz',
+    ]);
+    $dte = DteApiTestData::dte($otherCompany);
+    $token = $company->createToken('External ERP', ['list:dte'])->plainTextToken;
+
+    $this->withToken($token)
+        ->getJson(route('api.v1.dtes.show', $dte))
+        ->assertForbidden();
+});
+
+test('company API token without list dte ability cannot obtain a DTE', function () {
+    $company = DteApiTestData::company();
+    $dte = DteApiTestData::dte($company);
+    $token = $company->createToken('External ERP', ['create:dte'])->plainTextToken;
+
+    $this->withToken($token)
+        ->getJson(route('api.v1.dtes.show', $dte))
+        ->assertForbidden();
 });
 
 test('DTE endpoints require authentication', function () {

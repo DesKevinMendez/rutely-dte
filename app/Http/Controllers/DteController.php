@@ -13,6 +13,7 @@ use App\Response\CommonResponse;
 use App\Services\Dte\DteIssuanceService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -58,8 +59,15 @@ class DteController extends Controller
 
     public function store(StoreDteRequest $request, DteIssuanceService $issuanceService): CommonResponse
     {
+        $principal = $request->user();
+        $companyId = match (true) {
+            $principal instanceof Company => (string) $principal->getKey(),
+            $principal instanceof User => (string) $principal->company_id,
+            default => throw new AuthorizationException,
+        };
+
         try {
-            $result = $issuanceService->issue((string) $request->user()->company_id, $request->validated());
+            $result = $issuanceService->issue($companyId, $request->validated());
         } catch (DteSigningException $exception) {
             return new CommonResponse(
                 status: 400,
@@ -73,9 +81,17 @@ class DteController extends Controller
         ], 201);
     }
 
-    public function show(Dte $dte): CommonResponse
+    public function show(Request $request, Dte $dte): CommonResponse
     {
-        Gate::authorize('view', $dte);
+        $principal = $request->user();
+
+        if ($principal instanceof Company) {
+            if ($principal->getKey() !== $dte->company_id) {
+                throw new AuthorizationException;
+            }
+        } else {
+            Gate::authorize('view', $dte);
+        }
 
         return new CommonResponse($dte);
     }
