@@ -6,9 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ApiToken\StoreApiTokenRequest;
 use App\Http\Resources\CommonCollection;
 use App\Models\Company;
+use App\Models\PersonalAccessToken;
 use App\Response\CommonResponse;
 use Illuminate\Http\Request;
-use Laravel\Sanctum\PersonalAccessToken;
+use Illuminate\Http\Response;
 
 class ApiCompanyTokenController extends Controller
 {
@@ -33,6 +34,13 @@ class ApiCompanyTokenController extends Controller
             'record' => $this->metadata($token->accessToken),
             'plain_text_token' => $token->plainTextToken,
         ], 201);
+    }
+
+    public function destroy(Company $company, PersonalAccessToken $token): Response
+    {
+        $token->delete();
+
+        return response()->noContent(202);
     }
 
     /** @return array{id: int|string, name: string, abilities: array<int, string>, token_preview: string, last_used_at: string|null, created_at: string|null} */

@@ -17,4 +17,8 @@ Route::prefix('v1/superadmin')
 
         Route::apiResource('companies.tokens', ApiCompanyTokenController::class)
             ->only(['index', 'store']);
+
+        Route::delete('companies/{company}/tokens/{token}', [ApiCompanyTokenController::class, 'destroy'])
+            ->scopeBindings()
+            ->name('companies.tokens.destroy');
     });

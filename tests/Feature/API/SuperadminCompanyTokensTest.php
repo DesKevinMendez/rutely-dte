@@ -89,7 +89,59 @@ test('superadmin can create a token for the selected company with selected abili
         ->and(json_decode($storedToken->abilities, true))->toBe(['list:dte']);
 });
 
-test('company admin cannot list or create company tokens', function (): void {
+test('superadmin can revoke a token owned by the selected company', function (): void {
+    $company = DteApiTestData::company();
+    $otherCompany = DteApiTestData::company([
+        'name' => 'Otra empresa, S.A. de C.V.',
+        'nit' => '06142812901016',
+        'email' => 'otra@example.com',
+    ]);
+    $token = $company->createToken('ERP principal', ['create:dte'])->accessToken;
+    $otherCompanyToken = $otherCompany->createToken('Token externo', ['list:dte'])->accessToken;
+
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
+        'company_id' => null,
+    ]));
+
+    $this->deleteJson(route('api.v1.superadmin.companies.tokens.destroy', [
+        'company' => $company,
+        'token' => $token,
+    ]))
+        ->assertAccepted()
+        ->assertContent('');
+
+    $this->assertDatabaseMissing('personal_access_tokens', [
+        'id' => $token->getKey(),
+    ]);
+    $this->assertDatabaseHas('personal_access_tokens', [
+        'id' => $otherCompanyToken->getKey(),
+    ]);
+});
+
+test('superadmin cannot revoke a token owned by another company', function (): void {
+    $company = DteApiTestData::company();
+    $otherCompany = DteApiTestData::company([
+        'name' => 'Otra empresa, S.A. de C.V.',
+        'nit' => '06142812901016',
+        'email' => 'otra@example.com',
+    ]);
+    $token = $otherCompany->createToken('Token externo', ['list:dte'])->accessToken;
+
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
+        'company_id' => null,
+    ]));
+
+    $this->deleteJson(route('api.v1.superadmin.companies.tokens.destroy', [
+        'company' => $company,
+        'token' => $token,
+    ]))->assertNotFound();
+
+    $this->assertDatabaseHas('personal_access_tokens', [
+        'id' => $token->getKey(),
+    ]);
+});
+
+test('company admin cannot list, create, or revoke company tokens', function (): void {
     $company = DteApiTestData::company();
     Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
 
@@ -99,6 +151,10 @@ test('company admin cannot list or create company tokens', function (): void {
         'name' => 'ERP de lectura',
         'abilities' => ['list:dte'],
     ])->assertForbidden();
+    $this->deleteJson(route('api.v1.superadmin.companies.tokens.destroy', [
+        'company' => $company,
+        'token' => $company->createToken('ERP lectura', ['list:dte'])->accessToken,
+    ]))->assertForbidden();
 });
 
 test('only superadmins can access company tokens', function (Role $role): void {
@@ -111,6 +167,10 @@ test('only superadmins can access company tokens', function (Role $role): void {
         'name' => 'ERP de lectura',
         'abilities' => ['list:dte'],
     ])->assertForbidden();
+    $this->deleteJson(route('api.v1.superadmin.companies.tokens.destroy', [
+        'company' => $company,
+        'token' => $company->createToken('ERP lectura', ['list:dte'])->accessToken,
+    ]))->assertForbidden();
 })->with([
     'user' => Role::USER,
 ]);
@@ -122,4 +182,8 @@ test('company token endpoints require authentication', function (): void {
         ->assertUnauthorized();
     $this->postJson(route('api.v1.superadmin.companies.tokens.store', $company), [])
         ->assertUnauthorized();
+    $this->deleteJson(route('api.v1.superadmin.companies.tokens.destroy', [
+        'company' => $company,
+        'token' => $company->createToken('ERP lectura', ['list:dte'])->accessToken,
+    ]))->assertUnauthorized();
 });
