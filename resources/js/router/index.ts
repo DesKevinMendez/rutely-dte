@@ -151,6 +151,13 @@ const router = createRouter({
                             component: () =>
                                 import('@/modules/superadmin/companies/views/CompanyUsersView.vue'),
                         },
+                        {
+                            path: 'tokens',
+                            name: 'superadmin-company-tokens',
+                            meta: { title: 'Tokens de API' },
+                            component: () =>
+                                import('@/modules/superadmin/companies/views/CompanyTokensView.vue'),
+                        },
                     ],
                 },
             ],

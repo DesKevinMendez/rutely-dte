@@ -2,21 +2,33 @@
 import { IconPlus } from '@tabler/icons-vue';
 import { Alert, BaseButton, Card, DataTable } from 'ornito';
 import type { TableField } from 'ornito';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useApiTokensUi } from '../composables/useApiTokensUi';
-import type { ApiTokenApiRecord } from '../types/api-token.types';
+import type {
+    ApiTokenApiRecord,
+    ApiTokenAbility,
+} from '../types/api-token.types';
 import CreateApiTokenModal from './CreateApiTokenModal.vue';
 import GeneratedApiTokenModal from './GeneratedApiTokenModal.vue';
 
+const { companyId } = defineProps<{
+    companyId?: string;
+}>();
+
 const isCreateModalOpen = ref(false);
 const tableKey = ref(0);
+const tokensUrl = computed(() =>
+    companyId
+        ? `/api/v1/superadmin/companies/${encodeURIComponent(companyId)}/tokens`
+        : '/api/v1/tokens',
+);
 const {
     generatedToken,
     isLoading,
     error,
     createToken,
     clearGeneratedToken,
-} = useApiTokensUi();
+} = useApiTokensUi(tokensUrl);
 
 const formatDateTime = (value: string): string =>
     new Date(value).toLocaleString('es-SV', {
@@ -28,7 +40,12 @@ const formatLastUsedAt = (value: string | null): string =>
 
 const columns: TableField<ApiTokenApiRecord>[] = [
     { label: 'Nombre', key: 'name' },
-    { label: 'Token', key: 'id', slot: 'token' },
+    {
+        label: 'Permisos',
+        key: 'abilities',
+        format: (row) => row.abilities.join(', '),
+    },
+    { label: 'Token', key: 'token_preview', slot: 'token' },
     {
         label: 'Último uso',
         key: 'last_used_at',
@@ -41,8 +58,11 @@ const columns: TableField<ApiTokenApiRecord>[] = [
     },
 ];
 
-const handleCreate = async (name: string): Promise<void> => {
-    if (await createToken(name)) {
+const handleCreate = async (
+    name: string,
+    abilities: ApiTokenAbility[],
+): Promise<void> => {
+    if (await createToken(name, abilities)) {
         isCreateModalOpen.value = false;
         tableKey.value += 1;
     }
@@ -82,13 +102,13 @@ const closeGeneratedToken = (): void => {
 
         <Card title="Tokens de acceso">
             <DataTable
-                :key="tableKey"
+                :key="`${tokensUrl}-${tableKey}`"
                 :columns="columns"
-                url="/api/v1/tokens"
+                :url="tokensUrl"
             >
-                <template #token>
+                <template #token="{ row }">
                     <code class="font-mono text-gray-500 dark:text-gray-400">
-                        ********************
+                        {{ row.token_preview }}
                     </code>
                 </template>
             </DataTable>
