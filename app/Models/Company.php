@@ -26,7 +26,6 @@ use Laravel\Sanctum\HasApiTokens;
     'mh_pos_code',
     'own_establishment_code',
     'own_pos_code',
-    'is_onboarded',
 ])]
 class Company extends Model
 {

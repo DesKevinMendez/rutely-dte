@@ -49,10 +49,7 @@ class DeveloperSeeder extends Seeder
                 'own_pos_code' => '0001',
             ],
         );
-        $company->forceFill([
-            'is_onboarded' => '1',
-            'environment' => '00',
-        ])->save();
+        $company->forceFill(['environment' => '00'])->save();
 
         $adminCompany = Company::query()->updateOrCreate(
             ['nit' => '06142812901016'],
@@ -73,10 +70,7 @@ class DeveloperSeeder extends Seeder
                 'own_pos_code' => '0002',
             ],
         );
-        $adminCompany->forceFill([
-            'is_onboarded' => '1',
-            'environment' => '00',
-        ])->save();
+        $adminCompany->forceFill(['environment' => '00'])->save();
 
         User::query()->updateOrCreate(
             ['email' => 'playwright@rutely.biz'],
