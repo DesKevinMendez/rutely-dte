@@ -1,17 +1,35 @@
 <script setup lang="ts">
 import { BaseButton, Card, FormInput, SearchableSelect } from 'ornito';
 import { Form } from 'vee-validate';
+import { computed } from 'vue';
+import type { RouteLocationRaw } from 'vue-router';
+import type {
+    Company,
+    CompanyPayload,
+} from '@/modules/superadmin/companies/types/company.types';
 import useOnboarding from '../composables/useOnboarding';
 
 const props = withDefaults(
     defineProps<{
-        mode?: 'onboarding' | 'superadmin';
+        mode?: 'onboarding' | 'superadmin' | 'superadmin-edit';
+        initialCompany?: Company | null;
+        isSaving?: boolean;
+        submissionError?: string | null;
+        cancelTo?: RouteLocationRaw;
     }>(),
     {
         mode: 'onboarding',
+        initialCompany: null,
+        isSaving: false,
+        submissionError: null,
     },
 );
 
+const emit = defineEmits<{
+    submit: [payload: CompanyPayload];
+}>();
+
+const flowMode = props.mode === 'onboarding' ? 'onboarding' : 'superadmin';
 const {
     form,
     validationSchema,
@@ -20,9 +38,35 @@ const {
     showAccountFields,
     isLoading,
     error,
+    companyPayload,
     continueFlow,
     cancelFlow,
-} = useOnboarding(props.mode);
+} = useOnboarding(
+    flowMode,
+    props.initialCompany,
+    props.mode === 'superadmin-edit',
+);
+
+const isSubmitting = computed(() => props.isSaving || isLoading.value);
+const submissionError = computed(() => props.submissionError || error.value);
+
+const handleSubmit = async (): Promise<void> => {
+    if (props.mode === 'superadmin-edit') {
+        emit('submit', companyPayload());
+
+        return;
+    }
+
+    await continueFlow();
+};
+
+const handleCancel = async (): Promise<void> => {
+    if (props.cancelTo) {
+        return;
+    }
+
+    await cancelFlow();
+};
 </script>
 
 <template>
@@ -35,7 +79,7 @@ const {
             "
             class="space-y-8"
             :validation-schema="validationSchema"
-            @submit="continueFlow"
+            @submit="handleSubmit"
         >
             <section v-if="showAccountFields" class="space-y-4">
                 <div>
@@ -320,15 +364,17 @@ const {
                 class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-gray-800"
             >
                 <BaseButton
+                    :to="props.cancelTo"
                     type="button"
                     variant="outline"
                     size="auto"
-                    @click="cancelFlow"
+                    :disabled="isSubmitting"
+                    @click="handleCancel"
                 >
                     {{
-                        props.mode === 'superadmin'
-                            ? 'Cancelar'
-                            : 'Volver al login'
+                        props.mode === 'onboarding' && !props.cancelTo
+                            ? 'Volver al login'
+                            : 'Cancelar'
                     }}
                 </BaseButton>
 
@@ -336,22 +382,24 @@ const {
                     type="submit"
                     variant="primary"
                     size="auto"
-                    :loading="isLoading"
+                    :loading="isSubmitting"
                 >
                     {{
                         props.mode === 'superadmin'
                             ? 'Crear empresa'
-                            : 'Continuar'
+                            : props.mode === 'superadmin-edit'
+                              ? 'Guardar cambios'
+                              : 'Continuar'
                     }}
                 </BaseButton>
             </div>
 
             <p
-                v-if="error"
+                v-if="submissionError"
                 class="text-sm text-red-600 dark:text-red-400"
                 role="alert"
             >
-                {{ error }}
+                {{ submissionError }}
             </p>
         </Form>
     </Card>

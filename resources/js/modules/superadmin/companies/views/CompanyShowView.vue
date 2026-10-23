@@ -10,6 +10,16 @@ const route = useRoute();
 const { company, isLoading, error, loadCompany } = useCompanyShow();
 
 const companyName = computed(() => company.value?.name ?? 'Empresa');
+const pageTitle = computed(() =>
+    route.name === 'superadmin-company-profile-edit'
+        ? 'Editar perfil de la empresa'
+        : 'Perfil de la empresa',
+);
+const pageSubtitle = computed(() =>
+    route.name === 'superadmin-company-profile-edit'
+        ? 'Actualiza la información fiscal y de contacto de la empresa.'
+        : 'Consulta la información fiscal y de contacto de la empresa.',
+);
 const breadcrumbItems = computed<BreadcrumbItem[]>(() => [
     { label: 'Empresas', to: '/superadmin/companies', icon: IconBuilding },
     { label: companyName.value },
@@ -38,8 +48,8 @@ watch(
     <div class="space-y-6">
         <Breadcrumb :items="breadcrumbItems" />
         <ViewHeader
-            title="Perfil de la empresa"
-            subtitle="Consulta la información fiscal y de contacto de la empresa."
+            :title="pageTitle"
+            :subtitle="pageSubtitle"
             :badge-text="companyName"
         />
 

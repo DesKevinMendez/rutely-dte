@@ -24,6 +24,7 @@ declare module 'vue' {
     CertificateUploadForm: typeof import('./resources/js/modules/certificates/components/CertificateUploadForm.vue')['default']
     CompaniesIndexView: typeof import('./resources/js/modules/superadmin/companies/views/CompaniesIndexView.vue')['default']
     CompanyCreateView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyCreateView.vue')['default']
+    CompanyEditView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyEditView.vue')['default']
     CompanyProfileView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyProfileView.vue')['default']
     CompanyShowView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyShowView.vue')['default']
     CompanyUsersView: typeof import('./resources/js/modules/superadmin/companies/views/CompanyUsersView.vue')['default']

@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router';
 import * as yup from 'yup';
 import { useRequest } from '@/core/composables/useRequest';
 import { useAuth } from '@/core/stores/auth';
+import type { Company } from '@/modules/superadmin/companies/types/company.types';
 import type {
     CompanyRequest,
     CompanyResponse,
@@ -61,6 +62,8 @@ const digitsOnly = (value: string): string => value.replace(/\D/g, '');
 
 export default function useOnboarding(
     mode: 'onboarding' | 'superadmin' = 'onboarding',
+    initialCompany: Company | null = null,
+    isEditingCompany = false,
 ) {
     const router = useRouter();
     const auth = useAuth();
@@ -73,6 +76,7 @@ export default function useOnboarding(
         yup.object({
             ...(showAccountFields.value ? accountRules : {}),
             ...companyRules,
+            ...(isEditingCompany ? { districtId: yup.string() } : {}),
         }),
     );
 
@@ -81,20 +85,20 @@ export default function useOnboarding(
         userEmail: '',
         password: '',
         passwordConfirmation: '',
-        name: '',
-        commercialName: '',
-        nit: '',
-        nrc: '',
-        phone: '',
-        email: '',
-        address: '',
-        economicActivityCode: '',
-        establishmentType: '',
-        departmentId: '',
-        municipalityId: '',
-        districtId: '',
-        ownEstablishmentCode: '',
-        ownPosCode: '',
+        name: initialCompany?.name ?? '',
+        commercialName: initialCompany?.commercial_name ?? '',
+        nit: initialCompany?.nit ?? '',
+        nrc: initialCompany?.nrc ?? '',
+        phone: initialCompany?.phone ?? '',
+        email: initialCompany?.email ?? '',
+        address: initialCompany?.address ?? '',
+        economicActivityCode: initialCompany?.economic_activity_code ?? '',
+        establishmentType: initialCompany?.establishment_type ?? '',
+        departmentId: initialCompany?.departament_id ?? '',
+        municipalityId: initialCompany?.municipality_id ?? '',
+        districtId: initialCompany?.district_id ?? '',
+        ownEstablishmentCode: initialCompany?.own_establishment_code ?? '',
+        ownPosCode: initialCompany?.own_pos_code ?? '',
     });
 
     const municipalityUrl = computed(() => {
@@ -152,25 +156,28 @@ export default function useOnboarding(
         return true;
     };
 
+    const companyPayload = (): CompanyRequest => ({
+        name: form.name,
+        address: form.address,
+        phone: form.phone,
+        nit: digitsOnly(form.nit),
+        nrc: digitsOnly(form.nrc) || null,
+        commercial_name: form.commercialName,
+        economic_activity_code: form.economicActivityCode,
+        establishment_type: form.establishmentType,
+        departament_id: form.departmentId,
+        municipality_id: form.municipalityId,
+        district_id: form.districtId || null,
+        email: form.email,
+        mh_establishment_code:
+            initialCompany?.mh_establishment_code ?? form.ownEstablishmentCode,
+        mh_pos_code: initialCompany?.mh_pos_code ?? form.ownPosCode,
+        own_establishment_code: form.ownEstablishmentCode,
+        own_pos_code: form.ownPosCode,
+    });
+
     const createCompany = async (url: string): Promise<string | null> => {
-        const payload: CompanyRequest = {
-            name: form.name,
-            address: form.address,
-            phone: form.phone,
-            nit: digitsOnly(form.nit),
-            nrc: digitsOnly(form.nrc) || null,
-            commercial_name: form.commercialName,
-            economic_activity_code: form.economicActivityCode,
-            establishment_type: form.establishmentType,
-            departament_id: form.departmentId,
-            municipality_id: form.municipalityId,
-            district_id: form.districtId || null,
-            email: form.email,
-            mh_establishment_code: form.ownEstablishmentCode,
-            mh_pos_code: form.ownPosCode,
-            own_establishment_code: form.ownEstablishmentCode,
-            own_pos_code: form.ownPosCode,
-        };
+        const payload = companyPayload();
 
         const response = await post<CompanyResponse, CompanyRequest>(
             url,
@@ -237,6 +244,7 @@ export default function useOnboarding(
         showAccountFields,
         isLoading,
         error,
+        companyPayload,
         continueFlow,
         cancelFlow,
     };

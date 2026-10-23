@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Badge, Card, InfoItem } from 'ornito';
+import { IconEdit } from '@tabler/icons-vue';
+import { Badge, BaseButton, Card, InfoItem } from 'ornito';
 import { computed } from 'vue';
 import useCompanyShow from '@/modules/superadmin/companies/composables/useCompanyShow';
 
@@ -14,6 +15,21 @@ const isOnboarded = computed(() => {
 <template>
     <div v-if="company" class="space-y-4">
         <Card title="Información de la empresa">
+            <template #headerButtons>
+                <BaseButton
+                    :to="{
+                        name: 'superadmin-company-profile-edit',
+                        params: { id: company.id },
+                    }"
+                    variant="outline"
+                    size="auto"
+                    :icon="IconEdit"
+                    icon-position="left"
+                >
+                    Editar perfil
+                </BaseButton>
+            </template>
+
             <div class="grid gap-x-4 gap-y-4 sm:grid-cols-2">
                 <InfoItem label="Nombre de la empresa">
                     {{ company.name }}

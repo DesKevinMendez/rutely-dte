@@ -146,6 +146,13 @@ const router = createRouter({
                                 import('@/modules/superadmin/companies/views/CompanyProfileView.vue'),
                         },
                         {
+                            path: 'profile/edit',
+                            name: 'superadmin-company-profile-edit',
+                            meta: { title: 'Editar perfil' },
+                            component: () =>
+                                import('@/modules/superadmin/companies/views/CompanyEditView.vue'),
+                        },
+                        {
                             path: 'users',
                             name: 'superadmin-company-users',
                             meta: { title: 'Usuarios' },
