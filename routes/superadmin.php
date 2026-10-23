@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Superadmin\CompanyController;
+use App\Http\Controllers\Superadmin\CompanyUserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/superadmin')
@@ -18,4 +19,10 @@ Route::prefix('v1/superadmin')
 
         Route::match(['put', 'patch'], 'companies/{company}', [CompanyController::class, 'update'])
             ->name('companies.update');
+
+        Route::get('companies/{company}/users', [CompanyUserController::class, 'index'])
+            ->name('companies.users.index');
+
+        Route::post('companies/{company}/users', [CompanyUserController::class, 'store'])
+            ->name('companies.users.store');
     });
