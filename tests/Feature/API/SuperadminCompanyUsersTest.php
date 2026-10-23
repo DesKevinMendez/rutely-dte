@@ -67,13 +67,13 @@ test('superadmin can list only users assigned to the selected company', function
         ]);
 });
 
-test('superadmin can create an active company admin with a generated password', function () {
+test('superadmin can create an active company admin with a generated password', function (string $phone) {
     Queue::fake();
     $company = DteApiTestData::company();
     $superadmin = User::factory()->withRole(Role::SUPERADMIN)->create([
         'company_id' => null,
     ]);
-    $payload = validSuperadminCompanyUserPayload();
+    $payload = validSuperadminCompanyUserPayload(['phone' => $phone]);
 
     Sanctum::actingAs($superadmin);
     $response = $this->postJson(route('api.v1.superadmin.companies.users.store', $company), $payload);
@@ -84,7 +84,7 @@ test('superadmin can create an active company admin with a generated password', 
     ]);
 
     expect($user->company_id)->toBe($company->id)
-        ->and($user->phone)->toBe($payload['phone'])
+        ->and($user->phone)->toBe('+50312345678')
         ->and($user->status)->toBeTrue()
         ->and($user->hasRole(Role::ADMIN->value))->toBeTrue()
         ->and($superadmin->fresh()->company_id)->toBeNull();
@@ -96,7 +96,10 @@ test('superadmin can create an active company admin with a generated password', 
             && mb_strlen($job->password) === 16
             && Hash::check($job->password, $user->password),
     );
-});
+})->with([
+    'country code without spaces' => '+50312345678',
+    'country code with grouped spaces' => '+503 1234 5678',
+]);
 
 test('company admin credentials mail shows the generated login information', function () {
     $company = DteApiTestData::company(['name' => 'Empresa de prueba']);
@@ -202,8 +205,8 @@ test('superadmin company user creation validates one rule at a time', function (
     'email has a maximum length' => ['email', str_repeat('a', 64).'@'.str_repeat('b', 63).'.'.str_repeat('c', 63).'.'.str_repeat('d', 63).'.'.str_repeat('e', 20), 'El campo correo electrónico no debe contener más de 255 caracteres.'],
     'email must be unique' => ['email', 'existing@example.com', 'El campo correo electrónico ya ha sido registrado.'],
     'phone must be a string' => ['phone', ['12345678'], 'El campo teléfono debe ser una cadena de caracteres.'],
-    'phone has a minimum length' => ['phone', '1234567', 'El campo teléfono debe contener al menos 8 caracteres.'],
-    'phone has a maximum length' => ['phone', str_repeat('1', 31), 'El campo teléfono no debe contener más de 30 caracteres.'],
+    'phone must match the Salvadoran format' => ['phone', '1234-5678', 'El formato del campo teléfono no es válido.'],
+    'phone has a maximum length' => ['phone', str_repeat('1', 256), 'El campo teléfono no debe contener más de 255 caracteres.'],
     'password is prohibited' => ['password', 'client-password', 'El campo contraseña está prohibido.'],
     'company is prohibited' => ['company_id', (string) Str::uuid(), 'El campo empresa está prohibido.'],
     'role is prohibited' => ['role', Role::SUPERADMIN->value, 'El campo rol está prohibido.'],
