@@ -63,6 +63,7 @@ test('creates a Sanctum token owned by the authenticated company', function () {
     $plainTextToken = $response->json('data.plain_text_token');
 
     expect($response->json('data.record.name'))->toBe('ERP principal')
+        ->and($response->json('data.record.abilities'))->toBe(['create:dte', 'list:dte'])
         ->and($response->json('data.record.last_used_at'))->toBeNull()
         ->and($plainTextToken)->toBeString()->not->toBeEmpty();
 
@@ -76,7 +77,27 @@ test('creates a Sanctum token owned by the authenticated company', function () {
         ->and($storedToken->name)->toBe('ERP principal')
         ->and(json_decode($storedToken->abilities, true))->toBe(['create:dte', 'list:dte'])
         ->and($storedToken->token)->toBe(hash('sha256', $secret))
-        ->and($storedToken->token)->not->toBe($plainTextToken);
+        ->and($storedToken->token)->not->toBe($plainTextToken)
+        ->and($response->json('data.record.token_preview'))
+        ->toBe($tokenId.'|'.substr($storedToken->token, 0, 4).'***'.substr($storedToken->token, -4));
+});
+
+test('creates an API token with only the requested abilities', function () {
+    $company = apiTokenTestCompany('9');
+    Sanctum::actingAs(apiTokenTestUser($company));
+
+    $response = $this->postJson(route('api.v1.tokens.store'), [
+        'name' => 'ERP solo lectura',
+        'abilities' => ['list:dte'],
+    ])->assertCreated();
+
+    $tokenId = $response->json('data.record.id');
+    $storedToken = DB::table('personal_access_tokens')->where('id', $tokenId)->first();
+
+    expect($response->json('data.record.abilities'))->toBe(['list:dte'])
+        ->and($response->json('data.record.token_preview'))
+        ->toBe($tokenId.'|'.substr($storedToken->token, 0, 4).'***'.substr($storedToken->token, -4))
+        ->and(json_decode($storedToken->abilities, true))->toBe(['list:dte']);
 });
 
 test('store API token requires a name', function () {
@@ -107,12 +128,16 @@ test('lists only Sanctum tokens owned by the authenticated company', function ()
                 [
                     'id' => $secondToken->getKey(),
                     'name' => 'Sistema contable',
+                    'abilities' => ['create:dte'],
+                    'token_preview' => $secondToken->token_preview,
                     'last_used_at' => null,
                     'created_at' => $secondToken->created_at?->toJSON(),
                 ],
                 [
                     'id' => $firstToken->getKey(),
                     'name' => 'ERP principal',
+                    'abilities' => ['create:dte'],
+                    'token_preview' => $firstToken->token_preview,
                     'last_used_at' => null,
                     'created_at' => $firstToken->created_at?->toJSON(),
                 ],
@@ -127,6 +152,25 @@ test('lists only Sanctum tokens owned by the authenticated company', function ()
             ],
         ]);
 });
+
+test('store API token validates abilities one rule at a time', function (mixed $abilities, string $field, string $message): void {
+    $company = apiTokenTestCompany('10');
+    Sanctum::actingAs(apiTokenTestUser($company));
+
+    $this->postJson(route('api.v1.tokens.store'), [
+        'name' => 'ERP principal',
+        'abilities' => $abilities,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([$field => $message]);
+})->with([
+    'abilities must be an array' => ['list:dte', 'abilities', 'El campo permisos debe ser un arreglo.'],
+    'abilities cannot be empty' => [[], 'abilities', 'El campo permisos debe contener al menos 1 elementos.'],
+    'each ability is required' => [[null], 'abilities.0', 'El campo permiso es obligatorio.'],
+    'each ability must be a string' => [[['list:dte']], 'abilities.0', 'El campo permiso debe ser una cadena de caracteres.'],
+    'abilities must be distinct' => [['list:dte', 'list:dte'], 'abilities.1', 'El campo permiso tiene un valor duplicado.'],
+    'each ability must be supported' => [['delete:dte'], 'abilities.0', 'El valor seleccionado para permiso no es válido.'],
+]);
 
 test('API token endpoints return 404 when the authenticated user has no company', function () {
     $user = User::factory()->withRole(Role::ADMIN)->create([

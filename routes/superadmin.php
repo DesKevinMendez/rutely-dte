@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Superadmin\ApiCompanyTokenController;
 use App\Http\Controllers\Superadmin\CompanyController;
 use App\Http\Controllers\Superadmin\CompanyUserController;
 use Illuminate\Support\Facades\Route;
@@ -12,5 +13,8 @@ Route::prefix('v1/superadmin')
             ->only(['index', 'store', 'show', 'update']);
 
         Route::apiResource('companies.users', CompanyUserController::class)
+            ->only(['index', 'store']);
+
+        Route::apiResource('companies.tokens', ApiCompanyTokenController::class)
             ->only(['index', 'store']);
     });
