@@ -89,6 +89,18 @@ test('superadmin can create a token for the selected company with selected abili
         ->and(json_decode($storedToken->abilities, true))->toBe(['list:dte']);
 });
 
+test('company admin cannot list or create company tokens', function (): void {
+    $company = DteApiTestData::company();
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->getJson(route('api.v1.superadmin.companies.tokens.index', $company))
+        ->assertForbidden();
+    $this->postJson(route('api.v1.superadmin.companies.tokens.store', $company), [
+        'name' => 'ERP de lectura',
+        'abilities' => ['list:dte'],
+    ])->assertForbidden();
+});
+
 test('only superadmins can access company tokens', function (Role $role): void {
     $company = DteApiTestData::company();
     Sanctum::actingAs(DteApiTestData::user($company, $role));
@@ -100,7 +112,6 @@ test('only superadmins can access company tokens', function (Role $role): void {
         'abilities' => ['list:dte'],
     ])->assertForbidden();
 })->with([
-    'admin' => Role::ADMIN,
     'user' => Role::USER,
 ]);
 
