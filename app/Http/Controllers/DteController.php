@@ -6,9 +6,12 @@ use App\Exceptions\DteSigningException;
 use App\Http\Requests\CatalogIndexRequest;
 use App\Http\Requests\Dte\StoreDteRequest;
 use App\Http\Resources\CommonCollection;
+use App\Models\Company;
 use App\Models\Dte;
+use App\Models\User;
 use App\Response\CommonResponse;
 use App\Services\Dte\DteIssuanceService;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -18,9 +21,18 @@ class DteController extends Controller
 {
     public function index(CatalogIndexRequest $request): CommonCollection
     {
-        Gate::authorize('viewAny', Dte::class);
+        $principal = $request->user();
 
-        $dtes = QueryBuilder::for(Dte::query()->where('company_id', $request->user()->company_id))
+        if ($principal instanceof User) {
+            Gate::authorize('viewAny', Dte::class);
+            $companyId = $principal->company_id;
+        } elseif ($principal instanceof Company) {
+            $companyId = $principal->getKey();
+        } else {
+            throw new AuthorizationException;
+        }
+
+        $dtes = QueryBuilder::for(Dte::query()->where('company_id', $companyId))
             ->allowedFilters(
                 AllowedFilter::exact('tipoDte', 'dte_type'),
                 AllowedFilter::exact('estado', 'status'),

@@ -28,6 +28,10 @@ Route::group(['prefix' => 'v1'], function () {
     Route::post('register', RegisterController::class)->name('register');
     Route::post('login', LoginController::class)->name('login');
 
+    Route::get('dtes', [DteController::class, 'index'])
+        ->middleware(['auth:sanctum', 'dte-company-abilities:list:dte'])
+        ->name('api.v1.dtes.index');
+
     Route::middleware(['auth:sanctum', 'user-token'])->group(function () {
         Route::get('dashboard', [DashboardController::class, 'show'])
             ->name('api.v1.dashboard.show');
@@ -65,8 +69,6 @@ Route::group(['prefix' => 'v1'], function () {
         Route::post('mh-certificates', [MhCertificatesController::class, 'store'])
             ->name('api.v1.mh-certificates.store');
 
-        Route::get('dtes', [DteController::class, 'index'])
-            ->name('api.v1.dtes.index');
         Route::post('dtes', [DteController::class, 'store'])
             ->name('api.v1.dtes.store');
         Route::get('dtes/{dte}', [DteController::class, 'show'])

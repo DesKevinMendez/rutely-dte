@@ -30,7 +30,7 @@ class ApiTokenController extends Controller
         $company = Company::query()->findOrFail($request->user()->company_id);
         $token = $company->createToken(
             $request->validated('name'),
-            ['create:dte'],
+            ['create:dte', 'list:dte'],
         );
 
         return new CommonResponse([

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureDteCompanyAbilities;
 use App\Http\Middleware\EnsureUserToken;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
+            'dte-company-abilities' => EnsureDteCompanyAbilities::class,
             'user-token' => EnsureUserToken::class,
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,

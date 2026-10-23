@@ -74,7 +74,7 @@ test('creates a Sanctum token owned by the authenticated company', function () {
         ->and($storedToken->tokenable_type)->toBe($company->getMorphClass())
         ->and($storedToken->tokenable_id)->toBe($company->id)
         ->and($storedToken->name)->toBe('ERP principal')
-        ->and(json_decode($storedToken->abilities, true))->toBe(['create:dte'])
+        ->and(json_decode($storedToken->abilities, true))->toBe(['create:dte', 'list:dte'])
         ->and($storedToken->token)->toBe(hash('sha256', $secret))
         ->and($storedToken->token)->not->toBe($plainTextToken);
 });
@@ -142,9 +142,9 @@ test('API token endpoints return 404 when the authenticated user has no company'
     ])->assertNotFound();
 });
 
-test('company token with create dte ability is forbidden from internal endpoints', function () {
+test('company token abilities are forbidden from internal endpoints', function () {
     $company = apiTokenTestCompany('5');
-    $token = $company->createToken('External ERP', ['create:dte'])->plainTextToken;
+    $token = $company->createToken('External ERP', ['create:dte', 'list:dte'])->plainTextToken;
 
     $this->withToken($token)
         ->getJson('/api/user')
