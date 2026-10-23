@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import { IconEdit } from '@tabler/icons-vue';
-import { Badge, BaseButton, Card, InfoItem } from 'ornito';
-import { computed } from 'vue';
+import { BaseButton, Card, InfoItem } from 'ornito';
 import useCompanyShow from '@/modules/superadmin/companies/composables/useCompanyShow';
 
 const { company } = useCompanyShow();
-const isOnboarded = computed(() => {
-    const value = company.value?.is_onboarded;
-
-    return value === true || value === 1 || value === '1' || value === 'true';
-});
 </script>
 
 <template>
@@ -75,14 +69,6 @@ const isOnboarded = computed(() => {
                 </InfoItem>
                 <InfoItem label="Ambiente">
                     {{ company.environment }}
-                </InfoItem>
-                <InfoItem label="Onboarding">
-                    <Badge
-                        :variant="isOnboarded ? 'success' : 'neutral'"
-                        text="sm"
-                    >
-                        {{ isOnboarded ? 'Completado' : 'Pendiente' }}
-                    </Badge>
                 </InfoItem>
             </div>
         </Card>

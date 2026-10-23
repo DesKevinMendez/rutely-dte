@@ -45,9 +45,7 @@ export default function useLogin() {
 
         auth.setSession(session.token, session.user);
 
-        await router.push({
-            name: session.user.company_id ? 'dashboard' : 'onboarding',
-        });
+        await router.push({ name: 'dashboard' });
     };
 
     return {

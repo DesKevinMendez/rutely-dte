@@ -31,15 +31,7 @@ const router = createRouter({
         },
         {
             path: '/onboarding',
-            component: () => import('@/layouts/LayoutGuest.vue'),
-            children: [
-                {
-                    path: '',
-                    name: 'onboarding',
-                    component: () =>
-                        import('@/guess/modules/onboarding/views/OnboardingView.vue'),
-                },
-            ],
+            redirect: { name: 'dashboard' },
         },
         {
             path: '/',
@@ -199,7 +191,7 @@ router.beforeEach(async (to) => {
             return { name: 'superadmin-dashboard' };
         }
 
-        return { name: auth.user?.company_id ? 'dashboard' : 'onboarding' };
+        return { name: 'dashboard' };
     }
 
     return true;

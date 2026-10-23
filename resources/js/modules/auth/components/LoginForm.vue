@@ -75,15 +75,5 @@ const { email, password, rules, isLoading, error, login } = useLogin();
                 Acceder al Sistema
             </BaseButton>
         </Form>
-
-        <p class="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
-            ¿No tenés una cuenta?
-            <RouterLink
-                :to="{ name: 'onboarding' }"
-                class="font-semibold text-primary-600 hover:underline dark:text-primary-400"
-            >
-                Registrarse
-            </RouterLink>
-        </p>
     </Card>
 </template>

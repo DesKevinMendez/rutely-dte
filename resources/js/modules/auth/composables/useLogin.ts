@@ -48,9 +48,7 @@ export default function useLogin() {
             name:
                 session.user.role === 'superadmin'
                     ? 'superadmin-dashboard'
-                    : session.user.company_id
-                      ? 'dashboard'
-                      : 'onboarding',
+                    : 'dashboard',
         });
     };
 
