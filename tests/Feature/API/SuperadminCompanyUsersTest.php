@@ -89,6 +89,11 @@ test('superadmin can create an active company admin with a generated password', 
         ->and($user->hasRole(Role::ADMIN->value))->toBeTrue()
         ->and($superadmin->fresh()->company_id)->toBeNull();
 
+    $this->assertDatabaseHas(User::class, [
+        'id' => $user->id,
+        'phone' => '+50312345678',
+    ]);
+
     Queue::assertPushed(
         SendCompanyAdminCredentials::class,
         fn (SendCompanyAdminCredentials $job): bool => $job->user->is($user)
