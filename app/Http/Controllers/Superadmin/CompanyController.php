@@ -32,4 +32,9 @@ class CompanyController extends Controller
 
         return new CommonResponse($company->refresh(), 201);
     }
+
+    public function show(Company $company): CommonResponse
+    {
+        return new CommonResponse($company);
+    }
 }
