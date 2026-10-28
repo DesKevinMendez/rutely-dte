@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { BaseButton, FormInput, Modal, SwitchInput } from 'ornito';
 import { computed, ref, watch } from 'vue';
-import {
-    API_TOKEN_ABILITY_OPTIONS,
-    type ApiTokenAbility,
-} from '../types/api-token.types';
+import type { ApiTokenAbility } from '../types/api-token.types';
+import { API_TOKEN_ABILITY_OPTIONS } from '../types/api-token.types';
 
 const { isOpen, isSubmitting = false } = defineProps<{
     isOpen: boolean;
