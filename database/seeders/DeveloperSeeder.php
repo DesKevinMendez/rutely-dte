@@ -20,6 +20,7 @@ class DeveloperSeeder extends Seeder
             DistrictSeeder::class,
             EconomicActivitySeeder::class,
             EstablishmentTypesSeeder::class,
+            DocumentTypeSeeder::class,
         ]);
 
         $departamentId = DB::table('departaments')

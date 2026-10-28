@@ -15,4 +15,23 @@ test('catalog endpoints validate per page', function (string $routeName) {
     'districts' => 'api.v1.data.districts.index',
     'economic activities' => 'api.v1.data.economic-activities.index',
     'establishment types' => 'api.v1.data.establishment-types.index',
+    'document types' => 'api.v1.data.document-types.index',
+]);
+
+test('catalog endpoints reject per page values outside the allowed range', function (string $routeName) {
+    foreach ([0, 101] as $perPage) {
+        $response = $this->getJson(route($routeName, [
+            'per_page' => $perPage,
+        ]));
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['per_page']);
+    }
+})->with([
+    'departments' => 'api.v1.data.departments.index',
+    'municipalities' => 'api.v1.data.municipalities.index',
+    'districts' => 'api.v1.data.districts.index',
+    'economic activities' => 'api.v1.data.economic-activities.index',
+    'establishment types' => 'api.v1.data.establishment-types.index',
+    'document types' => 'api.v1.data.document-types.index',
 ]);
