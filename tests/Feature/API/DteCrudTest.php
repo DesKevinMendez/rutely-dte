@@ -3,12 +3,18 @@
 use App\Role;
 use App\Services\Dte\DteIssuanceService;
 use Database\Seeders\DocumentTypeSeeder;
+use Database\Seeders\DteTypeSeeder;
+use Database\Seeders\EstablishmentTypesSeeder;
+use Database\Seeders\ItemTypeSeeder;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
 
 beforeEach(function () {
     $this->seed(DocumentTypeSeeder::class);
+    $this->seed(DteTypeSeeder::class);
+    $this->seed(EstablishmentTypesSeeder::class);
+    $this->seed(ItemTypeSeeder::class);
 });
 
 function dteValidationPayload(array $overrides = []): array
@@ -356,4 +362,46 @@ test('store DTE request validation returns 422', function (array $payload, strin
     'item type supported' => [dteValidationPayload(['items' => [['tipoItem' => 5]]]), 'items.0.tipoItem', 'El valor seleccionado para tipo de ítem no es válido.'],
     'item code must be string' => [dteValidationPayload(['items' => [['codigo' => ['GPS']]]]), 'items.0.codigo', 'El campo código del ítem debe ser una cadena de caracteres.'],
     'item unit must be integer' => [dteValidationPayload(['items' => [['uniMedida' => 'x']]]), 'items.0.uniMedida', 'El campo unidad de medida del ítem debe ser un número entero.'],
+]);
+
+test('store DTE accepts every seeded catalog code', function (string $field, string|int $code) {
+    $company = DteApiTestData::company();
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+    $payload = DteApiTestData::validDtePayload();
+
+    if ($field === 'tipoDte') {
+        $payload['tipoDte'] = $code;
+    } elseif ($field === 'emisor.tipoEstablecimiento') {
+        $payload['emisor'] = ['tipoEstablecimiento' => $code];
+    } else {
+        $payload['items'][0]['tipoItem'] = $code;
+    }
+
+    $this->postJson(route('api.v1.dtes.store'), $payload)
+        ->assertStatus(400)
+        ->assertExactJson([
+            'message' => 'No hay material de firma configurado para la empresa y el ambiente seleccionados.',
+        ]);
+})->with([
+    'DTE type 01' => ['tipoDte', '01'],
+    'DTE type 03' => ['tipoDte', '03'],
+    'DTE type 04' => ['tipoDte', '04'],
+    'DTE type 05' => ['tipoDte', '05'],
+    'DTE type 06' => ['tipoDte', '06'],
+    'DTE type 07' => ['tipoDte', '07'],
+    'DTE type 08' => ['tipoDte', '08'],
+    'DTE type 09' => ['tipoDte', '09'],
+    'DTE type 11' => ['tipoDte', '11'],
+    'DTE type 14' => ['tipoDte', '14'],
+    'DTE type 15' => ['tipoDte', '15'],
+    'DTE type 17' => ['tipoDte', '17'],
+    'DTE type 18' => ['tipoDte', '18'],
+    'establishment type 01' => ['emisor.tipoEstablecimiento', '01'],
+    'establishment type 02' => ['emisor.tipoEstablecimiento', '02'],
+    'establishment type 04' => ['emisor.tipoEstablecimiento', '04'],
+    'establishment type 07' => ['emisor.tipoEstablecimiento', '07'],
+    'item type 1' => ['items.*.tipoItem', 1],
+    'item type 2' => ['items.*.tipoItem', 2],
+    'item type 3' => ['items.*.tipoItem', 3],
+    'item type 4' => ['items.*.tipoItem', 4],
 ]);
