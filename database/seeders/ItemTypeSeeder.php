@@ -32,6 +32,6 @@ class ItemTypeSeeder extends Seeder
             $types
         );
 
-        DB::table('item_types')->insert($rows);
+        DB::table('item_types')->upsert($rows, ['code'], ['description', 'updated_at']);
     }
 }

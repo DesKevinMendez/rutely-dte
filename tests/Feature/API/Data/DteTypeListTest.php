@@ -148,6 +148,8 @@ test('DTE types reject unknown filters', function () {
 });
 
 test('DTE type factories create valid persisted models', function () {
+    DB::table('dte_types')->delete();
+
     $dteType = DteType::factory()->create();
 
     $this->assertMatchesRegularExpression('/^\d{2}$/', $dteType->code);
@@ -157,4 +159,32 @@ test('DTE type factories create valid persisted models', function () {
         'code' => $dteType->code,
         'description' => $dteType->description,
     ]);
+});
+
+test('DTE type seeder is idempotent and updates catalog rows by code', function () {
+    $originalRows = DB::table('dte_types')->get()->keyBy('code');
+
+    $this->seed(DteTypeSeeder::class);
+
+    expect(DB::table('dte_types')->count())->toBe($originalRows->count());
+
+    $reseededRows = DB::table('dte_types')->get()->keyBy('code');
+
+    foreach ($originalRows as $code => $originalRow) {
+        expect($reseededRows->get($code)->id)->toBe($originalRow->id);
+    }
+
+    DB::table('dte_types')->where('code', '01')->update([
+        'description' => 'Descripción anterior',
+        'updated_at' => '2000-01-01 00:00:00',
+    ]);
+
+    $this->seed(DteTypeSeeder::class);
+
+    $updatedRow = DB::table('dte_types')->where('code', '01')->first();
+
+    expect($updatedRow->id)->toBe($originalRows->get('01')->id)
+        ->and($updatedRow->description)->toBe('Factura')
+        ->and($updatedRow->created_at)->toBe($originalRows->get('01')->created_at)
+        ->and($updatedRow->updated_at)->not->toBe('2000-01-01 00:00:00');
 });

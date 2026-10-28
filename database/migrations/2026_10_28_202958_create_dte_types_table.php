@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('description');
             $table->timestamps();
 
-            $table->index(['code']);
+            $table->unique(['code']);
         });
     }
 

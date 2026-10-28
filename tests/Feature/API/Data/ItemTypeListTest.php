@@ -137,6 +137,8 @@ test('item types reject unknown filters', function () {
 });
 
 test('item type factories create valid persisted models', function () {
+    DB::table('item_types')->delete();
+
     $itemType = ItemType::factory()->create();
 
     $this->assertSame(1, $itemType->code);
@@ -146,4 +148,32 @@ test('item type factories create valid persisted models', function () {
         'code' => $itemType->code,
         'description' => $itemType->description,
     ]);
+});
+
+test('item type seeder is idempotent and updates catalog rows by code', function () {
+    $originalRows = DB::table('item_types')->get()->keyBy('code');
+
+    $this->seed(ItemTypeSeeder::class);
+
+    expect(DB::table('item_types')->count())->toBe($originalRows->count());
+
+    $reseededRows = DB::table('item_types')->get()->keyBy('code');
+
+    foreach ($originalRows as $code => $originalRow) {
+        expect($reseededRows->get($code)->id)->toBe($originalRow->id);
+    }
+
+    DB::table('item_types')->where('code', 1)->update([
+        'description' => 'Descripción anterior',
+        'updated_at' => '2000-01-01 00:00:00',
+    ]);
+
+    $this->seed(ItemTypeSeeder::class);
+
+    $updatedRow = DB::table('item_types')->where('code', 1)->first();
+
+    expect($updatedRow->id)->toBe($originalRows->get(1)->id)
+        ->and($updatedRow->description)->toBe('Bienes')
+        ->and($updatedRow->created_at)->toBe($originalRows->get(1)->created_at)
+        ->and($updatedRow->updated_at)->not->toBe('2000-01-01 00:00:00');
 });

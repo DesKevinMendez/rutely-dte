@@ -41,6 +41,6 @@ class DteTypeSeeder extends Seeder
             $types
         );
 
-        DB::table('dte_types')->insert($rows);
+        DB::table('dte_types')->upsert($rows, ['code'], ['description', 'updated_at']);
     }
 }
