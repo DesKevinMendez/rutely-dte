@@ -10,11 +10,11 @@
 
 ### Qué hacer
 
-- [ ] Tabla `document_types` (`code`, `description`) con su seeder, siguiendo el patrón de `establishment_types`.
-- [ ] Sembrar los códigos que hoy acepta `StoreDteRequest`: `13` DUI, `36` NIT, `03` Pasaporte, `37` Otro. Decidir si se agrega `02` Carnet de residente, que Hacienda define y hoy no se acepta.
-- [ ] `GET /api/v1/data/document-types` en `routes/guess.php`, con la misma paginación y filtros (`code`, `description`) que los demás catálogos.
-- [ ] Validar `receptor.tipoDocumento` en `StoreDteRequest` con `exists:document_types,code` en lugar de la lista fija.
+- [x] Tabla `document_types` (`code`, `description`) con su seeder, siguiendo el patrón de `establishment_types`.
+- [x] Sembrar los códigos que define Hacienda: `13` DUI, `36` NIT, `02` Carnet de Residente, `03` Pasaporte, `37` Otro.
+- [x] `GET /api/v1/data/document-types` en `routes/guess.php`, con la misma paginación y filtros (`id`, `code`, `description`) que los demás catálogos.
+- [x] Validar `receptor.tipoDocumento` en `StoreDteRequest` contra `document_types` en lugar de la lista fija.
 
 ### Cómo lo consume el POS
 
-El backend del POS llama a este endpoint por la red interna de Docker (`DTE_URL`) y le reenvía los datos a su frontend. El frontend del POS nunca habla directo con DTE.
+El backend del POS llama a este endpoint por HTTP (`DTE_URL`), lo guarda en caché un día y le reenvía los datos a su frontend. El frontend del POS nunca habla directo con DTE.
