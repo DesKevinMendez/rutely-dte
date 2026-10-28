@@ -13,6 +13,7 @@ class DocumentTypeSeeder extends Seeder
         $types = [
             ['code' => '13', 'description' => 'DUI'],
             ['code' => '36', 'description' => 'NIT'],
+            ['code' => '02', 'description' => 'Carnet de Residente'],
             ['code' => '03', 'description' => 'Pasaporte'],
             ['code' => '37', 'description' => 'Otro'],
         ];
