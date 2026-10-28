@@ -2,9 +2,14 @@
 
 use App\Role;
 use App\Services\Dte\DteIssuanceService;
+use Database\Seeders\DocumentTypeSeeder;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
+
+beforeEach(function () {
+    $this->seed(DocumentTypeSeeder::class);
+});
 
 function dteValidationPayload(array $overrides = []): array
 {
@@ -178,6 +183,34 @@ test('company member can create a DTE through issuance service with common respo
     'admin' => Role::ADMIN,
     'user' => Role::USER,
     'superadmin' => Role::SUPERADMIN,
+]);
+
+test('DTE creation accepts every receiver document type of the catalog', function (string $documentType) {
+    $company = DteApiTestData::company();
+    $record = DteApiTestData::dte($company);
+    $payload = dteValidationPayload(['receptor' => ['tipoDocumento' => $documentType]]);
+    $mhResult = [
+        'estado' => 'PROCESADO',
+        'selloRecibido' => 'SELLO-MH',
+        'observaciones' => [],
+    ];
+
+    $this->mock(DteIssuanceService::class)
+        ->shouldReceive('issue')
+        ->once()
+        ->with($company->id, $payload)
+        ->andReturn(['record' => $record, 'mhResult' => $mhResult]);
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+
+    $this->postJson(route('api.v1.dtes.store'), $payload)
+        ->assertCreated()
+        ->assertJsonPath('data.mh_result', $mhResult);
+})->with([
+    'carnet de residente' => '02',
+    'pasaporte' => '03',
+    'DUI' => '13',
+    'NIT' => '36',
+    'otro' => '37',
 ]);
 
 test('company member can show its DTE with common response', function () {

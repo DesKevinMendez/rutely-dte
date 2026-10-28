@@ -1,10 +1,12 @@
 <?php
 
 use App\Role;
+use Database\Seeders\DocumentTypeSeeder;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
 
 test('DTE creation returns bad request when signing material is not configured for the company environment', function () {
+    $this->seed(DocumentTypeSeeder::class);
     $company = DteApiTestData::company();
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
 

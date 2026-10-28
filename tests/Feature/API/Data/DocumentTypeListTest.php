@@ -16,8 +16,8 @@ test('document types return the exact collection response', function () {
         ->map(fn (object $row): array => (array) $row)
         ->all();
 
-    expect(array_column($expected, 'code'))->toBe(['03', '13', '36', '37'])
-        ->and(array_column($expected, 'description'))->toBe(['Pasaporte', 'DUI', 'NIT', 'Otro']);
+    expect(array_column($expected, 'code'))->toBe(['02', '03', '13', '36', '37'])
+        ->and(array_column($expected, 'description'))->toBe(['Carnet de Residente', 'Pasaporte', 'DUI', 'NIT', 'Otro']);
 
     $response = $this->getJson(route('api.v1.data.document-types.index'));
 
@@ -25,12 +25,12 @@ test('document types return the exact collection response', function () {
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
-                'total' => 4,
+                'total' => 5,
                 'per_page' => 10,
                 'current_page' => 1,
                 'last_page' => 1,
                 'from' => 1,
-                'to' => 4,
+                'to' => 5,
             ],
         ]);
 });
@@ -120,7 +120,7 @@ test('document types accept up to one hundred items per page', function () {
 
     $response->assertOk()
         ->assertJsonPath('pagination.per_page', 100)
-        ->assertJsonPath('pagination.total', 4);
+        ->assertJsonPath('pagination.total', 5);
 });
 
 test('document types reject unknown filters', function () {
