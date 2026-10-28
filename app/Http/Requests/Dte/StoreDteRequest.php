@@ -6,6 +6,9 @@ use App\Environment;
 use App\Models\Company;
 use App\Models\DocumentType;
 use App\Models\Dte;
+use App\Models\DteType;
+use App\Models\EstablishmentTypes;
+use App\Models\ItemType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +29,7 @@ class StoreDteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tipoDte' => ['sometimes', 'string', Rule::in(['01', '03', '04', '05', '06', '07', '08', '09', '11', '14', '15', '17', '18'])],
+            'tipoDte' => ['sometimes', 'string', Rule::exists(DteType::class, 'code')],
             'ambiente' => ['sometimes', 'string', Rule::enum(Environment::class)],
             'emisor' => ['sometimes', 'array'],
             'emisor.nit' => ['sometimes', 'string', 'regex:/^(?:\d{14}|\d{4}-\d{6}-\d{3}-\d)$/'],
@@ -35,7 +38,7 @@ class StoreDteRequest extends FormRequest
             'emisor.codActividad' => ['sometimes', 'string', 'size:5'],
             'emisor.descActividad' => ['sometimes', 'string', 'min:3'],
             'emisor.nombreComercial' => ['sometimes', 'nullable', 'string'],
-            'emisor.tipoEstablecimiento' => ['sometimes', 'string', Rule::in(['01', '02', '04', '07'])],
+            'emisor.tipoEstablecimiento' => ['sometimes', 'string', Rule::exists(EstablishmentTypes::class, 'code')],
             'emisor.direccion' => ['sometimes', 'array'],
             'emisor.direccion.departamento' => ['required_with:emisor.direccion', 'string', 'size:2'],
             'emisor.direccion.municipio' => ['required_with:emisor.direccion', 'string', 'size:2'],
@@ -60,7 +63,7 @@ class StoreDteRequest extends FormRequest
             'items.*.cantidad' => ['required', 'numeric', 'gt:0'],
             'items.*.precioUni' => ['required', 'numeric', 'gte:0'],
             'items.*.montoDescu' => ['sometimes', 'numeric', 'gte:0'],
-            'items.*.tipoItem' => ['sometimes', 'integer', Rule::in([1, 2, 3, 4])],
+            'items.*.tipoItem' => ['sometimes', 'integer', Rule::exists(ItemType::class, 'code')],
             'items.*.codigo' => ['sometimes', 'nullable', 'string'],
             'items.*.uniMedida' => ['sometimes', 'integer'],
         ];

@@ -16,6 +16,8 @@ test('catalog endpoints validate per page', function (string $routeName) {
     'economic activities' => 'api.v1.data.economic-activities.index',
     'establishment types' => 'api.v1.data.establishment-types.index',
     'document types' => 'api.v1.data.document-types.index',
+    'DTE types' => 'api.v1.data.dte-types.index',
+    'item types' => 'api.v1.data.item-types.index',
 ]);
 
 test('catalog endpoints reject per page values outside the allowed range', function (string $routeName) {
@@ -34,4 +36,6 @@ test('catalog endpoints reject per page values outside the allowed range', funct
     'economic activities' => 'api.v1.data.economic-activities.index',
     'establishment types' => 'api.v1.data.establishment-types.index',
     'document types' => 'api.v1.data.document-types.index',
+    'DTE types' => 'api.v1.data.dte-types.index',
+    'item types' => 'api.v1.data.item-types.index',
 ]);

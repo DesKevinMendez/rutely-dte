@@ -30,6 +30,6 @@ class DocumentTypeSeeder extends Seeder
             $types
         );
 
-        DB::table('document_types')->insert($rows);
+        DB::table('document_types')->upsert($rows, ['code'], ['description', 'updated_at']);
     }
 }
