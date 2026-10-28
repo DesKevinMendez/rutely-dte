@@ -6,9 +6,14 @@ use App\Models\DteInvalidation;
 use App\Role;
 use App\Services\Dte\ContingencyService;
 use App\Services\Dte\DteInvalidationService;
+use Database\Seeders\DteTypeSeeder;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
+
+beforeEach(function () {
+    $this->seed(DteTypeSeeder::class);
+});
 
 function validInvalidationPayload(): array
 {
@@ -233,6 +238,40 @@ test('contingency event request validation returns 422', function (array $payloa
     'contingency reason string' => [array_replace(validContingencyPayload(), ['motivoContingencia' => ['reason']]), 'motivoContingencia', 'El campo motivo de contingencia debe ser una cadena de caracteres.'],
     'contingency reason minimum' => [array_replace(validContingencyPayload(), ['motivoContingencia' => '1234']), 'motivoContingencia', 'El campo motivo de contingencia debe contener al menos 5 caracteres.'],
     'contingency reason maximum' => [array_replace(validContingencyPayload(), ['motivoContingencia' => str_repeat('a', 501)]), 'motivoContingencia', 'El campo motivo de contingencia no debe contener más de 500 caracteres.'],
+]);
+
+test('contingency events accept every seeded DTE type', function (string $dteType) {
+    $company = DteApiTestData::company();
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+    $payload = validContingencyPayload();
+    $payload['dtes'][0]['tipoDte'] = $dteType;
+
+    $this->mock(ContingencyService::class)
+        ->shouldReceive('create')
+        ->once()
+        ->with($company->id, $payload)
+        ->andReturn([
+            'event' => new ContingencyEvent,
+            'document' => [],
+            'mhResult' => [],
+        ]);
+
+    $this->postJson(route('api.v1.contingency.events.store'), $payload)
+        ->assertOk();
+})->with([
+    'DTE type 01' => '01',
+    'DTE type 03' => '03',
+    'DTE type 04' => '04',
+    'DTE type 05' => '05',
+    'DTE type 06' => '06',
+    'DTE type 07' => '07',
+    'DTE type 08' => '08',
+    'DTE type 09' => '09',
+    'DTE type 11' => '11',
+    'DTE type 14' => '14',
+    'DTE type 15' => '15',
+    'DTE type 17' => '17',
+    'DTE type 18' => '18',
 ]);
 
 test('company member can read contingency status and admin can update it', function () {

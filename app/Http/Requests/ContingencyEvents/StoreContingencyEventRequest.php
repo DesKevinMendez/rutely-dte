@@ -3,6 +3,7 @@
 namespace App\Http\Requests\ContingencyEvents;
 
 use App\Models\ContingencyEvent;
+use App\Models\DteType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ class StoreContingencyEventRequest extends FormRequest
         return [
             'dtes' => ['required', 'array', 'min:1', 'max:100'],
             'dtes.*.codigoGeneracion' => ['required', 'uuid'],
-            'dtes.*.tipoDte' => ['required', 'string', Rule::in(['01', '03', '04', '05', '06', '07', '08', '09', '11', '14', '15', '17', '18'])],
+            'dtes.*.tipoDte' => ['required', 'string', Rule::exists(DteType::class, 'code')],
             'fInicio' => ['required', 'date_format:Y-m-d'],
             'hInicio' => ['required', 'date_format:H:i:s'],
             'fFin' => ['required', 'date_format:Y-m-d'],
