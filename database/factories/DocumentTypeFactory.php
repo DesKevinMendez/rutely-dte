@@ -18,7 +18,8 @@ class DocumentTypeFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'code' => fake()->numerify('##'),
+            'description' => fake()->word(),
         ];
     }
 }
