@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\DocumentType;
 use Database\Seeders\DocumentTypeSeeder;
 use Illuminate\Support\Facades\DB;
 
@@ -61,6 +62,30 @@ test('document types can be filtered by code', function () {
         ]);
 });
 
+test('document types can be filtered by id', function () {
+    $documentType = DB::table('document_types')
+        ->select(['id', 'code', 'description'])
+        ->where('code', '36')
+        ->first();
+
+    $response = $this->getJson(route('api.v1.data.document-types.index', [
+        'filter' => ['id' => $documentType->id],
+    ]));
+
+    $response->assertOk()
+        ->assertExactJson([
+            'data' => [(array) $documentType],
+            'pagination' => [
+                'total' => 1,
+                'per_page' => 10,
+                'current_page' => 1,
+                'last_page' => 1,
+                'from' => 1,
+                'to' => 1,
+            ],
+        ]);
+});
+
 test('document types can be filtered by part of the description', function () {
     $expected = DB::table('document_types')
         ->select(['id', 'code', 'description'])
@@ -104,4 +129,16 @@ test('document types reject unknown filters', function () {
     ]));
 
     $response->assertBadRequest();
+});
+
+test('document type factories create valid persisted models', function () {
+    $documentType = DocumentType::factory()->create();
+
+    $this->assertMatchesRegularExpression('/^\d{2}$/', $documentType->code);
+    $this->assertNotEmpty($documentType->description);
+    $this->assertDatabaseHas('document_types', [
+        'id' => $documentType->id,
+        'code' => $documentType->code,
+        'description' => $documentType->description,
+    ]);
 });
