@@ -15,4 +15,5 @@ test('catalog endpoints validate per page', function (string $routeName) {
     'districts' => 'api.v1.data.districts.index',
     'economic activities' => 'api.v1.data.economic-activities.index',
     'establishment types' => 'api.v1.data.establishment-types.index',
+    'document types' => 'api.v1.data.document-types.index',
 ]);

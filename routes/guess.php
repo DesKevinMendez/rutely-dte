@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\API\Data\DepartmentListController;
 use App\Http\Controllers\API\Data\DistrictListController;
+use App\Http\Controllers\API\Data\DocumentTypeListController;
 use App\Http\Controllers\API\Data\EconomicActivityListController;
 use App\Http\Controllers\API\Data\EstablishmentTypeListController;
 use App\Http\Controllers\API\Data\MunicipalityListController;
@@ -14,5 +15,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('districts', DistrictListController::class)->name('districts.index');
         Route::get('economic-activities', EconomicActivityListController::class)->name('economic-activities.index');
         Route::get('establishment-types', EstablishmentTypeListController::class)->name('establishment-types.index');
+        Route::get('document-types', DocumentTypeListController::class)->name('document-types.index');
     });
 });
