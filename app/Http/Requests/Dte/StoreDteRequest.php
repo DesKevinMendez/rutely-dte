@@ -4,6 +4,7 @@ namespace App\Http\Requests\Dte;
 
 use App\Environment;
 use App\Models\Company;
+use App\Models\DocumentType;
 use App\Models\Dte;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -42,7 +43,7 @@ class StoreDteRequest extends FormRequest
             'emisor.telefono' => ['sometimes', 'nullable', 'string'],
             'emisor.correo' => ['sometimes', 'nullable', 'email'],
             'receptor' => ['sometimes', 'array'],
-            'receptor.tipoDocumento' => ['sometimes', 'string', Rule::in(['13', '36', '03', '37'])],
+            'receptor.tipoDocumento' => ['sometimes', 'string', Rule::exists(DocumentType::class, 'code')],
             'receptor.numDocumento' => ['sometimes', 'nullable', 'string'],
             'receptor.nrc' => ['sometimes', 'nullable', 'string'],
             'receptor.nombre' => ['sometimes', 'nullable', 'string'],
