@@ -44,7 +44,7 @@ class TaxCreditBuilder extends SaleDocumentBuilder
     {
         return [
             'nit' => $receiver['nit'],
-            'nrc' => $receiver['nrc'] ?? null,
+            'nrc' => $receiver['nrc'],
             'nombre' => $receiver['nombre'],
             'codActividad' => $receiver['codActividad'],
             'descActividad' => $receiver['descActividad'],

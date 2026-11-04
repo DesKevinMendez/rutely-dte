@@ -20,6 +20,9 @@ class MhCatalog
     /** Normativa 2.0, Anexo IV: 9 digits, without hyphens or other special characters. */
     public const DUI_PATTERN = '/^[0-9]{9}$/';
 
+    /** Normativa 2.0, Anexo II: 2 to 8 digits, without hyphens. */
+    public const NRC_PATTERN = '/^[0-9]{2,8}$/';
+
     /** CAT-022: NIT. */
     public const NIT_DOCUMENT_TYPE = '36';
 

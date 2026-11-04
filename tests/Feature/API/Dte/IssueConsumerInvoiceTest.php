@@ -221,6 +221,15 @@ test('goods and mixed lines keep the unit of measure sent by the client', functi
     'goods and services' => [3],
 ]);
 
+test('a consumer invoice sends the receiver NRC without its hyphen', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), consumerInvoiceReceiver(['nrc' => '987654-3']))->assertCreated();
+
+    expect(signedDocument(Dte::query()->findOrFail($response->json('data.record.id'))->signed_json)['receptor']['nrc'])
+        ->toBe('9876543');
+});
+
 test('consumer invoice applies the item discount and the withheld IVA', function () {
     $company = companyReadyToIssue();
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
@@ -375,6 +384,7 @@ test('consumer invoice validation returns 422 with the official limits', functio
     'DUI with 9 digits' => [consumerInvoiceReceiver(['tipoDocumento' => '13', 'numDocumento' => '0123456-7']), 'receptor.numDocumento', 'El formato del campo receptor.num documento no es válido.'],
     'DUI with digits only' => [consumerInvoiceReceiver(['tipoDocumento' => '13', 'numDocumento' => '0123456A8']), 'receptor.numDocumento', 'El formato del campo receptor.num documento no es válido.'],
     'NIT with 9 or 14 digits' => [consumerInvoiceReceiver(['tipoDocumento' => '36', 'numDocumento' => '0614-150592']), 'receptor.numDocumento', 'El formato del campo receptor.num documento no es válido.'],
+    'NRC digits only' => [consumerInvoiceReceiver(['nrc' => '98765A']), 'receptor.nrc', 'El formato del campo receptor.nrc no es válido.'],
     'NRC minimum' => [consumerInvoiceReceiver(['nrc' => '1']), 'receptor.nrc', 'El campo receptor.nrc debe contener al menos 2 caracteres.'],
     'NRC maximum' => [consumerInvoiceReceiver(['nrc' => '123456789']), 'receptor.nrc', 'El campo receptor.nrc no debe contener más de 8 caracteres.'],
     'name maximum' => [consumerInvoiceReceiver(['nombre' => str_repeat('a', 251)]), 'receptor.nombre', 'El campo receptor.nombre no debe contener más de 250 caracteres.'],

@@ -114,15 +114,21 @@ test('a tax credit line without value does not declare IVA', function () {
         ->and($document['resumen']['tributos'])->toBeNull();
 });
 
-test('a tax credit sends the receiver NIT without hyphens', function () {
+test('a tax credit sends the receiver NIT and NRC without hyphens', function () {
     Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
 
-    $response = $this->postJson(route('api.v1.dtes.store'), taxCreditReceiver(['nit' => '0614-150592-101-5']))->assertCreated();
+    $response = $this->postJson(route('api.v1.dtes.store'), taxCreditReceiver([
+        'nit' => '0614-150592-101-5',
+        'nrc' => '987654-3',
+    ]))->assertCreated();
 
     $dte = Dte::query()->findOrFail($response->json('data.record.id'));
+    $receiver = signedDocument($dte->signed_json)['receptor'];
 
     expect($dte->receiver_document)->toBe('06141505921015')
-        ->and(signedDocument($dte->signed_json)['receptor']['nit'])->toBe('06141505921015');
+        ->and($receiver['nit'])->toBe('06141505921015')
+        ->and($receiver['nrc'])->toBe('9876543')
+        ->and(Receivers::query()->firstOrFail()->nrc)->toBe('9876543');
 });
 
 test('tax credit validation returns 422 with the official limits', function (array $payload, string $field, string $message) {
@@ -139,6 +145,8 @@ test('tax credit validation returns 422 with the official limits', function (arr
     'NIT required' => [taxCreditWithoutReceiverField('nit'), 'receptor.nit', 'El campo NIT del receptor es obligatorio.'],
     'NIT must be string' => [taxCreditReceiver(['nit' => ['0614']]), 'receptor.nit', 'El campo NIT del receptor debe ser una cadena de caracteres.'],
     'NIT format' => [taxCreditReceiver(['nit' => '0614-150592']), 'receptor.nit', 'El formato del campo NIT del receptor no es válido.'],
+    'NRC required' => [taxCreditWithoutReceiverField('nrc'), 'receptor.nrc', 'El campo receptor.nrc es obligatorio.'],
+    'NRC digits only' => [taxCreditReceiver(['nrc' => '98765A']), 'receptor.nrc', 'El formato del campo receptor.nrc no es válido.'],
     'NRC minimum' => [taxCreditReceiver(['nrc' => '1']), 'receptor.nrc', 'El campo receptor.nrc debe contener al menos 2 caracteres.'],
     'NRC maximum' => [taxCreditReceiver(['nrc' => '123456789']), 'receptor.nrc', 'El campo receptor.nrc no debe contener más de 8 caracteres.'],
     'name required' => [taxCreditWithoutReceiverField('nombre'), 'receptor.nombre', 'El campo receptor.nombre es obligatorio.'],

@@ -48,7 +48,7 @@ class StoreDteRequest extends FormRequest
     }
 
     /**
-     * NIT and DUI are written with hyphens in El Salvador, but Hacienda receives only their digits.
+     * NIT, NRC and DUI are written with hyphens in El Salvador, but Hacienda receives only their digits.
      */
     protected function prepareForValidation(): void
     {
@@ -58,8 +58,10 @@ class StoreDteRequest extends FormRequest
             return;
         }
 
-        if (is_string($receiver['nit'] ?? null)) {
-            $receiver['nit'] = str_replace('-', '', $receiver['nit']);
+        foreach (['nit', 'nrc'] as $field) {
+            if (is_string($receiver[$field] ?? null)) {
+                $receiver[$field] = str_replace('-', '', $receiver[$field]);
+            }
         }
 
         $hasDigitsOnlyDocument = in_array($receiver['tipoDocumento'] ?? null, [MhCatalog::DUI_DOCUMENT_TYPE, MhCatalog::NIT_DOCUMENT_TYPE], true);
@@ -211,7 +213,7 @@ class StoreDteRequest extends FormRequest
             'receptor.nombreComercial' => ['prohibited'],
             'receptor.tipoDocumento' => ['bail', 'nullable', 'required_with:receptor.numDocumento', 'string', Rule::exists(DocumentType::class, 'code')],
             'receptor.numDocumento' => ['nullable', 'required_with:receptor.tipoDocumento', 'string', 'max:20', ...$this->documentNumberFormat()],
-            'receptor.nrc' => ['sometimes', 'nullable', 'string', 'min:2', 'max:8'],
+            'receptor.nrc' => ['sometimes', 'nullable', 'string', 'min:2', 'max:8', 'regex:'.MhCatalog::NRC_PATTERN],
             'receptor.nombre' => ['sometimes', 'nullable', 'string', 'max:250'],
             'receptor.codActividad' => ['bail', 'sometimes', 'nullable', 'string', Rule::exists(EconomicActivity::class, 'code')],
             'receptor.descActividad' => ['sometimes', 'nullable', 'string', 'min:5', 'max:150'],
@@ -229,7 +231,7 @@ class StoreDteRequest extends FormRequest
             'receptor.tipoDocumento' => ['prohibited'],
             'receptor.numDocumento' => ['prohibited'],
             'receptor.nit' => ['required', 'string', 'regex:'.MhCatalog::NIT_PATTERN],
-            'receptor.nrc' => ['sometimes', 'nullable', 'string', 'min:2', 'max:8'],
+            'receptor.nrc' => ['required', 'string', 'min:2', 'max:8', 'regex:'.MhCatalog::NRC_PATTERN],
             'receptor.nombre' => ['required', 'string', 'max:250'],
             'receptor.codActividad' => ['bail', 'required', 'string', Rule::exists(EconomicActivity::class, 'code')],
             'receptor.descActividad' => ['required', 'string', 'min:5', 'max:150'],
