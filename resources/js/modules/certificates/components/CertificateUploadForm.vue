@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { IconCloudUpload } from '@tabler/icons-vue';
-import { BaseButton, Card, FormInput } from 'ornito';
+import { Alert, BaseButton, Card, FormInput } from 'ornito';
 import { ref } from 'vue';
 import type {
     CertificateEnvironment,
     CertificateUploadPayload,
 } from '../types/certificate.types';
+
+const MAX_CERTIFICATE_SIZE_IN_BYTES = 2 * 1024 * 1024;
 
 const {
     selectedEnvironment,
@@ -24,12 +26,19 @@ const emit = defineEmits<{
 
 const selectedFile = ref<File | null>(null);
 const fileName = ref('');
+const fileError = ref('');
 const password = ref('');
 const isDragging = ref(false);
 
 const setFile = (file?: File): void => {
-    selectedFile.value = file ?? null;
-    fileName.value = file?.name ?? '';
+    const isTooLarge = (file?.size ?? 0) > MAX_CERTIFICATE_SIZE_IN_BYTES;
+    const acceptedFile = isTooLarge ? null : (file ?? null);
+
+    fileError.value = isTooLarge
+        ? 'El certificado no debe pesar más de 2 MB.'
+        : '';
+    selectedFile.value = acceptedFile;
+    fileName.value = acceptedFile?.name ?? '';
 };
 
 const handleFileChange = (event: Event): void => {
@@ -155,7 +164,7 @@ const submit = (): void => {
                         }}
                     </span>
                     <span class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Archivos soportados: .xml, .crt o .txt
+                        Archivos soportados: .xml, .crt o .txt (máximo 2 MB)
                     </span>
                 </label>
                 <input
@@ -166,6 +175,9 @@ const submit = (): void => {
                     :disabled="isSubmitting"
                     @change="handleFileChange"
                 />
+                <Alert v-if="fileError" type="danger" class="mt-3">
+                    {{ fileError }}
+                </Alert>
             </div>
 
             <FormInput

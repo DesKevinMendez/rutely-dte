@@ -48,6 +48,19 @@ test.describe('Certificates', () => {
         await expect(submitButton).toBeEnabled();
     });
 
+    test('rejects a certificate larger than 2 MB before uploading it', async ({ page }) => {
+        await page.locator('#certificate-file').setInputFiles({
+            name: 'oversized-certificate.xml',
+            mimeType: 'application/xml',
+            buffer: Buffer.alloc(2 * 1024 * 1024 + 1, 'a'),
+        });
+
+        await expect(
+            page.getByText('El certificado no debe pesar más de 2 MB.', { exact: true }),
+        ).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Guardar y Encriptar Certificado' })).toBeDisabled();
+    });
+
     test('uploads and stores the repository MH certificate fixture', async ({ page }) => {
         const certificateResponse = page.waitForResponse(
             (response) =>

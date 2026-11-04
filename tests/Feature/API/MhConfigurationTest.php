@@ -2,6 +2,7 @@
 
 use App\Environment;
 use App\Models\Company;
+use App\Models\MhCertificates;
 use App\Models\MhCredentials;
 use App\Models\User;
 use App\Role;
@@ -9,6 +10,7 @@ use App\Services\Mh\MhCertificateService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Rutely\DteSigned\Certificate\MhCertificate;
 
 function mhConfigurationCompany(): Company
 {
@@ -238,6 +240,111 @@ test('admin can store and show MH certificate metadata while material remains en
         ->assertExactJson($expected);
 });
 
+test('MH certificates are tenant isolated', function () {
+    $company = mhConfigurationCompany();
+    $otherCompany = Company::query()->create(array_merge($company->only([
+        'address', 'phone', 'nrc', 'commercial_name', 'economic_activity_code', 'establishment_type',
+        'departament_id', 'municipality_id', 'district_id', 'mh_establishment_code', 'mh_pos_code',
+        'own_establishment_code', 'own_pos_code',
+    ]), [
+        'name' => 'Other Company',
+        'nit' => '06142812901016',
+        'email' => 'other@rutely.biz',
+    ]));
+    $otherCertificate = MhCertificates::query()->create([
+        'company_id' => $otherCompany->id,
+        'environment' => Environment::SANDBOX->value,
+        'nit' => $otherCompany->nit,
+        'encrypted_certificate' => '<certificado>other</certificado>',
+        'encrypted_private_key_password' => 'other-secret',
+        'active' => true,
+    ]);
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+
+    $this->getJson(route('api.v1.mh-certificates.show'))->assertNotFound();
+
+    $this->mock(MhCertificateService::class)
+        ->shouldReceive('validateForCompany')
+        ->twice()
+        ->with($company->id, '<certificado>own</certificado>', 'own-secret')
+        ->andReturn($company->nit);
+
+    $store = $this->postJson(route('api.v1.mh-certificates.store'), [
+        'company_id' => $otherCompany->id,
+        'environment' => Environment::SANDBOX->value,
+        'certificadoXml' => '<certificado>own</certificado>',
+        'passwordPri' => 'own-secret',
+    ])->assertOk();
+
+    $ownCertificate = MhCertificates::query()->findOrFail($store->json('data.id'));
+    $otherCertificate->refresh();
+
+    expect($ownCertificate->company_id)->toBe($company->id)
+        ->and($ownCertificate->id)->not->toBe($otherCertificate->id)
+        ->and($otherCertificate->company_id)->toBe($otherCompany->id)
+        ->and($otherCertificate->encrypted_certificate)->toBe('<certificado>other</certificado>')
+        ->and($otherCertificate->encrypted_private_key_password)->toBe('other-secret');
+
+    $this->getJson(route('api.v1.mh-certificates.show'))
+        ->assertOk()
+        ->assertExactJson(['data' => [
+            'id' => $ownCertificate->id,
+            'environment' => Environment::SANDBOX->value,
+            'nit' => $company->nit,
+            'active' => true,
+            'updated_at' => $ownCertificate->updated_at?->toJSON(),
+        ]]);
+});
+
+test('MH certificate secrets are never serialized', function () {
+    $certificate = MhCertificates::query()->create([
+        'company_id' => mhConfigurationCompany()->id,
+        'environment' => Environment::SANDBOX->value,
+        'nit' => '06142812901015',
+        'encrypted_certificate' => '<certificado>fixture</certificado>',
+        'encrypted_private_key_password' => 'private-secret',
+        'active' => true,
+    ]);
+
+    expect($certificate->toArray())->not->toHaveKeys(['encrypted_certificate', 'encrypted_private_key_password'])
+        ->and($certificate->toJson())->not->toContain('fixture')->not->toContain('private-secret')
+        ->and($certificate->encrypted_certificate)->toBe('<certificado>fixture</certificado>')
+        ->and($certificate->encrypted_private_key_password)->toBe('private-secret');
+});
+
+test('stack traces expose only the first six characters of the certificate password', function () {
+    $previousIgnoreArgs = ini_set('zend.exception_ignore_args', '0');
+    $trace = '';
+
+    try {
+        MhCertificate::fromXml('<invalid/>', 'SECRET-PASSWORD-123');
+    } catch (Throwable $exception) {
+        $trace = $exception->getTraceAsString();
+    }
+
+    ini_set('zend.exception_ignore_args', (string) $previousIgnoreArgs);
+
+    expect($trace)->toContain("'SECRET...'")->not->toContain('SECRET-');
+});
+
+test('MH certificate of exactly 2 MB passes the size rule', function () {
+    $company = mhConfigurationCompany();
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    $certificateXml = str_repeat('a', 2097152);
+
+    $this->mock(MhCertificateService::class)
+        ->shouldReceive('validateForCompany')
+        ->twice()
+        ->with($company->id, $certificateXml, 'private-secret')
+        ->andReturn($company->nit);
+
+    $this->postJson(route('api.v1.mh-certificates.store'), [
+        'environment' => Environment::SANDBOX->value,
+        'certificadoXml' => $certificateXml,
+        'passwordPri' => 'private-secret',
+    ])->assertOk();
+});
+
 test('operational user cannot manage MH certificates', function () {
     $company = mhConfigurationCompany();
     Sanctum::actingAs(mhConfigurationAdmin($company, Role::USER));
@@ -264,6 +371,7 @@ test('store MH certificate request validation returns 422', function (array $pay
     'environment must be valid' => [['environment' => '99', 'certificadoXml' => '<xml/>'], 'environment', 'El valor seleccionado para ambiente no es válido.'],
     'certificate is required' => [['environment' => '00'], 'certificadoXml', 'El campo certificado de Hacienda es obligatorio.'],
     'certificate must be a string' => [['environment' => '00', 'certificadoXml' => ['xml']], 'certificadoXml', 'El campo certificado de Hacienda debe ser una cadena de caracteres.'],
+    'certificate cannot exceed 2 MB' => [['environment' => '00', 'certificadoXml' => str_repeat('a', 2097153)], 'certificadoXml', 'El certificado de Hacienda no debe pesar más de 2 MB.'],
     'private password must be a string' => [['environment' => '00', 'certificadoXml' => '<xml/>', 'passwordPri' => ['secret']], 'passwordPri', 'El campo contraseña privada debe ser una cadena de caracteres.'],
     'private password has a maximum length' => [['environment' => '00', 'certificadoXml' => '<xml/>', 'passwordPri' => str_repeat('a', 256)], 'passwordPri', 'El campo contraseña privada no debe contener más de 255 caracteres.'],
 ]);

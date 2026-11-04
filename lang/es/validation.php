@@ -64,6 +64,12 @@ return [
     'unique' => 'El campo :attribute ya ha sido registrado.',
     'uuid' => 'El campo :attribute debe ser un UUID válido.',
 
+    'custom' => [
+        'certificadoXml' => [
+            'max' => 'El certificado de Hacienda no debe pesar más de 2 MB.',
+        ],
+    ],
+
     'attributes' => [
         'name' => 'nombre',
         'address' => 'dirección',
