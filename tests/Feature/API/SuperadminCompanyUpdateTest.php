@@ -72,11 +72,10 @@ test('superadmin company update allows null optional fields', function (): void 
 
     $this->patchJson(
         route('api.v1.superadmin.companies.update', $company),
-        ['nrc' => null, 'district_id' => null],
+        ['nrc' => null],
     )
         ->assertOk()
-        ->assertJsonPath('data.nrc', null)
-        ->assertJsonPath('data.district_id', null);
+        ->assertJsonPath('data.nrc', null);
 });
 
 test('superadmin company update validates each request rule', function (string $field, mixed $value, string $message): void {
@@ -91,10 +90,10 @@ test('superadmin company update validates each request rule', function (string $
 })->with([
     'name cannot be null' => ['name', null, 'El campo nombre es obligatorio.'],
     'name must be a string' => ['name', ['Rutely'], 'El campo nombre debe ser una cadena de caracteres.'],
-    'name has a maximum length' => ['name', str_repeat('a', 256), 'El campo nombre no debe contener más de 255 caracteres.'],
+    'name has a maximum length' => ['name', str_repeat('a', 251), 'El campo nombre no debe contener más de 250 caracteres.'],
     'address cannot be null' => ['address', null, 'El campo dirección es obligatorio.'],
     'address must be a string' => ['address', ['San Salvador'], 'El campo dirección debe ser una cadena de caracteres.'],
-    'address has a maximum length' => ['address', str_repeat('a', 256), 'El campo dirección no debe contener más de 255 caracteres.'],
+    'address has a maximum length' => ['address', str_repeat('a', 201), 'El campo dirección no debe contener más de 200 caracteres.'],
     'phone cannot be null' => ['phone', null, 'El campo teléfono es obligatorio.'],
     'phone must be a string' => ['phone', ['22223333'], 'El campo teléfono debe ser una cadena de caracteres.'],
     'phone has a minimum length' => ['phone', '1234567', 'El campo teléfono debe contener al menos 8 caracteres.'],
@@ -119,11 +118,14 @@ test('superadmin company update validates each request rule', function (string $
     'municipality cannot be null' => ['municipality_id', null, 'El campo municipio es obligatorio.'],
     'municipality must be a uuid' => ['municipality_id', 'invalid-uuid', 'El campo municipio debe ser un UUID válido.'],
     'municipality must exist' => ['municipality_id', '00000000-0000-4000-8000-000000000002', 'El valor seleccionado para municipio no es válido.'],
+    'district cannot be null' => ['district_id', null, 'El campo distrito es obligatorio.'],
     'district must be a uuid' => ['district_id', 'invalid-uuid', 'El campo distrito debe ser un UUID válido.'],
     'district must exist' => ['district_id', '00000000-0000-4000-8000-000000000003', 'El valor seleccionado para distrito no es válido.'],
     'email cannot be null' => ['email', null, 'El campo correo electrónico es obligatorio.'],
     'email must be valid' => ['email', 'invalid-email', 'El campo correo electrónico debe ser una dirección de correo electrónico válida.'],
-    'email has a maximum length' => ['email', str_repeat('a', 256).'@example.com', 'El campo correo electrónico no debe contener más de 255 caracteres.'],
+    'email needs a top level domain' => ['email', 'usuario@dominio', 'El campo correo electrónico debe ser una dirección de correo electrónico válida.'],
+    'email has a minimum length' => ['email', 'a@b.c', 'El campo correo electrónico debe contener al menos 6 caracteres.'],
+    'email has a maximum length' => ['email', str_repeat('a', 89).'@example.com', 'El campo correo electrónico no debe contener más de 100 caracteres.'],
     'MH establishment code cannot be null' => ['mh_establishment_code', null, 'El campo código de establecimiento MH es obligatorio.'],
     'MH establishment code must be a string' => ['mh_establishment_code', ['0001'], 'El campo código de establecimiento MH debe ser una cadena de caracteres.'],
     'MH establishment code has size four' => ['mh_establishment_code', '001', 'El campo código de establecimiento MH debe contener 4 caracteres.'],
@@ -133,7 +135,9 @@ test('superadmin company update validates each request rule', function (string $
     'own establishment code cannot be null' => ['own_establishment_code', null, 'El campo código propio de establecimiento es obligatorio.'],
     'own establishment code must be a string' => ['own_establishment_code', ['0001'], 'El campo código propio de establecimiento debe ser una cadena de caracteres.'],
     'own establishment code has size four' => ['own_establishment_code', '001', 'El campo código propio de establecimiento debe contener 4 caracteres.'],
+    'MH establishment code has the official format' => ['mh_establishment_code', '0001', 'El formato del campo código de establecimiento MH no es válido.'],
     'own point of sale code cannot be null' => ['own_pos_code', null, 'El campo código propio de punto de venta es obligatorio.'],
     'own point of sale code must be a string' => ['own_pos_code', ['0001'], 'El campo código propio de punto de venta debe ser una cadena de caracteres.'],
     'own point of sale code has size four' => ['own_pos_code', '001', 'El campo código propio de punto de venta debe contener 4 caracteres.'],
+    'MH point of sale code has the official format' => ['mh_pos_code', '0001', 'El formato del campo código de punto de venta MH no es válido.'],
 ]);

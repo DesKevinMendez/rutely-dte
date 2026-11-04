@@ -65,7 +65,7 @@ test('admin can store and show MH credentials without exposing the password', fu
     $store = $this->postJson(route('api.v1.mh-credentials.store'), [
         'environment' => Environment::SANDBOX->value,
         'nit' => $company->nit,
-        'pwd' => 'mh-secret',
+        'pwd' => 'Hacienda-Prueba-01',
     ]);
     $id = $store->json('data.id');
     $updatedAt = $store->json('data.updated_at');
@@ -78,7 +78,7 @@ test('admin can store and show MH credentials without exposing the password', fu
     ]];
 
     $store->assertOk()->assertExactJson($expected);
-    expect(DB::table('mh_credentials')->where('id', $id)->value('password'))->not->toBe('mh-secret');
+    expect(DB::table('mh_credentials')->where('id', $id)->value('password'))->not->toBe('Hacienda-Prueba-01');
 
     $this->getJson(route('api.v1.mh-credentials.show', ['environment' => Environment::SANDBOX->value]))
         ->assertOk()
@@ -109,17 +109,17 @@ test('MH credentials are tenant isolated and update the environment singleton', 
     $first = $this->postJson(route('api.v1.mh-credentials.store'), [
         'environment' => Environment::SANDBOX->value,
         'nit' => $company->nit,
-        'pwd' => 'first-secret',
+        'pwd' => 'Hacienda-Primera-01',
     ])->assertOk();
     $this->postJson(route('api.v1.mh-credentials.store'), [
         'environment' => Environment::SANDBOX->value,
         'nit' => $company->nit,
-        'pwd' => 'second-secret',
+        'pwd' => 'Hacienda-Segunda-02',
     ])->assertOk();
 
     $own = MhCredentials::query()->where('company_id', $company->id)->firstOrFail();
     expect(MhCredentials::query()->where('company_id', $company->id)->count())->toBe(1)
-        ->and($own->password)->toBe('second-secret');
+        ->and($own->password)->toBe('Hacienda-Segunda-02');
 
     $this->getJson(route('api.v1.mh-credentials.show'))
         ->assertOk()
@@ -153,15 +153,47 @@ test('store MH credentials request validation returns 422', function (array $pay
         ->assertUnprocessable()
         ->assertJsonValidationErrors([$field => $message]);
 })->with([
-    'environment is required' => [['nit' => '06142812901015', 'pwd' => 'secret'], 'environment', 'El campo ambiente es obligatorio.'],
-    'environment must be a string' => [['environment' => ['00'], 'nit' => '06142812901015', 'pwd' => 'secret'], 'environment', 'El campo ambiente debe ser una cadena de caracteres.'],
-    'environment must be valid' => [['environment' => '99', 'nit' => '06142812901015', 'pwd' => 'secret'], 'environment', 'El valor seleccionado para ambiente no es válido.'],
-    'nit is required' => [['environment' => '00', 'pwd' => 'secret'], 'nit', 'El campo NIT es obligatorio.'],
-    'nit must be a string' => [['environment' => '00', 'nit' => ['0614'], 'pwd' => 'secret'], 'nit', 'El campo NIT debe ser una cadena de caracteres.'],
-    'nit has a maximum length' => [['environment' => '00', 'nit' => str_repeat('1', 21), 'pwd' => 'secret'], 'nit', 'El campo NIT no debe contener más de 20 caracteres.'],
+    'environment is required' => [['nit' => '06142812901015', 'pwd' => 'Hacienda-Prueba-01'], 'environment', 'El campo ambiente es obligatorio.'],
+    'environment must be a string' => [['environment' => ['00'], 'nit' => '06142812901015', 'pwd' => 'Hacienda-Prueba-01'], 'environment', 'El campo ambiente debe ser una cadena de caracteres.'],
+    'environment must be valid' => [['environment' => '99', 'nit' => '06142812901015', 'pwd' => 'Hacienda-Prueba-01'], 'environment', 'El valor seleccionado para ambiente no es válido.'],
+    'nit is required' => [['environment' => '00', 'pwd' => 'Hacienda-Prueba-01'], 'nit', 'El campo NIT es obligatorio.'],
+    'nit must be a string' => [['environment' => '00', 'nit' => ['0614'], 'pwd' => 'Hacienda-Prueba-01'], 'nit', 'El campo NIT debe ser una cadena de caracteres.'],
+    'nit with letters' => [['environment' => '00', 'nit' => '0614281290101A', 'pwd' => 'Hacienda-Prueba-01'], 'nit', 'El formato del campo NIT no es válido.'],
+    'nit with an invalid length' => [['environment' => '00', 'nit' => str_repeat('1', 21), 'pwd' => 'Hacienda-Prueba-01'], 'nit', 'El formato del campo NIT no es válido.'],
     'password is required' => [['environment' => '00', 'nit' => '06142812901015'], 'pwd', 'El campo contraseña de Hacienda es obligatorio.'],
     'password must be a string' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => ['secret']], 'pwd', 'El campo contraseña de Hacienda debe ser una cadena de caracteres.'],
-    'password has a maximum length' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => str_repeat('a', 256)], 'pwd', 'El campo contraseña de Hacienda no debe contener más de 255 caracteres.'],
+    'password has a minimum length' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => 'Hacienda-P01'], 'pwd', 'El campo contraseña de Hacienda debe contener al menos 13 caracteres.'],
+    'password has a maximum length' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => 'Hacienda-Prueba-01-'.str_repeat('a', 7)], 'pwd', 'El campo contraseña de Hacienda no debe contener más de 25 caracteres.'],
+    'password needs a letter' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => '1234567890-123'], 'pwd', 'El campo contraseña de Hacienda debe contener al menos una letra.'],
+    'password needs a number' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => 'Hacienda-Prueba'], 'pwd', 'El campo contraseña de Hacienda debe contener al menos un número.'],
+    'password needs a special character' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => 'HaciendaPrueba01'], 'pwd', 'El campo contraseña de Hacienda debe contener al menos un carácter especial.'],
+]);
+
+test('store MH credentials keeps only the digits of a NIT written with hyphens', function () {
+    $company = mhConfigurationCompany();
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => '0614-281290-101-5',
+        'pwd' => 'Hacienda-Prueba-01',
+    ])->assertOk()->assertJsonPath('data.nit', '06142812901015');
+
+    expect(MhCredentials::query()->where('company_id', $company->id)->value('nit'))->toBe('06142812901015');
+});
+
+test('store MH credentials accepts a 9 digit NIT and the password length limits', function (string $nit, string $password) {
+    Sanctum::actingAs(mhConfigurationAdmin(mhConfigurationCompany()));
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => $nit,
+        'pwd' => $password,
+    ])->assertOk()->assertJsonPath('data.nit', $nit);
+})->with([
+    '9 digit NIT' => ['012345678', 'Hacienda-Prueba-01'],
+    'shortest password' => ['06142812901015', 'Hacienda-P012'],
+    'longest password' => ['06142812901015', 'Hacienda-Prueba-01'.str_repeat('a', 7)],
 ]);
 
 test('show MH credentials environment validation returns 422', function (mixed $environment, string $message) {

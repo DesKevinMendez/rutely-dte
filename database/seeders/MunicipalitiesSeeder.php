@@ -12,6 +12,7 @@ class MunicipalitiesSeeder extends Seeder
     public function run(): void
     {
         $municipalities = [
+            ['departament_code' => '00', 'code' => '00', 'name' => 'Otro (Para extranjeros)'],
             ['departament_code' => '01', 'code' => '13', 'name' => 'AHUACHAPAN NORTE'],
             ['departament_code' => '01', 'code' => '14', 'name' => 'AHUACHAPAN CENTRO'],
             ['departament_code' => '01', 'code' => '15', 'name' => 'AHUACHAPAN SUR'],

@@ -2,6 +2,7 @@
 import { Alert, Badge, BaseButton, Card, DataTable, FormSelect } from 'ornito';
 import type { BadgeVariant, TableField } from 'ornito';
 import { computed, ref } from 'vue';
+import { formatIdentityDocument } from '@/core/composables/formatIdentityDocument';
 import { useDtesUi } from '../composables/useDtesUi';
 import type { DteApiRecord, DteDraft } from '../types/dte.types';
 import CreateDteModal from './CreateDteModal.vue';
@@ -93,10 +94,19 @@ const tableUrl = computed(() => {
 const receiverName = (record: DteApiRecord): string =>
     record.original_json?.receptor?.nombre?.trim() || 'Cliente General';
 
-const receiverDocument = (record: DteApiRecord): string =>
-    record.receiver_document ||
-    record.original_json?.receptor?.numDocumento ||
-    'N/A';
+const receiverDocument = (record: DteApiRecord): string => {
+    const receiver = record.original_json?.receptor;
+    const document = record.receiver_document || receiver?.numDocumento;
+
+    if (!document) {
+        return 'N/A';
+    }
+
+    const hasOwnFormat =
+        receiver?.tipoDocumento && !['13', '36'].includes(receiver.tipoDocumento);
+
+    return hasOwnFormat ? document : formatIdentityDocument(document);
+};
 
 const statusVariant = (status: string): BadgeVariant => {
     switch (status) {

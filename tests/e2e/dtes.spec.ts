@@ -42,9 +42,9 @@ test.describe('DTEs', () => {
             page.getByRole('heading', { name: 'Documentos Tributarios Electrónicos (DTEs)' }),
         ).toBeVisible();
 
-        await expect(page.getByText('DTE-01-00010001-000000000000001', { exact: true })).toBeVisible();
-        await expect(page.getByText('DTE-01-00010001-000000000000002', { exact: true })).toBeVisible();
-        await expect(page.getByText('DTE-01-00010001-000000000000003', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000002', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000003', { exact: true })).toBeVisible();
 
         const table = page.getByRole('table');
 
@@ -56,9 +56,9 @@ test.describe('DTEs', () => {
     test('filters DTEs by status', async ({ page }) => {
         await page.locator('#filter-estado').selectOption('PROCESADO');
 
-        await expect(page.getByText('DTE-01-00010001-000000000000001', { exact: true })).toBeVisible();
-        await expect(page.getByText('DTE-01-00010001-000000000000002', { exact: true })).toHaveCount(0);
-        await expect(page.getByText('DTE-01-00010001-000000000000003', { exact: true })).toHaveCount(0);
+        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000002', { exact: true })).toHaveCount(0);
+        await expect(page.getByText('DTE-01-M001P001-000000000000003', { exact: true })).toHaveCount(0);
     });
 
     test('refreshes the DTE list from the API', async ({ page }) => {
@@ -71,12 +71,12 @@ test.describe('DTEs', () => {
         await page.getByRole('button', { name: 'Actualizar', exact: true }).click();
 
         expect((await dtesResponse).status()).toBe(200);
-        await expect(page.getByText('DTE-01-00010001-000000000000001', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
     });
 
     test('creates a Factura 01 from the UI against the Laravel backend', async ({ page }) => {
         await storeRepositoryCertificate(page);
-        await expect(page.getByText('DTE-01-00010001-000000000000001', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
 
         await page.getByRole('button', { name: 'Emitir Nuevo DTE', exact: true }).click();
         await expect(page.locator('#tipo-dte')).toBeVisible();
@@ -89,7 +89,7 @@ test.describe('DTEs', () => {
         await page.locator('#item-qty-0').fill('2');
         await page.locator('#item-price-0').fill('25');
 
-        await expect(page.getByText('Total: $56.50 USD', { exact: true })).toBeVisible();
+        await expect(page.getByText('Total: $50.00 USD', { exact: true })).toBeVisible();
 
         const dteGetRequests: string[] = [];
         page.on('request', (request) => {
@@ -130,8 +130,8 @@ test.describe('DTEs', () => {
         const record = body.data.record;
 
         expect(record.dte_type).toBe('01');
-        expect(record.receiver_document).toBe('0614-280390-112-1');
-        expect(record.total_amount).toBe(5650);
+        expect(record.receiver_document).toBe('06142803901121');
+        expect(record.total_amount).toBe(5000);
         expect(record.original_json.identificacion.fecEmi).toMatch(/^\d{4}-\d{2}-\d{2}$/);
         expect(record.original_json.identificacion.horEmi).toMatch(/^\d{2}:\d{2}:\d{2}$/);
 
@@ -139,6 +139,7 @@ test.describe('DTEs', () => {
         await expect(
             page.getByText('CLIENTE PLAYWRIGHT FACTURA', { exact: true }),
         ).toBeVisible();
+        await expect(page.getByText('Doc: 0614-280390-112-1', { exact: true })).toBeVisible();
 
         const [year, month, day] = record.original_json.identificacion.fecEmi.split('-');
         await expect(
@@ -154,6 +155,21 @@ test.describe('DTEs', () => {
         const refreshUrl = new URL(dteGetRequests[0]);
         expect(refreshUrl.searchParams.get('page')).toBe('1');
         expect(refreshUrl.searchParams.get('per_page')).toBe('10');
+    });
+
+    test('warns that a Factura from $25,000 must identify the receiver', async ({ page }) => {
+        const notice = page.getByText('En operaciones de $25,000.00 o más', { exact: false });
+
+        await page.getByRole('button', { name: 'Emitir Nuevo DTE', exact: true }).click();
+        await page.locator('#item-qty-0').fill('1');
+        await page.locator('#item-price-0').fill('24999.99');
+        await expect(notice).toHaveCount(0);
+
+        await page.locator('#item-price-0').fill('25000');
+        await expect(notice).toBeVisible();
+
+        await page.locator('#tipo-dte').selectOption('14');
+        await expect(notice).toHaveCount(0);
     });
 
     test('persists a cryptographically valid RS512 signature for the issued Factura 01', async ({ page }) => {

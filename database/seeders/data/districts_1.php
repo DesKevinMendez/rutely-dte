@@ -1,6 +1,7 @@
 <?php
 
 return [
+    ['departament_code' => '00', 'municipality_code' => '00', 'code' => '00', 'name' => 'Otro (Para extranjeros)'],
     ['departament_code' => '01', 'municipality_code' => '14', 'code' => '01', 'name' => 'AHUACHAPÁN'],
     ['departament_code' => '01', 'municipality_code' => '14', 'code' => '02', 'name' => 'APANECA'],
     ['departament_code' => '01', 'municipality_code' => '13', 'code' => '03', 'name' => 'ATIQUIZAYA'],

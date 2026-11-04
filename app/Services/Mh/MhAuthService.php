@@ -37,6 +37,12 @@ class MhAuthService
             return $cached['token'];
         }
 
+        $rejectedCacheKey = "mh-auth-rejected:{$companyId}:{$environmentValue}";
+
+        if (Cache::get($rejectedCacheKey) === $credentialFingerprint) {
+            throw new RuntimeException('Hacienda ya rechazó estas credenciales. Actualícelas antes de reintentar para evitar el bloqueo del usuario.');
+        }
+
         $response = Http::asForm()
             ->timeout(10)
             ->post($this->authUrl($environmentValue), [
@@ -44,13 +50,16 @@ class MhAuthService
                 'pwd' => $credentials->password,
             ]);
 
-        if (! $response->successful()) {
+        if ($response->serverError()) {
             throw new RuntimeException("Error en autenticación MH [HTTP {$response->status()}]: {$response->body()}");
         }
 
         $token = $response->json('body.token');
-        if (! is_string($token) || $token === '') {
-            throw new RuntimeException('La respuesta de autenticación MH no contiene un token válido.');
+
+        if (! $response->successful() || ! is_string($token) || $token === '') {
+            Cache::forever($rejectedCacheKey, $credentialFingerprint);
+
+            throw new RuntimeException("Hacienda rechazó las credenciales [HTTP {$response->status()}]: {$response->body()}");
         }
 
         $normalizedToken = str_starts_with($token, 'Bearer ') ? substr($token, 7) : $token;

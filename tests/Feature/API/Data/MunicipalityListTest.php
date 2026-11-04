@@ -33,7 +33,7 @@ test('municipalities return the exact collection response', function () {
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
-                'total' => 44,
+                'total' => 45,
                 'per_page' => 10,
                 'current_page' => 1,
                 'last_page' => 5,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { IconEdit } from '@tabler/icons-vue';
 import { BaseButton, Card, InfoItem } from 'ornito';
+import { formatIdentityDocument } from '@/core/composables/formatIdentityDocument';
 import useCompanyShow from '@/modules/superadmin/companies/composables/useCompanyShow';
 
 const { company } = useCompanyShow();
@@ -31,7 +32,9 @@ const { company } = useCompanyShow();
                 <InfoItem label="Nombre comercial">
                     {{ company.commercial_name }}
                 </InfoItem>
-                <InfoItem label="NIT">{{ company.nit }}</InfoItem>
+                <InfoItem label="NIT">
+                    {{ formatIdentityDocument(company.nit) }}
+                </InfoItem>
                 <InfoItem label="NRC">
                     {{ company.nrc || 'No registrado' }}
                 </InfoItem>

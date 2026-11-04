@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Company;
 
 use App\Models\Company;
+use App\Services\Dte\MhCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateCompanyRequest extends FormRequest
@@ -18,8 +19,8 @@ class UpdateCompanyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'address' => ['sometimes', 'required', 'string', 'max:255'],
+            'name' => ['sometimes', 'required', 'string', 'max:250'],
+            'address' => ['sometimes', 'required', 'string', 'max:200'],
             'phone' => ['sometimes', 'required', 'string', 'min:8', 'max:30'],
             'nit' => ['sometimes', 'required', 'string', 'regex:/^(?:\d{14}|\d{9})$/'],
             'nrc' => ['sometimes', 'nullable', 'string', 'regex:/^\d{2,8}$/'],
@@ -28,10 +29,10 @@ class UpdateCompanyRequest extends FormRequest
             'establishment_type' => ['sometimes', 'required', 'string', 'exists:establishment_types,code'],
             'departament_id' => ['sometimes', 'required', 'uuid', 'exists:departaments,id'],
             'municipality_id' => ['sometimes', 'required', 'uuid', 'exists:municipalities,id'],
-            'district_id' => ['sometimes', 'nullable', 'uuid', 'exists:districts,id'],
-            'email' => ['sometimes', 'required', 'email', 'max:255'],
-            'mh_establishment_code' => ['sometimes', 'required', 'string', 'size:4'],
-            'mh_pos_code' => ['sometimes', 'required', 'string', 'size:4'],
+            'district_id' => ['bail', 'sometimes', 'required', 'uuid', 'exists:districts,id'],
+            'email' => ['sometimes', 'required', 'email:filter', 'min:6', 'max:100'],
+            'mh_establishment_code' => ['sometimes', 'required', 'string', 'size:4', 'regex:'.MhCatalog::ESTABLISHMENT_CODE_PATTERN],
+            'mh_pos_code' => ['sometimes', 'required', 'string', 'size:4', 'regex:'.MhCatalog::POS_CODE_PATTERN],
             'own_establishment_code' => ['sometimes', 'required', 'string', 'size:4'],
             'own_pos_code' => ['sometimes', 'required', 'string', 'size:4'],
         ];

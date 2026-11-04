@@ -6,12 +6,14 @@ use App\Models\DteInvalidation;
 use App\Role;
 use App\Services\Dte\ContingencyService;
 use App\Services\Dte\DteInvalidationService;
+use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\DteTypeSeeder;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
 
 beforeEach(function () {
+    $this->seed(DocumentTypeSeeder::class);
     $this->seed(DteTypeSeeder::class);
 });
 
@@ -26,6 +28,7 @@ function validInvalidationPayload(): array
         'nombreSolicita' => 'Solicitante DTE',
         'tipDocSolicita' => '13',
         'numDocSolicita' => '012345678',
+        'codigoGeneracionR' => fake()->uuid(),
     ];
 }
 
@@ -141,23 +144,29 @@ test('DTE invalidation request validation returns 422', function (string $field,
         ->assertUnprocessable()
         ->assertJsonValidationErrors([$field => $message]);
 })->with([
+    'type required' => ['tipoAnulacion', null, 'El campo tipo de anulación es obligatorio.'],
     'type integer' => ['tipoAnulacion', 'one', 'El campo tipo de anulación debe ser un número entero.'],
     'type supported' => ['tipoAnulacion', 4, 'El valor seleccionado para tipo de anulación no es válido.'],
     'reason string' => ['motivoAnulacion', ['error'], 'El campo motivo de anulación debe ser una cadena de caracteres.'],
-    'reason minimum' => ['motivoAnulacion', '1234', 'El campo motivo de anulación debe contener al menos 5 caracteres.'],
-    'reason maximum' => ['motivoAnulacion', str_repeat('a', 501), 'El campo motivo de anulación no debe contener más de 500 caracteres.'],
+    'reason maximum' => ['motivoAnulacion', str_repeat('a', 201), 'El campo motivo de anulación no debe contener más de 200 caracteres.'],
+    'responsible name required' => ['nombreResponsable', null, 'El campo nombre del responsable es obligatorio.'],
     'responsible name string' => ['nombreResponsable', ['Name'], 'El campo nombre del responsable debe ser una cadena de caracteres.'],
-    'responsible name maximum' => ['nombreResponsable', str_repeat('a', 256), 'El campo nombre del responsable no debe contener más de 255 caracteres.'],
+    'responsible name maximum' => ['nombreResponsable', str_repeat('a', 101), 'El campo nombre del responsable no debe contener más de 100 caracteres.'],
+    'responsible doc type required' => ['tipDocResponsable', null, 'El campo tipo de documento del responsable es obligatorio.'],
     'responsible doc type string' => ['tipDocResponsable', ['13'], 'El campo tipo de documento del responsable debe ser una cadena de caracteres.'],
-    'responsible doc type maximum' => ['tipDocResponsable', str_repeat('a', 11), 'El campo tipo de documento del responsable no debe contener más de 10 caracteres.'],
+    'responsible doc type in catalog' => ['tipDocResponsable', '99', 'El valor seleccionado para tipo de documento del responsable no es válido.'],
+    'responsible doc number required' => ['numDocResponsable', null, 'El campo número de documento del responsable es obligatorio.'],
     'responsible doc number string' => ['numDocResponsable', ['123'], 'El campo número de documento del responsable debe ser una cadena de caracteres.'],
-    'responsible doc number maximum' => ['numDocResponsable', str_repeat('1', 51), 'El campo número de documento del responsable no debe contener más de 50 caracteres.'],
+    'responsible doc number maximum' => ['numDocResponsable', str_repeat('1', 21), 'El campo número de documento del responsable no debe contener más de 20 caracteres.'],
+    'requester name required' => ['nombreSolicita', null, 'El campo nombre del solicitante es obligatorio.'],
     'requester name string' => ['nombreSolicita', ['Name'], 'El campo nombre del solicitante debe ser una cadena de caracteres.'],
-    'requester name maximum' => ['nombreSolicita', str_repeat('a', 256), 'El campo nombre del solicitante no debe contener más de 255 caracteres.'],
+    'requester name maximum' => ['nombreSolicita', str_repeat('a', 101), 'El campo nombre del solicitante no debe contener más de 100 caracteres.'],
+    'requester doc type required' => ['tipDocSolicita', null, 'El campo tipo de documento del solicitante es obligatorio.'],
     'requester doc type string' => ['tipDocSolicita', ['13'], 'El campo tipo de documento del solicitante debe ser una cadena de caracteres.'],
-    'requester doc type maximum' => ['tipDocSolicita', str_repeat('a', 11), 'El campo tipo de documento del solicitante no debe contener más de 10 caracteres.'],
+    'requester doc type in catalog' => ['tipDocSolicita', '99', 'El valor seleccionado para tipo de documento del solicitante no es válido.'],
+    'requester doc number required' => ['numDocSolicita', null, 'El campo número de documento del solicitante es obligatorio.'],
     'requester doc number string' => ['numDocSolicita', ['123'], 'El campo número de documento del solicitante debe ser una cadena de caracteres.'],
-    'requester doc number maximum' => ['numDocSolicita', str_repeat('1', 51), 'El campo número de documento del solicitante no debe contener más de 50 caracteres.'],
+    'requester doc number maximum' => ['numDocSolicita', str_repeat('1', 21), 'El campo número de documento del solicitante no debe contener más de 20 caracteres.'],
 ]);
 
 test('company member can create contingency event with common response', function (Role $role) {

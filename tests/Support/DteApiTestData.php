@@ -40,6 +40,21 @@ class DteApiTestData
             ]);
         }
 
+        $districtId = DB::table('districts')
+            ->where('municipality_id', $municipalityId)
+            ->where('code', '01')
+            ->value('id');
+        if ($districtId === null) {
+            $districtId = (string) Str::uuid();
+            DB::table('districts')->insert([
+                'id' => $districtId,
+                'departament_id' => $departamentId,
+                'municipality_id' => $municipalityId,
+                'code' => '01',
+                'name' => 'San Salvador',
+            ]);
+        }
+
         if (! DB::table('economic_activities')->where('code', '62010')->exists()) {
             DB::table('economic_activities')->insert([
                 'id' => (string) Str::uuid(),
@@ -67,11 +82,12 @@ class DteApiTestData
             'establishment_type' => '01',
             'departament_id' => $departamentId,
             'municipality_id' => $municipalityId,
+            'district_id' => $districtId,
             'email' => 'billing@rutely.biz',
-            'mh_establishment_code' => '0001',
-            'mh_pos_code' => '0001',
-            'own_establishment_code' => '0001',
-            'own_pos_code' => '0001',
+            'mh_establishment_code' => 'M001',
+            'mh_pos_code' => 'P001',
+            'own_establishment_code' => 'M001',
+            'own_pos_code' => 'P001',
         ], $overrides));
     }
 
@@ -137,8 +153,68 @@ class DteApiTestData
                 'montoDescu' => 0,
                 'tipoItem' => 2,
                 'codigo' => 'GPS-001',
-                'uniMedida' => 59,
+                'uniMedida' => 99,
             ]],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function validTaxCreditPayload(): array
+    {
+        return [
+            'tipoDte' => '03',
+            'receptor' => [
+                'nit' => '06141505921015',
+                'nrc' => '9876543',
+                'nombre' => 'Comercial Los Pinos, S.A. de C.V.',
+                'codActividad' => '62010',
+                'descActividad' => 'Programación informática',
+                'nombreComercial' => 'Los Pinos',
+                'direccion' => self::receiverAddress(),
+                'telefono' => '22225551',
+                'correo' => 'compras@lospinos.example',
+            ],
+            'items' => self::validDtePayload()['items'],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function validExcludedSubjectPayload(): array
+    {
+        return [
+            'tipoDte' => '14',
+            'receptor' => [
+                'tipoDocumento' => '13',
+                'numDocumento' => '012345678',
+                'nombre' => 'María Pérez',
+                'codActividad' => '62010',
+                'descActividad' => 'Programación informática',
+                'direccion' => self::receiverAddress(),
+                'telefono' => '77778888',
+                'correo' => 'maria@example.com',
+            ],
+            'items' => self::validDtePayload()['items'],
+        ];
+    }
+
+    /** @return array{departamento: string, municipio: string, distrito: string, complemento: string} */
+    public static function receiverAddress(): array
+    {
+        return [
+            'departamento' => '06',
+            'municipio' => '01',
+            'distrito' => '01',
+            'complemento' => 'Colonia Escalón, San Salvador',
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function mhResult(): array
+    {
+        return [
+            'estado' => 'PROCESADO',
+            'selloRecibido' => str_repeat('A', 40),
+            'observaciones' => [],
         ];
     }
 }

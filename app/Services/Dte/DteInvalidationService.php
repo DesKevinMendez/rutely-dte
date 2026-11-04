@@ -5,6 +5,7 @@ namespace App\Services\Dte;
 use App\Models\Company;
 use App\Models\Dte;
 use App\Models\DteInvalidation;
+use App\Services\Dte\Documents\DteDocumentBuilder;
 use App\Services\Mh\MhTransmissionService;
 use Illuminate\Support\Str;
 
@@ -16,7 +17,7 @@ class DteInvalidationService
     ) {}
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array{updated: Dte, mhResult: array<string, mixed>, invalidation: DteInvalidation}
      */
     public function invalidate(Dte $dte, array $payload): array
@@ -24,14 +25,16 @@ class DteInvalidationService
         $company = Company::query()->findOrFail($dte->company_id);
         $original = $dte->original_json;
         $now = now('America/El_Salvador');
-        $nameResponsible = (string) ($payload['nombreResponsable'] ?? 'OPERADOR');
-        $docTypeResponsible = (string) ($payload['tipDocResponsable'] ?? '13');
-        $docNumberResponsible = (string) ($payload['numDocResponsable'] ?? '000000000');
-        $nameRequester = (string) ($payload['nombreSolicita'] ?? $nameResponsible);
-        $docTypeRequester = (string) ($payload['tipDocSolicita'] ?? $docTypeResponsible);
-        $docNumberRequester = (string) ($payload['numDocSolicita'] ?? $docNumberResponsible);
-        $type = (int) ($payload['tipoAnulacion'] ?? 1);
-        $reason = (string) ($payload['motivoAnulacion'] ?? 'Anulación por error en información');
+        $nameResponsible = (string) $payload['nombreResponsable'];
+        $docTypeResponsible = (string) $payload['tipDocResponsable'];
+        $docNumberResponsible = (string) $payload['numDocResponsable'];
+        $nameRequester = (string) $payload['nombreSolicita'];
+        $docTypeRequester = (string) $payload['tipDocSolicita'];
+        $docNumberRequester = (string) $payload['numDocSolicita'];
+        $type = (int) $payload['tipoAnulacion'];
+        $reason = $payload['motivoAnulacion'] ?? null;
+        $replacementCode = $payload['codigoGeneracionR'] ?? null;
+        $receiverIdentity = DteDocumentBuilder::receiverIdentity((array) data_get($original, 'receptor', []));
         $generationCode = strtoupper((string) Str::uuid());
 
         $document = [
@@ -59,9 +62,9 @@ class DteInvalidationService
                 'selloRecibido' => $dte->received_seal,
                 'numeroControl' => $dte->control_number,
                 'fecEmi' => data_get($original, 'identificacion.fecEmi'),
-                'codigoGeneracionR' => null,
-                'tipoDocumento' => data_get($original, 'receptor.tipoDocumento'),
-                'numDocumento' => data_get($original, 'receptor.numDocumento'),
+                'codigoGeneracionR' => $replacementCode !== null ? strtoupper($replacementCode) : null,
+                'tipoDocumento' => $receiverIdentity['type'],
+                'numDocumento' => $receiverIdentity['number'],
                 'nombre' => data_get($original, 'receptor.nombre'),
                 'telefono' => data_get($original, 'receptor.telefono'),
                 'correo' => data_get($original, 'receptor.correo'),
@@ -83,7 +86,7 @@ class DteInvalidationService
             'dte_id' => $dte->id,
             'generation_code' => $generationCode,
             'invalidation_type' => (string) $type,
-            'reason' => $reason,
+            'reason' => (string) $reason,
             'name_person_in_charge' => $nameResponsible,
             'doc_type_person_in_charge' => $docTypeResponsible,
             'doc_number_person_in_charge' => $docNumberResponsible,

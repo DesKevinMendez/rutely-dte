@@ -194,7 +194,7 @@ test('company member can create a DTE through issuance service with common respo
 test('DTE creation accepts every receiver document type of the catalog', function (string $documentType) {
     $company = DteApiTestData::company();
     $record = DteApiTestData::dte($company);
-    $payload = dteValidationPayload(['receptor' => ['tipoDocumento' => $documentType]]);
+    $payload = dteValidationPayload(['receptor' => ['tipoDocumento' => $documentType, 'numDocumento' => '012345678']]);
     $mhResult = [
         'estado' => 'PROCESADO',
         'selloRecibido' => 'SELLO-MH',
@@ -341,13 +341,13 @@ test('store DTE request validation returns 422', function (array $payload, strin
     'receiver municipality size' => [dteValidationPayload(['receptor' => ['direccion' => ['departamento' => '06', 'municipio' => '1', 'complemento' => 'Calle 1']]]), 'receptor.direccion.municipio', 'El campo municipio del receptor debe contener 2 caracteres.'],
     'receiver complement required' => [dteValidationPayload(['receptor' => ['direccion' => ['departamento' => '06', 'municipio' => '01']]]), 'receptor.direccion.complemento', 'El campo complemento de dirección del receptor es obligatorio cuando receptor.direccion está presente.'],
     'receiver complement must be string' => [dteValidationPayload(['receptor' => ['direccion' => ['departamento' => '06', 'municipio' => '01', 'complemento' => ['Calle']]]]), 'receptor.direccion.complemento', 'El campo complemento de dirección del receptor debe ser una cadena de caracteres.'],
-    'receiver complement minimum' => [dteValidationPayload(['receptor' => ['direccion' => ['departamento' => '06', 'municipio' => '01', 'complemento' => 'AB']]]), 'receptor.direccion.complemento', 'El campo complemento de dirección del receptor debe contener al menos 3 caracteres.'],
+    'receiver complement maximum' => [dteValidationPayload(['receptor' => ['direccion' => ['departamento' => '06', 'municipio' => '01', 'complemento' => str_repeat('a', 201)]]]), 'receptor.direccion.complemento', 'El campo complemento de dirección del receptor no debe contener más de 200 caracteres.'],
     'receiver phone must be string' => [dteValidationPayload(['receptor' => ['telefono' => ['77778888']]]), 'receptor.telefono', 'El campo receptor.telefono debe ser una cadena de caracteres.'],
     'receiver email must be valid' => [dteValidationPayload(['receptor' => ['correo' => 'invalid']]), 'receptor.correo', 'El campo correo del receptor debe ser una dirección de correo electrónico válida.'],
     'items required' => [[], 'items', 'El campo ítems es obligatorio.'],
     'items must be array' => [['items' => 'items'], 'items', 'El campo ítems debe ser un arreglo.'],
     'items minimum' => [['items' => []], 'items', 'El campo ítems es obligatorio.'],
-    'items maximum' => [['items' => array_fill(0, 201, ['descripcion' => 'Item', 'cantidad' => 1, 'precioUni' => 1])], 'items', 'El campo ítems no debe contener más de 200 elementos.'],
+    'items maximum' => [['items' => array_fill(0, 2001, ['descripcion' => 'Item', 'cantidad' => 1, 'precioUni' => 1])], 'items', 'El campo ítems no debe contener más de 2000 elementos.'],
     'item description required' => [['items' => [['cantidad' => 1, 'precioUni' => 1]]], 'items.0.descripcion', 'El campo descripción del ítem es obligatorio.'],
     'item description must be string' => [['items' => [['descripcion' => ['Item'], 'cantidad' => 1, 'precioUni' => 1]]], 'items.0.descripcion', 'El campo descripción del ítem debe ser una cadena de caracteres.'],
     'item quantity required' => [['items' => [['descripcion' => 'Item', 'precioUni' => 1]]], 'items.0.cantidad', 'El campo cantidad del ítem es obligatorio.'],
@@ -364,14 +364,12 @@ test('store DTE request validation returns 422', function (array $payload, strin
     'item unit must be integer' => [dteValidationPayload(['items' => [['uniMedida' => 'x']]]), 'items.0.uniMedida', 'El campo unidad de medida del ítem debe ser un número entero.'],
 ]);
 
-test('store DTE accepts every seeded catalog code', function (string $field, string|int $code) {
+test('store DTE accepts the catalog codes it can issue', function (string $field, string|int $code) {
     $company = DteApiTestData::company();
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
     $payload = DteApiTestData::validDtePayload();
 
-    if ($field === 'tipoDte') {
-        $payload['tipoDte'] = $code;
-    } elseif ($field === 'emisor.tipoEstablecimiento') {
+    if ($field === 'emisor.tipoEstablecimiento') {
         $payload['emisor'] = ['tipoEstablecimiento' => $code];
     } else {
         $payload['items'][0]['tipoItem'] = $code;
@@ -383,19 +381,6 @@ test('store DTE accepts every seeded catalog code', function (string $field, str
             'message' => 'No hay material de firma configurado para la empresa y el ambiente seleccionados.',
         ]);
 })->with([
-    'DTE type 01' => ['tipoDte', '01'],
-    'DTE type 03' => ['tipoDte', '03'],
-    'DTE type 04' => ['tipoDte', '04'],
-    'DTE type 05' => ['tipoDte', '05'],
-    'DTE type 06' => ['tipoDte', '06'],
-    'DTE type 07' => ['tipoDte', '07'],
-    'DTE type 08' => ['tipoDte', '08'],
-    'DTE type 09' => ['tipoDte', '09'],
-    'DTE type 11' => ['tipoDte', '11'],
-    'DTE type 14' => ['tipoDte', '14'],
-    'DTE type 15' => ['tipoDte', '15'],
-    'DTE type 17' => ['tipoDte', '17'],
-    'DTE type 18' => ['tipoDte', '18'],
     'establishment type 01' => ['emisor.tipoEstablecimiento', '01'],
     'establishment type 02' => ['emisor.tipoEstablecimiento', '02'],
     'establishment type 04' => ['emisor.tipoEstablecimiento', '04'],
@@ -403,5 +388,26 @@ test('store DTE accepts every seeded catalog code', function (string $field, str
     'item type 1' => ['items.*.tipoItem', 1],
     'item type 2' => ['items.*.tipoItem', 2],
     'item type 3' => ['items.*.tipoItem', 3],
-    'item type 4' => ['items.*.tipoItem', 4],
 ]);
+
+test('store DTE accepts the DTE types that can be issued', function (array $payload) {
+    Sanctum::actingAs(DteApiTestData::user(DteApiTestData::company(), Role::USER));
+
+    $this->postJson(route('api.v1.dtes.store'), $payload)
+        ->assertBadRequest()
+        ->assertExactJson([
+            'message' => 'No hay material de firma configurado para la empresa y el ambiente seleccionados.',
+        ]);
+})->with([
+    'consumer invoice' => [DteApiTestData::validDtePayload()],
+    'tax credit' => [DteApiTestData::validTaxCreditPayload()],
+    'excluded subject' => [DteApiTestData::validExcludedSubjectPayload()],
+]);
+
+test('store DTE rejects the catalog DTE types that cannot be issued yet', function (string $type) {
+    Sanctum::actingAs(DteApiTestData::user(DteApiTestData::company(), Role::USER));
+
+    $this->postJson(route('api.v1.dtes.store'), dteValidationPayload(['tipoDte' => $type]))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['tipoDte' => 'El valor seleccionado para tipo de DTE no es válido.']);
+})->with(['04', '05', '06', '07', '08', '09', '11', '15', '17', '18']);

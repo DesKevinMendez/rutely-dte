@@ -22,7 +22,7 @@ test('departments can be listed without authentication', function () {
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
-                'total' => 14,
+                'total' => 15,
                 'per_page' => 10,
                 'current_page' => 1,
                 'last_page' => 2,

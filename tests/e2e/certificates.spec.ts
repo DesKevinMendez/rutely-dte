@@ -68,7 +68,7 @@ test.describe('Certificates', () => {
             }),
         ).toBeVisible();
         await expect(page.getByText('ACTIVO', { exact: true })).toBeVisible();
-        await expect(page.getByText('06142812901015', { exact: true })).toBeVisible();
+        await expect(page.getByText('0614-281290-101-5', { exact: true })).toBeVisible();
         await expect(
             page.getByText(
                 'El certificado se encuentra almacenado de forma segura y listo para el firmador DTE.',
