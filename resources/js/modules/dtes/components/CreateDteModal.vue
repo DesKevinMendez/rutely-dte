@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { BaseButton, Card, FormInput, FormSelect, Modal } from 'ornito';
+import { Alert, BaseButton, Card, FormInput, FormSelect, Modal } from 'ornito';
+import { Form } from 'vee-validate';
 import { computed, ref, watch } from 'vue';
+import { createDteFormRules } from '../dte-form.yup';
+import type {
+    ServerValidationErrors,
+    SetServerErrors,
+    VeeValidateSetErrors,
+} from '../types/dte-form.types';
 import type { DteDraft, DteItem } from '../types/dte.types';
 
 const { isOpen, isSubmitting = false } = defineProps<{
@@ -10,7 +17,7 @@ const { isOpen, isSubmitting = false } = defineProps<{
 
 const emit = defineEmits<{
     'update:isOpen': [value: boolean];
-    created: [draft: DteDraft];
+    created: [draft: DteDraft, setServerErrors: SetServerErrors];
 }>();
 
 const typeOptions = [
@@ -64,8 +71,14 @@ const total = computed(() =>
     isTaxCredit.value ? subtotal.value + iva.value : subtotal.value,
 );
 const requiresIdentification = computed(
-    () => isConsumerInvoice.value && total.value >= CONSUMER_IDENTIFICATION_AMOUNT,
+    () =>
+        isConsumerInvoice.value &&
+        total.value >= CONSUMER_IDENTIFICATION_AMOUNT,
 );
+const requiresReceiverIdentity = computed(
+    () => requiresIdentification.value || tipoDte.value === '14',
+);
+const rules = createDteFormRules(requiresReceiverIdentity, receptorDocumento);
 const ivaLabel = computed(() =>
     isConsumerInvoice.value ? 'IVA incluido (13%)' : 'IVA (13%)',
 );
@@ -98,7 +111,7 @@ const updateQuantity = (item: DteItem, value: unknown): void => {
 };
 
 const updateUnitPrice = (item: DteItem, value: unknown): void => {
-    item.precioUni = Number(value ?? 0);
+    item.precioUni = Number(value ?? 0) / 100;
 };
 
 const reset = (): void => {
@@ -125,20 +138,88 @@ const handleOpenChange = (value: boolean): void => {
     }
 };
 
-const submit = (): void => {
+const fieldForServerError = (field: string): string | null => {
+    const receiverFields: Record<string, string> = {
+        'receptor.tipoDocumento': 'tipoDocumento',
+        'receptor.numDocumento': 'receptorDocumento',
+        'receptor.nombre': 'receptorNombre',
+        'receptor.correo': 'receptorCorreo',
+    };
+
+    if (field === 'tipoDte') {
+        return 'tipoDte';
+    }
+
+    if (receiverFields[field]) {
+        return receiverFields[field];
+    }
+
+    const itemField = field.match(
+        /^items\.(\d+)\.(descripcion|cantidad|precioUni)$/,
+    );
+
+    if (itemField) {
+        const [, index, name] = itemField;
+        const itemFields: Record<string, string> = {
+            descripcion: 'descripcion',
+            cantidad: 'cantidad',
+            precioUni: 'precio',
+        };
+
+        return `item-${index}-${itemFields[name]}`;
+    }
+
+    return null;
+};
+
+const setFormServerErrors = (
+    setErrors: VeeValidateSetErrors,
+    serverErrors: ServerValidationErrors,
+    serverMessage: string | null,
+): void => {
+    const fieldErrors: Record<string, string | string[] | undefined> = {};
+    const unhandledErrors: string[] = [];
+
+    for (const [serverField, message] of Object.entries(serverErrors)) {
+        const formField = fieldForServerError(serverField);
+
+        if (formField) {
+            fieldErrors[formField] = [message];
+        } else {
+            unhandledErrors.push(message);
+        }
+    }
+
+    if (serverMessage) {
+        unhandledErrors.unshift(serverMessage);
+    }
+
+    fieldErrors._form = unhandledErrors.length
+        ? unhandledErrors.join(' ')
+        : undefined;
+
+    setErrors(fieldErrors);
+};
+
+const submit = (setErrors: VeeValidateSetErrors): void => {
     if (isSubmitting) {
         return;
     }
 
-    emit('created', {
-        tipoDte: tipoDte.value,
-        tipoDocumento: tipoDocumento.value,
-        receptorNombre: receptorNombre.value,
-        receptorDocumento: receptorDocumento.value,
-        receptorCorreo: receptorCorreo.value,
-        items: items.value.map((item) => ({ ...item })),
-        montoTotal: total.value,
-    });
+    emit(
+        'created',
+        {
+            tipoDte: tipoDte.value,
+            tipoDocumento: tipoDocumento.value,
+            receptorNombre: receptorNombre.value,
+            receptorDocumento: receptorDocumento.value,
+            receptorCorreo: receptorCorreo.value,
+            items: items.value.map((item) => ({ ...item })),
+            montoTotal: total.value,
+        },
+        (serverErrors, serverMessage) =>
+            setFormServerErrors(setErrors, serverErrors, serverMessage),
+    );
 };
 </script>
 
@@ -150,13 +231,19 @@ const submit = (): void => {
         size="xl"
         @update:open="handleOpenChange"
     >
-        <form class="space-y-5 pt-2 text-sm" @submit.prevent="submit">
+        <Form
+            :key="isOpen ? 'open' : 'closed'"
+            v-slot="{ errors }"
+            class="space-y-5 pt-2 text-sm"
+            @submit="(_values, { setErrors }) => submit(setErrors)"
+        >
             <FormSelect
                 v-model="tipoDte"
                 id="tipo-dte"
                 name="tipoDte"
                 label="Tipo de Comprobante"
                 :options="typeOptions"
+                :rules="rules.tipoDte"
             />
 
             <Card title="Datos del Receptor / Cliente">
@@ -175,6 +262,7 @@ const submit = (): void => {
                             name="receptorNombre"
                             type="text"
                             label="Nombre o Razón Social"
+                            :rules="rules.receiverName"
                             small
                         />
                     </div>
@@ -185,6 +273,7 @@ const submit = (): void => {
                         label="Tipo de Documento"
                         small
                         :options="documentOptions"
+                        :rules="rules.receiverDocumentType"
                     />
                     <FormInput
                         v-model="receptorDocumento"
@@ -192,6 +281,7 @@ const submit = (): void => {
                         name="receptorDocumento"
                         type="text"
                         label="Nº Documento"
+                        :rules="rules.receiverDocument"
                         small
                     />
                     <div class="sm:col-span-2">
@@ -201,6 +291,7 @@ const submit = (): void => {
                             name="receptorCorreo"
                             type="email"
                             label="Correo Electrónico"
+                            :rules="rules.receiverEmail"
                             small
                         />
                     </div>
@@ -240,6 +331,7 @@ const submit = (): void => {
                             :name="`item-${index}-descripcion`"
                             type="text"
                             label="Descripción"
+                            :rules="rules.description"
                             small
                             @update:model-value="
                                 updateDescription(item, $event)
@@ -251,15 +343,17 @@ const submit = (): void => {
                             :name="`item-${index}-cantidad`"
                             type="number"
                             label="Cant."
+                            :rules="rules.quantity"
                             small
                             @update:model-value="updateQuantity(item, $event)"
                         />
                         <FormInput
-                            :model-value="item.precioUni"
+                            :model-value="Math.round(item.precioUni * 100)"
                             :id="`item-price-${index}`"
                             :name="`item-${index}-precio`"
-                            type="number"
+                            type="money"
                             label="Precio Uni ($)"
+                            :rules="rules.unitPrice"
                             small
                             @update:model-value="updateUnitPrice(item, $event)"
                         />
@@ -303,6 +397,10 @@ const submit = (): void => {
                 </div>
             </Card>
 
+            <Alert v-if="errors._form" type="danger">
+                {{ errors._form }}
+            </Alert>
+
             <div
                 class="flex justify-end gap-2 border-t border-gray-200 pt-4 dark:border-gray-800"
             >
@@ -323,6 +421,6 @@ const submit = (): void => {
                     {{ isSubmitting ? 'Emitiendo…' : 'Emitir DTE' }}
                 </BaseButton>
             </div>
-        </form>
+        </Form>
     </Modal>
 </template>

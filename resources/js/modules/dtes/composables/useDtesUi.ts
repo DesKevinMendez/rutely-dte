@@ -37,31 +37,42 @@ const toStorePayload = (draft: DteDraft): DteStorePayload => ({
 export function useDtesUi() {
     const filterTipoDte = ref('');
     const filterEstado = ref('');
-    const error = ref<string | null>(null);
     const { post, isLoading } = useRequest();
 
-    const createDte = async (draft: DteDraft): Promise<boolean> => {
+    const createDte = async (
+        draft: DteDraft,
+    ): Promise<{
+        success: boolean;
+        validationErrors: Record<string, string>;
+        serverError: string | null;
+    }> => {
         const response = await post<
             ApiResponse<DteStoreResult>,
             DteStorePayload
         >('/api/v1/dtes', toStorePayload(draft));
 
         if (!response.data.value) {
-            error.value = response.error.value ?? 'No se pudo emitir el DTE.';
+            const validationErrors = response.validationErrors.value;
+            const isValidationResponse =
+                Object.keys(validationErrors).length > 0 &&
+                response.statusCode.value !== 400;
 
-            return false;
+            return {
+                success: false,
+                validationErrors,
+                serverError: isValidationResponse
+                    ? null
+                    : (response.error.value ?? 'No se pudo emitir el DTE.'),
+            };
         }
 
-        error.value = null;
-
-        return true;
+        return { success: true, validationErrors: {}, serverError: null };
     };
 
     return {
         filterTipoDte,
         filterEstado,
         isLoading,
-        error,
         createDte,
     };
 }
