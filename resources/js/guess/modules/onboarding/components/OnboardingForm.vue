@@ -41,11 +41,7 @@ const {
     companyPayload,
     continueFlow,
     cancelFlow,
-} = useOnboarding(
-    flowMode,
-    props.initialCompany,
-    props.mode === 'superadmin-edit',
-);
+} = useOnboarding(flowMode, props.initialCompany);
 
 const isSubmitting = computed(() => props.isSaving || isLoading.value);
 const submissionError = computed(() => props.submissionError || error.value);

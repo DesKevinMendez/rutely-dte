@@ -40,6 +40,21 @@ class DteApiTestData
             ]);
         }
 
+        $districtId = DB::table('districts')
+            ->where('municipality_id', $municipalityId)
+            ->where('code', '01')
+            ->value('id');
+        if ($districtId === null) {
+            $districtId = (string) Str::uuid();
+            DB::table('districts')->insert([
+                'id' => $districtId,
+                'departament_id' => $departamentId,
+                'municipality_id' => $municipalityId,
+                'code' => '01',
+                'name' => 'San Salvador',
+            ]);
+        }
+
         if (! DB::table('economic_activities')->where('code', '62010')->exists()) {
             DB::table('economic_activities')->insert([
                 'id' => (string) Str::uuid(),
@@ -67,11 +82,12 @@ class DteApiTestData
             'establishment_type' => '01',
             'departament_id' => $departamentId,
             'municipality_id' => $municipalityId,
+            'district_id' => $districtId,
             'email' => 'billing@rutely.biz',
             'mh_establishment_code' => '0001',
             'mh_pos_code' => '0001',
-            'own_establishment_code' => '0001',
-            'own_pos_code' => '0001',
+            'own_establishment_code' => 'M001',
+            'own_pos_code' => 'P001',
         ], $overrides));
     }
 

@@ -62,8 +62,8 @@ function validCompanyPayload(): array
         'email' => 'billing@rutely.biz',
         'mh_establishment_code' => '0001',
         'mh_pos_code' => '0001',
-        'own_establishment_code' => '0001',
-        'own_pos_code' => '0001',
+        'own_establishment_code' => 'M001',
+        'own_pos_code' => 'P001',
     ];
 }
 
@@ -162,7 +162,6 @@ test('nullable company fields may be null', function (string $field) {
         ->assertCreated();
 })->with([
     'nrc' => 'nrc',
-    'district' => 'district_id',
 ]);
 
 test('company request validation returns 422', function (string $field, mixed $value, string $message) {
@@ -178,10 +177,10 @@ test('company request validation returns 422', function (string $field, mixed $v
 })->with([
     'name is required' => ['name', null, 'El campo nombre es obligatorio.'],
     'name must be a string' => ['name', ['Rutely'], 'El campo nombre debe ser una cadena de caracteres.'],
-    'name has a maximum length' => ['name', str_repeat('a', 256), 'El campo nombre no debe contener más de 255 caracteres.'],
+    'name has a maximum length' => ['name', str_repeat('a', 251), 'El campo nombre no debe contener más de 250 caracteres.'],
     'address is required' => ['address', null, 'El campo dirección es obligatorio.'],
     'address must be a string' => ['address', ['San Salvador'], 'El campo dirección debe ser una cadena de caracteres.'],
-    'address has a maximum length' => ['address', str_repeat('a', 256), 'El campo dirección no debe contener más de 255 caracteres.'],
+    'address has a maximum length' => ['address', str_repeat('a', 201), 'El campo dirección no debe contener más de 200 caracteres.'],
     'phone is required' => ['phone', null, 'El campo teléfono es obligatorio.'],
     'phone must be a string' => ['phone', ['22223333'], 'El campo teléfono debe ser una cadena de caracteres.'],
     'phone has a minimum length' => ['phone', '1234567', 'El campo teléfono debe contener al menos 8 caracteres.'],
@@ -206,11 +205,13 @@ test('company request validation returns 422', function (string $field, mixed $v
     'municipality is required' => ['municipality_id', null, 'El campo municipio es obligatorio.'],
     'municipality must be a uuid' => ['municipality_id', 'invalid-uuid', 'El campo municipio debe ser un UUID válido.'],
     'municipality must exist' => ['municipality_id', '00000000-0000-4000-8000-000000000002', 'El valor seleccionado para municipio no es válido.'],
+    'district cannot be null' => ['district_id', null, 'El campo distrito es obligatorio.'],
     'district must be a uuid' => ['district_id', 'invalid-uuid', 'El campo distrito debe ser un UUID válido.'],
     'district must exist' => ['district_id', '00000000-0000-4000-8000-000000000003', 'El valor seleccionado para distrito no es válido.'],
     'email is required' => ['email', null, 'El campo correo electrónico es obligatorio.'],
     'email must be valid' => ['email', 'invalid-email', 'El campo correo electrónico debe ser una dirección de correo electrónico válida.'],
-    'email has a maximum length' => ['email', str_repeat('a', 256).'@example.com', 'El campo correo electrónico no debe contener más de 255 caracteres.'],
+    'email has a minimum length' => ['email', 'a@b.c', 'El campo correo electrónico debe contener al menos 6 caracteres.'],
+    'email has a maximum length' => ['email', str_repeat('a', 89).'@example.com', 'El campo correo electrónico no debe contener más de 100 caracteres.'],
     'mh establishment code is required' => ['mh_establishment_code', null, 'El campo código de establecimiento MH es obligatorio.'],
     'mh establishment code must be a string' => ['mh_establishment_code', ['0001'], 'El campo código de establecimiento MH debe ser una cadena de caracteres.'],
     'mh establishment code must have four characters' => ['mh_establishment_code', '001', 'El campo código de establecimiento MH debe contener 4 caracteres.'],
@@ -220,7 +221,9 @@ test('company request validation returns 422', function (string $field, mixed $v
     'own establishment code is required' => ['own_establishment_code', null, 'El campo código propio de establecimiento es obligatorio.'],
     'own establishment code must be a string' => ['own_establishment_code', ['0001'], 'El campo código propio de establecimiento debe ser una cadena de caracteres.'],
     'own establishment code must have four characters' => ['own_establishment_code', '001', 'El campo código propio de establecimiento debe contener 4 caracteres.'],
+    'own establishment code has the official format' => ['own_establishment_code', '0001', 'El formato del campo código propio de establecimiento no es válido.'],
     'own pos code is required' => ['own_pos_code', null, 'El campo código propio de punto de venta es obligatorio.'],
     'own pos code must be a string' => ['own_pos_code', ['0001'], 'El campo código propio de punto de venta debe ser una cadena de caracteres.'],
     'own pos code must have four characters' => ['own_pos_code', '001', 'El campo código propio de punto de venta debe contener 4 caracteres.'],
+    'own point of sale code has the official format' => ['own_pos_code', '0001', 'El formato del campo código propio de punto de venta no es válido.'],
 ]);

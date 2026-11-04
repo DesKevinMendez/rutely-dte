@@ -31,16 +31,29 @@ const accountRules = {
 };
 
 const companyRules = {
-    name: requiredText('La razón social es requerida.'),
-    commercialName: requiredText('El nombre comercial es requerido.'),
+    name: requiredText('La razón social es requerida.').max(
+        250,
+        'La razón social no debe contener más de 250 caracteres.',
+    ),
+    commercialName: requiredText('El nombre comercial es requerido.').max(
+        150,
+        'El nombre comercial no debe contener más de 150 caracteres.',
+    ),
     nit: requiredText('El NIT es requerido.'),
     nrc: yup.string(),
     phone: requiredText('El teléfono es requerido.'),
     email: yup
         .string()
         .required('El correo electrónico es requerido.')
-        .email('Ingresá un correo electrónico válido.'),
-    address: requiredText('La dirección es requerida.'),
+        .email('Ingresá un correo electrónico válido.')
+        .max(
+            100,
+            'El correo electrónico no debe contener más de 100 caracteres.',
+        ),
+    address: requiredText('La dirección es requerida.').max(
+        200,
+        'La dirección no debe contener más de 200 caracteres.',
+    ),
     economicActivityCode: requiredText('La actividad económica es requerida.'),
     establishmentType: requiredText('El tipo de establecimiento es requerido.'),
     departmentId: requiredText('El departamento es requerido.'),
@@ -48,13 +61,15 @@ const companyRules = {
     districtId: requiredText('El distrito es requerido.'),
     ownEstablishmentCode: requiredText(
         'El código de establecimiento es requerido.',
-    ).max(
-        4,
-        'El código de establecimiento no debe contener más de 4 caracteres.',
+    ).matches(
+        /^[MBSP][0-9]{3}$/,
+        'El código de establecimiento debe iniciar con M, B, S o P seguido de 3 números. Ej. M001.',
     ),
-    ownPosCode: requiredText('El código de punto de venta es requerido.').max(
-        4,
-        'El código de punto de venta no debe contener más de 4 caracteres.',
+    ownPosCode: requiredText(
+        'El código de punto de venta es requerido.',
+    ).matches(
+        /^P[0-9]{3}$/,
+        'El código de punto de venta debe iniciar con P seguido de 3 números. Ej. P001.',
     ),
 };
 
@@ -63,7 +78,6 @@ const digitsOnly = (value: string): string => value.replace(/\D/g, '');
 export default function useOnboarding(
     mode: 'onboarding' | 'superadmin' = 'onboarding',
     initialCompany: Company | null = null,
-    isEditingCompany = false,
 ) {
     const router = useRouter();
     const auth = useAuth();
@@ -76,7 +90,6 @@ export default function useOnboarding(
         yup.object({
             ...(showAccountFields.value ? accountRules : {}),
             ...companyRules,
-            ...(isEditingCompany ? { districtId: yup.string() } : {}),
         }),
     );
 
