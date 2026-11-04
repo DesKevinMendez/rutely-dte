@@ -164,6 +164,14 @@ class StoreDteRequest extends FormRequest
                     return;
                 }
 
+                $condition = (int) $this->input('resumen.condicionOperacion', MhCatalog::CASH_CONDITION);
+
+                if ($amountDue === 0.0 && $condition !== MhCatalog::CASH_CONDITION) {
+                    $validator->errors()->add('resumen.condicionOperacion', 'La condición de la operación debe ser 1 (Contado) cuando el total a pagar es $0.00.');
+
+                    return;
+                }
+
                 $payments = $this->input('resumen.pagos');
 
                 if (is_array($payments)) {
