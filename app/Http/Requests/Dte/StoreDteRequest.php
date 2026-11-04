@@ -106,14 +106,6 @@ class StoreDteRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, string> */
-    public function messages(): array
-    {
-        return [
-            'items.*.tipoItem.not_in' => 'El tipo de ítem 4 (otros tributos por ítem) todavía no se puede emitir.',
-        ];
-    }
-
     /** @return array<int, callable(Validator): void> */
     public function after(): array
     {
