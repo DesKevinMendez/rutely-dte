@@ -393,6 +393,7 @@ test('consumer invoice validation returns 422 with the official limits', functio
     'activity description maximum' => [consumerInvoiceReceiver(['descActividad' => str_repeat('a', 151)]), 'receptor.descActividad', 'El campo receptor.desc actividad no debe contener más de 150 caracteres.'],
     'phone minimum' => [consumerInvoiceReceiver(['telefono' => '1234567']), 'receptor.telefono', 'El campo receptor.telefono debe contener al menos 8 caracteres.'],
     'phone maximum' => [consumerInvoiceReceiver(['telefono' => str_repeat('1', 31)]), 'receptor.telefono', 'El campo receptor.telefono no debe contener más de 30 caracteres.'],
+    'email needs a top level domain' => [consumerInvoiceReceiver(['correo' => 'usuario@dominio']), 'receptor.correo', 'El campo correo del receptor debe ser una dirección de correo electrónico válida.'],
     'email minimum' => [consumerInvoiceReceiver(['correo' => 'a@b.c']), 'receptor.correo', 'El campo correo del receptor debe contener al menos 6 caracteres.'],
     'email maximum' => [consumerInvoiceReceiver(['correo' => str_repeat('a', 92).'@mail.com']), 'receptor.correo', 'El campo correo del receptor no debe contener más de 100 caracteres.'],
     'department in catalog' => [consumerInvoiceReceiver(['direccion' => [...DteApiTestData::receiverAddress(), 'departamento' => '99']]), 'receptor.direccion.departamento', 'El valor seleccionado para departamento del receptor no es válido.'],

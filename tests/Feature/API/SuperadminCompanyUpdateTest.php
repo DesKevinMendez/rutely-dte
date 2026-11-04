@@ -123,6 +123,7 @@ test('superadmin company update validates each request rule', function (string $
     'district must exist' => ['district_id', '00000000-0000-4000-8000-000000000003', 'El valor seleccionado para distrito no es válido.'],
     'email cannot be null' => ['email', null, 'El campo correo electrónico es obligatorio.'],
     'email must be valid' => ['email', 'invalid-email', 'El campo correo electrónico debe ser una dirección de correo electrónico válida.'],
+    'email needs a top level domain' => ['email', 'usuario@dominio', 'El campo correo electrónico debe ser una dirección de correo electrónico válida.'],
     'email has a minimum length' => ['email', 'a@b.c', 'El campo correo electrónico debe contener al menos 6 caracteres.'],
     'email has a maximum length' => ['email', str_repeat('a', 89).'@example.com', 'El campo correo electrónico no debe contener más de 100 caracteres.'],
     'MH establishment code cannot be null' => ['mh_establishment_code', null, 'El campo código de establecimiento MH es obligatorio.'],

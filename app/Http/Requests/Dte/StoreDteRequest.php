@@ -317,7 +317,7 @@ class StoreDteRequest extends FormRequest
     {
         return [
             'receptor.telefono' => ['sometimes', 'nullable', 'string', 'min:8', 'max:30'],
-            'receptor.correo' => ['sometimes', 'nullable', 'email', "min:{$minimumEmailLength}", 'max:100'],
+            'receptor.correo' => ['sometimes', 'nullable', 'email:filter', "min:{$minimumEmailLength}", 'max:100'],
         ];
     }
 
