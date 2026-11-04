@@ -16,29 +16,34 @@ const emit = defineEmits<{
 const typeOptions = [
     { value: '01', label: 'Factura Electrónica (01)' },
     { value: '03', label: 'Comprobante de Crédito Fiscal - CCF (03)' },
-    { value: '05', label: 'Nota de Crédito (05)' },
     { value: '14', label: 'Factura de Sujeto Excluido (14)' },
 ];
 
 const documentOptions = [
     { value: '36', label: 'NIT (36)' },
     { value: '13', label: 'DUI (13)' },
+    { value: '02', label: 'Carnet de Residente (02)' },
     { value: '03', label: 'Pasaporte (03)' },
     { value: '37', label: 'Otro (37)' },
 ];
 
+const IVA_RATE = 0.13;
+
+const emptyItem = (): DteItem => ({
+    descripcion: '',
+    cantidad: 1,
+    precioUni: 0,
+});
+
 const tipoDte = ref('01');
 const tipoDocumento = ref('36');
-const receptorNombre = ref('CLIENTE DE PRUEBAS S.A. DE C.V.');
-const receptorDocumento = ref('0614-280390-112-1');
-const receptorCorreo = ref('cliente@ejemplo.com');
-const items = ref<DteItem[]>([
-    {
-        descripcion: 'Servicios de Desarrollo de Software DTE',
-        cantidad: 1,
-        precioUni: 100,
-    },
-]);
+const receptorNombre = ref('');
+const receptorDocumento = ref('');
+const receptorCorreo = ref('');
+const items = ref<DteItem[]>([emptyItem()]);
+
+const isConsumerInvoice = computed(() => tipoDte.value === '01');
+const isTaxCredit = computed(() => tipoDte.value === '03');
 
 const subtotal = computed(() =>
     items.value.reduce(
@@ -47,11 +52,31 @@ const subtotal = computed(() =>
         0,
     ),
 );
-const iva = computed(() => subtotal.value * 0.13);
-const total = computed(() => subtotal.value + iva.value);
+const iva = computed(() => {
+    if (isConsumerInvoice.value) {
+        return (subtotal.value / (1 + IVA_RATE)) * IVA_RATE;
+    }
+
+    return isTaxCredit.value ? subtotal.value * IVA_RATE : 0;
+});
+const total = computed(() =>
+    isTaxCredit.value ? subtotal.value + iva.value : subtotal.value,
+);
+const ivaLabel = computed(() =>
+    isConsumerInvoice.value ? 'IVA incluido (13%)' : 'IVA (13%)',
+);
+const priceNote = computed(() => {
+    if (isConsumerInvoice.value) {
+        return 'En la Factura los precios ya incluyen el IVA.';
+    }
+
+    return isTaxCredit.value
+        ? 'En el Crédito Fiscal los precios no incluyen el IVA, se agrega al total.'
+        : 'La Factura de Sujeto Excluido no lleva IVA.';
+});
 
 const addItem = (): void => {
-    items.value.push({ descripcion: '', cantidad: 1, precioUni: 0 });
+    items.value.push(emptyItem());
 };
 
 const removeItem = (index: number): void => {
@@ -75,16 +100,10 @@ const updateUnitPrice = (item: DteItem, value: unknown): void => {
 const reset = (): void => {
     tipoDte.value = '01';
     tipoDocumento.value = '36';
-    receptorNombre.value = 'CLIENTE DE PRUEBAS S.A. DE C.V.';
-    receptorDocumento.value = '0614-280390-112-1';
-    receptorCorreo.value = 'cliente@ejemplo.com';
-    items.value = [
-        {
-            descripcion: 'Servicios de Desarrollo de Software DTE',
-            cantidad: 1,
-            precioUni: 100,
-        },
-    ];
+    receptorNombre.value = '';
+    receptorDocumento.value = '';
+    receptorCorreo.value = '';
+    items.value = [emptyItem()];
 };
 
 watch(
@@ -211,7 +230,9 @@ const submit = (): void => {
                             type="text"
                             label="Descripción"
                             small
-                            @update:model-value="updateDescription(item, $event)"
+                            @update:model-value="
+                                updateDescription(item, $event)
+                            "
                         />
                         <FormInput
                             :model-value="item.cantidad"
@@ -248,10 +269,9 @@ const submit = (): void => {
                 <div
                     class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
                 >
-                    <span class="text-xs text-gray-500 dark:text-gray-400"
-                        >El monto se calcula automáticamente con IVA según el
-                        flujo actual del backend.</span
-                    >
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{
+                        priceNote
+                    }}</span>
                     <div
                         class="text-right text-xs text-gray-500 dark:text-gray-400"
                     >
@@ -259,8 +279,9 @@ const submit = (): void => {
                             Subtotal:
                             <strong>${{ subtotal.toFixed(2) }}</strong>
                         </div>
-                        <div>
-                            IVA (13%): <strong>${{ iva.toFixed(2) }}</strong>
+                        <div v-if="iva > 0">
+                            {{ ivaLabel }}:
+                            <strong>${{ iva.toFixed(2) }}</strong>
                         </div>
                         <div
                             class="mt-1 text-base font-extrabold text-primary-600 dark:text-primary-400"

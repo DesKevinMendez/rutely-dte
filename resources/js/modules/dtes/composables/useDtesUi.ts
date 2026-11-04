@@ -7,14 +7,26 @@ import type {
     DteStoreResult,
 } from '../types/dte.types';
 
+const toReceiver = (draft: DteDraft): DteStorePayload['receptor'] => {
+    const numDocumento = draft.receptorDocumento.trim() || null;
+    const nombre = draft.receptorNombre.trim() || null;
+    const correo = draft.receptorCorreo.trim() || null;
+
+    if (!numDocumento && !nombre && !correo) {
+        return undefined;
+    }
+
+    return {
+        tipoDocumento: numDocumento ? draft.tipoDocumento : null,
+        numDocumento,
+        nombre,
+        correo,
+    };
+};
+
 const toStorePayload = (draft: DteDraft): DteStorePayload => ({
     tipoDte: draft.tipoDte,
-    receptor: {
-        tipoDocumento: draft.tipoDocumento,
-        numDocumento: draft.receptorDocumento.trim() || null,
-        nombre: draft.receptorNombre.trim() || null,
-        correo: draft.receptorCorreo.trim() || null,
-    },
+    receptor: toReceiver(draft),
     items: draft.items.map((item) => ({
         descripcion: item.descripcion,
         cantidad: Number(item.cantidad),

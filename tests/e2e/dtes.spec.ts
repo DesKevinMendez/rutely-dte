@@ -89,7 +89,7 @@ test.describe('DTEs', () => {
         await page.locator('#item-qty-0').fill('2');
         await page.locator('#item-price-0').fill('25');
 
-        await expect(page.getByText('Total: $56.50 USD', { exact: true })).toBeVisible();
+        await expect(page.getByText('Total: $50.00 USD', { exact: true })).toBeVisible();
 
         const dteGetRequests: string[] = [];
         page.on('request', (request) => {
@@ -131,7 +131,7 @@ test.describe('DTEs', () => {
 
         expect(record.dte_type).toBe('01');
         expect(record.receiver_document).toBe('0614-280390-112-1');
-        expect(record.total_amount).toBe(5650);
+        expect(record.total_amount).toBe(5000);
         expect(record.original_json.identificacion.fecEmi).toMatch(/^\d{4}-\d{2}-\d{2}$/);
         expect(record.original_json.identificacion.horEmi).toMatch(/^\d{2}:\d{2}:\d{2}$/);
 

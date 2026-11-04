@@ -57,8 +57,8 @@ export interface DteDraft {
 
 export interface DteStorePayload {
     tipoDte: string;
-    receptor: {
-        tipoDocumento: string;
+    receptor?: {
+        tipoDocumento: string | null;
         numDocumento: string | null;
         nombre: string | null;
         correo: string | null;
