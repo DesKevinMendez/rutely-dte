@@ -139,6 +139,36 @@ test('a consumer invoice sends and stores NIT and DUI without hyphens', function
     'passport keeps its own format' => ['03', 'A-1234567', 'A-1234567'],
 ]);
 
+test('a line without type or unit is a service with the unit of measure 99', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), [
+        'tipoDte' => '01',
+        'items' => [['descripcion' => 'Consultoría', 'cantidad' => 1, 'precioUni' => 10]],
+    ])->assertCreated();
+
+    $item = signedDocument(Dte::query()->findOrFail($response->json('data.record.id'))->signed_json)['cuerpoDocumento'][0];
+
+    expect($item['tipoItem'])->toBe(2)
+        ->and($item['uniMedida'])->toBe(99);
+});
+
+test('goods and mixed lines keep the unit of measure sent by the client', function (int $itemType) {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), consumerInvoicePayload([
+        'items' => [['tipoItem' => $itemType, 'uniMedida' => 59]],
+    ]))->assertCreated();
+
+    $item = signedDocument(Dte::query()->findOrFail($response->json('data.record.id'))->signed_json)['cuerpoDocumento'][0];
+
+    expect($item['tipoItem'])->toBe($itemType)
+        ->and($item['uniMedida'])->toBe(59);
+})->with([
+    'goods' => [1],
+    'goods and services' => [3],
+]);
+
 test('consumer invoice applies the item discount and the withheld IVA', function () {
     $company = companyReadyToIssue();
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
@@ -253,6 +283,9 @@ test('consumer invoice validation returns 422 with the official limits', functio
     'item discount above line value' => [consumerInvoicePayload(['items' => [['montoDescu' => 10.01]]]), 'items.0.montoDescu', 'El monto de descuento del ítem no puede ser mayor que el valor de la línea.'],
     'item code maximum' => [consumerInvoicePayload(['items' => [['codigo' => str_repeat('a', 26)]]]), 'items.0.codigo', 'El campo código del ítem no debe contener más de 25 caracteres.'],
     'item unit in catalog' => [consumerInvoicePayload(['items' => [['uniMedida' => 3]]]), 'items.0.uniMedida', 'El valor seleccionado para unidad de medida del ítem no es válido.'],
+    'service must use unit 99' => [consumerInvoicePayload(['items' => [['tipoItem' => 2, 'uniMedida' => 59]]]), 'items.0.uniMedida', 'Los servicios y los otros tributos por ítem deben usar la unidad de medida 99 (Otra).'],
+    'other taxes must use unit 99' => [consumerInvoicePayload(['items' => [['tipoItem' => 4, 'uniMedida' => 59]]]), 'items.0.uniMedida', 'Los servicios y los otros tributos por ítem deben usar la unidad de medida 99 (Otra).'],
+    'line without type is a service' => [['tipoDte' => '01', 'items' => [['descripcion' => 'Línea', 'cantidad' => 1, 'precioUni' => 10, 'uniMedida' => 59]]], 'items.0.uniMedida', 'Los servicios y los otros tributos por ítem deben usar la unidad de medida 99 (Otra).'],
     'summary must be array' => [consumerInvoicePayload(['resumen' => 'resumen']), 'resumen', 'El campo resumen debe ser un arreglo.'],
     'withheld IVA numeric' => [consumerInvoicePayload(['resumen' => ['ivaRete' => 'x']]), 'resumen.ivaRete', 'El campo IVA retenido debe ser un número.'],
     'withheld IVA nonnegative' => [consumerInvoicePayload(['resumen' => ['ivaRete' => -1]]), 'resumen.ivaRete', 'El campo IVA retenido debe ser mayor o igual que 0.'],

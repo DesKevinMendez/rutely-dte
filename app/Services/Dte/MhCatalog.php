@@ -47,6 +47,15 @@ class MhCatalog
     /** CAT-018: Plazo. */
     public const PAYMENT_TERMS = ['01', '02', '03'];
 
+    /** CAT-011: Servicios. */
+    public const SERVICE_ITEM_TYPE = 2;
+
+    /** Normativa 2.0, Anexo IV: CAT-011 types that must use the unit of measure 99. */
+    public const ITEM_TYPES_WITHOUT_UNIT = [self::SERVICE_ITEM_TYPE, 4];
+
+    /** CAT-014: Otra. */
+    public const OTHER_UNIT_OF_MEASURE = 99;
+
     /** CAT-014: Unidad de Medida. */
     public const UNITS_OF_MEASURE = [
         1, 2, 6, 9, 10, 13, 15, 18, 20, 22, 23, 24, 26, 30, 32, 33, 34, 36, 37, 38,

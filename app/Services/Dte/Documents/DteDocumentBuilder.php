@@ -17,10 +17,6 @@ use Carbon\CarbonInterface;
  */
 abstract class DteDocumentBuilder
 {
-    private const DEFAULT_ITEM_TYPE = 2;
-
-    private const DEFAULT_UNIT_OF_MEASURE = 59;
-
     public static function for(IssuableDteType $type): self
     {
         return match ($type) {
@@ -184,10 +180,10 @@ abstract class DteDocumentBuilder
     {
         return [
             'numItem' => $index + 1,
-            'tipoItem' => (int) ($item['tipoItem'] ?? self::DEFAULT_ITEM_TYPE),
+            'tipoItem' => (int) ($item['tipoItem'] ?? MhCatalog::SERVICE_ITEM_TYPE),
             'cantidad' => (float) $item['cantidad'],
             'codigo' => $item['codigo'] ?? null,
-            'uniMedida' => (int) ($item['uniMedida'] ?? self::DEFAULT_UNIT_OF_MEASURE),
+            'uniMedida' => (int) ($item['uniMedida'] ?? MhCatalog::OTHER_UNIT_OF_MEASURE),
             'descripcion' => $item['descripcion'],
             'precioUni' => (float) $item['precioUni'],
             'montoDescu' => (float) ($item['montoDescu'] ?? 0),

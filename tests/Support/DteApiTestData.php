@@ -153,7 +153,7 @@ class DteApiTestData
                 'montoDescu' => 0,
                 'tipoItem' => 2,
                 'codigo' => 'GPS-001',
-                'uniMedida' => 59,
+                'uniMedida' => 99,
             ]],
         ];
     }

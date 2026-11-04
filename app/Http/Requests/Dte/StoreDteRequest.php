@@ -115,6 +115,13 @@ class StoreDteRequest extends FormRequest
                             'El monto de descuento del ítem no puede ser mayor que el valor de la línea.',
                         );
                     }
+
+                    if ($this->usesAUnitItsTypeDoesNotAllow($item)) {
+                        $validator->errors()->add(
+                            "items.{$index}.uniMedida",
+                            'Los servicios y los otros tributos por ítem deben usar la unidad de medida 99 (Otra).',
+                        );
+                    }
                 }
 
                 if ($validator->errors()->isNotEmpty()) {
@@ -140,6 +147,16 @@ class StoreDteRequest extends FormRequest
                 }
             },
         ];
+    }
+
+    /** @param  array<string, mixed>  $item */
+    private function usesAUnitItsTypeDoesNotAllow(array $item): bool
+    {
+        $itemType = (int) ($item['tipoItem'] ?? MhCatalog::SERVICE_ITEM_TYPE);
+        $unit = (int) ($item['uniMedida'] ?? MhCatalog::OTHER_UNIT_OF_MEASURE);
+
+        return in_array($itemType, MhCatalog::ITEM_TYPES_WITHOUT_UNIT, true)
+            && $unit !== MhCatalog::OTHER_UNIT_OF_MEASURE;
     }
 
     private function documentType(): IssuableDteType
