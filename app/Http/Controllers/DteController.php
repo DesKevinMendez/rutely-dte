@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\DteIssuerProfileException;
 use App\Exceptions\DteSigningException;
 use App\Http\Requests\CatalogIndexRequest;
 use App\Http\Requests\Dte\StoreDteRequest;
@@ -68,7 +69,7 @@ class DteController extends Controller
 
         try {
             $result = $issuanceService->issue($companyId, $request->validated());
-        } catch (DteSigningException $exception) {
+        } catch (DteSigningException|DteIssuerProfileException $exception) {
             return new CommonResponse(
                 status: 400,
                 message: $exception->getMessage(),

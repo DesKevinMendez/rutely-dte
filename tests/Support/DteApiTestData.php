@@ -157,4 +157,64 @@ class DteApiTestData
             ]],
         ];
     }
+
+    /** @return array<string, mixed> */
+    public static function validTaxCreditPayload(): array
+    {
+        return [
+            'tipoDte' => '03',
+            'receptor' => [
+                'nit' => '06141505921015',
+                'nrc' => '9876543',
+                'nombre' => 'Comercial Los Pinos, S.A. de C.V.',
+                'codActividad' => '62010',
+                'descActividad' => 'Programación informática',
+                'nombreComercial' => 'Los Pinos',
+                'direccion' => self::receiverAddress(),
+                'telefono' => '22225551',
+                'correo' => 'compras@lospinos.example',
+            ],
+            'items' => self::validDtePayload()['items'],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function validExcludedSubjectPayload(): array
+    {
+        return [
+            'tipoDte' => '14',
+            'receptor' => [
+                'tipoDocumento' => '13',
+                'numDocumento' => '01234567-8',
+                'nombre' => 'María Pérez',
+                'codActividad' => '62010',
+                'descActividad' => 'Programación informática',
+                'direccion' => self::receiverAddress(),
+                'telefono' => '77778888',
+                'correo' => 'maria@example.com',
+            ],
+            'items' => self::validDtePayload()['items'],
+        ];
+    }
+
+    /** @return array{departamento: string, municipio: string, distrito: string, complemento: string} */
+    public static function receiverAddress(): array
+    {
+        return [
+            'departamento' => '06',
+            'municipio' => '01',
+            'distrito' => '01',
+            'complemento' => 'Colonia Escalón, San Salvador',
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function mhResult(): array
+    {
+        return [
+            'estado' => 'PROCESADO',
+            'selloRecibido' => str_repeat('A', 40),
+            'observaciones' => [],
+        ];
+    }
 }
