@@ -28,3 +28,4 @@ yarn-error.log
 /playwright-report
 /test-results
 /blob-report
+/certificates
