@@ -61,6 +61,29 @@ test.describe('Certificates', () => {
         await expect(page.getByRole('button', { name: 'Guardar y Encriptar Certificado' })).toBeDisabled();
     });
 
+    test('requires the private key password before uploading the certificate', async ({ page }) => {
+        const uploadRequests: string[] = [];
+        page.on('request', (request) => {
+            if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/v1/mh-certificates') {
+                uploadRequests.push(request.url());
+            }
+        });
+
+        await expect(page.getByText('(Opcional)')).toHaveCount(0);
+
+        await page.locator('#certificate-file').setInputFiles({
+            name: 'playwright-certificate.xml',
+            mimeType: 'application/xml',
+            buffer: Buffer.from('<certificado />'),
+        });
+        await page.getByRole('button', { name: 'Guardar y Encriptar Certificado' }).click();
+
+        await expect(
+            page.getByText('La contraseña de la clave privada es requerida.', { exact: true }),
+        ).toBeVisible();
+        expect(uploadRequests).toHaveLength(0);
+    });
+
     test('uploads and stores the repository MH certificate fixture', async ({ page }) => {
         const certificateResponse = page.waitForResponse(
             (response) =>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { IconCloudUpload } from '@tabler/icons-vue';
-import { Alert, BaseButton, Card, FormInput } from 'ornito';
+import { Alert, BaseButton, Card, FormInput, yup } from 'ornito';
+import { Form } from 'vee-validate';
 import { ref } from 'vue';
 import type {
     CertificateEnvironment,
@@ -8,6 +9,10 @@ import type {
 } from '../types/certificate.types';
 
 const MAX_CERTIFICATE_SIZE_IN_BYTES = 2 * 1024 * 1024;
+const passwordRules = yup
+    .string()
+    .trim()
+    .required('La contraseña de la clave privada es requerida.');
 
 const {
     selectedEnvironment,
@@ -68,7 +73,7 @@ const submit = (): void => {
         title="Cargar Certificado Digital (MH)"
         subtitle="Seleccione el archivo XML del certificado de firma entregado por el Ministerio de Hacienda."
     >
-        <form class="space-y-5" @submit.prevent="submit">
+        <Form class="space-y-5" @submit="submit">
             <div
                 v-if="uploadSuccess"
                 class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
@@ -185,8 +190,9 @@ const submit = (): void => {
                 id="certificate-password"
                 name="password"
                 type="password"
-                label="Contraseña de la Clave Privada (Opcional)"
-                placeholder="Ingrese la contraseña si el certificado requiere clave privada"
+                label="Contraseña de la Clave Privada"
+                placeholder="Ingrese la contraseña de la clave privada"
+                :rules="passwordRules"
             />
             <p class="-mt-3 text-xs text-gray-500 dark:text-gray-400">
                 La contraseña se valida contra la clave privada antes de
@@ -209,6 +215,6 @@ const submit = (): void => {
                     }}
                 </BaseButton>
             </div>
-        </form>
+        </Form>
     </Card>
 </template>

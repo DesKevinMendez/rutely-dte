@@ -31,8 +31,8 @@ import { Card } from 'ornito';
                     >3</span
                 >
                 <p>
-                    Si el certificado requiere contraseña para la clave privada,
-                    asegúrese de ingresarla correctamente.
+                    Ingrese correctamente la contraseña de la clave privada; es
+                    obligatoria para guardar el certificado.
                 </p>
             </div>
         </div>
