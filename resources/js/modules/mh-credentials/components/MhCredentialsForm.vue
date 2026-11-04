@@ -21,8 +21,6 @@ const emit = defineEmits<{
     save: [payload: MhCredentialsPayload];
 }>();
 
-const MH_PASSWORD_FORMAT = /^(?=.*\p{L})(?=.*\p{N})(?=.*[\p{Z}\p{S}\p{P}]).{13,25}$/u;
-
 const nit = ref('');
 const password = ref('');
 
@@ -30,7 +28,7 @@ const nitDigits = computed(() => nit.value.replace(/\D/g, ''));
 const canSubmit = computed(
     () =>
         [9, 14].includes(nitDigits.value.length) &&
-        MH_PASSWORD_FORMAT.test(password.value) &&
+        password.value.length > 0 &&
         !isSubmitting,
 );
 
@@ -148,7 +146,6 @@ const submit = (): void => {
                 type="password"
                 label="Contraseña del Portal MH"
                 placeholder="Ingrese la contraseña del portal MH"
-                help="De 13 a 25 caracteres, con letras, números y un carácter especial. Hacienda bloquea el usuario tras varios intentos fallidos."
             />
 
             <div
