@@ -157,6 +157,21 @@ test.describe('DTEs', () => {
         expect(refreshUrl.searchParams.get('per_page')).toBe('10');
     });
 
+    test('warns that a Factura from $25,000 must identify the receiver', async ({ page }) => {
+        const notice = page.getByText('En operaciones de $25,000.00 o más', { exact: false });
+
+        await page.getByRole('button', { name: 'Emitir Nuevo DTE', exact: true }).click();
+        await page.locator('#item-qty-0').fill('1');
+        await page.locator('#item-price-0').fill('24999.99');
+        await expect(notice).toHaveCount(0);
+
+        await page.locator('#item-price-0').fill('25000');
+        await expect(notice).toBeVisible();
+
+        await page.locator('#tipo-dte').selectOption('14');
+        await expect(notice).toHaveCount(0);
+    });
+
     test('persists a cryptographically valid RS512 signature for the issued Factura 01', async ({ page }) => {
         await storeRepositoryCertificate(page);
 

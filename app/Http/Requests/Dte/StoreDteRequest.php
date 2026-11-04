@@ -29,6 +29,13 @@ class StoreDteRequest extends FormRequest
 
     private const PAYMENT_TOLERANCE = 0.01;
 
+    /** Normativa 2.0, Anexo IV: consumer data required above the legal amount. */
+    private const IDENTIFICATION_FIELDS = [
+        'tipoDocumento' => 'tipo de documento',
+        'numDocumento' => 'número de documento',
+        'nombre' => 'nombre',
+    ];
+
     public function authorize(): bool
     {
         $principal = $this->user();
@@ -126,6 +133,17 @@ class StoreDteRequest extends FormRequest
 
                 if ($validator->errors()->isNotEmpty()) {
                     return;
+                }
+
+                if ($builder->requiresReceiverIdentification($this->only(['items', 'resumen']))) {
+                    foreach (self::IDENTIFICATION_FIELDS as $field => $label) {
+                        if (blank($this->input("receptor.{$field}"))) {
+                            $validator->errors()->add(
+                                "receptor.{$field}",
+                                "El {$label} del receptor es obligatorio en operaciones de $25,000.00 o más.",
+                            );
+                        }
+                    }
                 }
 
                 $amountDue = $builder->totalToPay($this->only(['items', 'resumen']));

@@ -26,6 +26,9 @@ class MhCatalog
     /** CAT-022: DUI. */
     public const DUI_DOCUMENT_TYPE = '13';
 
+    /** Aviso DGII of 2024-09-05: below this amount a consumer cannot be asked for an identity document. */
+    public const CONSUMER_IDENTIFICATION_AMOUNT = 25000;
+
     /** CAT-015: Impuesto al Valor Agregado 13%. */
     public const IVA_TAX_CODE = '20';
 

@@ -119,6 +119,12 @@ abstract class DteDocumentBuilder
         return $this->summary($this->items($payload['items']), $payload)['totalPagar'];
     }
 
+    /** @param  array<string, mixed>  $payload */
+    public function requiresReceiverIdentification(array $payload): bool
+    {
+        return false;
+    }
+
     abstract protected function version(): int;
 
     abstract protected function type(): IssuableDteType;

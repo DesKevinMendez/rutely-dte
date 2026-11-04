@@ -3,12 +3,21 @@
 namespace App\Services\Dte\Documents;
 
 use App\IssuableDteType;
+use App\Services\Dte\MhCatalog;
 
 /**
  * Factura Electrónica (fe-f-v2). Prices include IVA, which is broken down per item and in the summary.
  */
 class ConsumerInvoiceBuilder extends SaleDocumentBuilder
 {
+    /** @param  array<string, mixed>  $payload */
+    public function requiresReceiverIdentification(array $payload): bool
+    {
+        $operationTotal = $this->summary($this->items($payload['items']), $payload)['montoTotalOperacion'];
+
+        return $operationTotal >= MhCatalog::CONSUMER_IDENTIFICATION_AMOUNT;
+    }
+
     protected function version(): int
     {
         return 2;

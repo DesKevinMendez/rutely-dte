@@ -28,6 +28,7 @@ const documentOptions = [
 ];
 
 const IVA_RATE = 0.13;
+const CONSUMER_IDENTIFICATION_AMOUNT = 25000;
 
 const emptyItem = (): DteItem => ({
     descripcion: '',
@@ -61,6 +62,9 @@ const iva = computed(() => {
 });
 const total = computed(() =>
     isTaxCredit.value ? subtotal.value + iva.value : subtotal.value,
+);
+const requiresIdentification = computed(
+    () => isConsumerInvoice.value && total.value >= CONSUMER_IDENTIFICATION_AMOUNT,
 );
 const ivaLabel = computed(() =>
     isConsumerInvoice.value ? 'IVA incluido (13%)' : 'IVA (13%)',
@@ -156,6 +160,13 @@ const submit = (): void => {
             />
 
             <Card title="Datos del Receptor / Cliente">
+                <p
+                    v-if="requiresIdentification"
+                    class="mb-3 text-xs text-warning-700 dark:text-warning-400"
+                >
+                    En operaciones de $25,000.00 o más el nombre y el documento
+                    del receptor son obligatorios.
+                </p>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div class="sm:col-span-2">
                         <FormInput

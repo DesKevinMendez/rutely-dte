@@ -139,6 +139,57 @@ test('a consumer invoice sends and stores NIT and DUI without hyphens', function
     'passport keeps its own format' => ['03', 'A-1234567', 'A-1234567'],
 ]);
 
+test('a consumer invoice below $25,000 does not need to identify the receiver', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), [
+        'tipoDte' => '01',
+        'items' => [['descripcion' => 'Maquinaria', 'cantidad' => 1, 'precioUni' => 24999.99]],
+    ])->assertCreated();
+
+    expect(Dte::query()->findOrFail($response->json('data.record.id'))->receiver_document)->toBeNull();
+});
+
+test('a consumer invoice from $25,000 is issued when the receiver is identified', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), [
+        'tipoDte' => '01',
+        'receptor' => ['tipoDocumento' => '13', 'numDocumento' => '012345678', 'nombre' => 'María Pérez'],
+        'items' => [['descripcion' => 'Maquinaria', 'cantidad' => 1, 'precioUni' => 25000]],
+    ])->assertCreated();
+
+    $document = signedDocument(Dte::query()->findOrFail($response->json('data.record.id'))->signed_json);
+
+    expect($document['receptor']['tipoDocumento'])->toBe('13')
+        ->and($document['receptor']['numDocumento'])->toBe('012345678')
+        ->and($document['receptor']['nombre'])->toBe('María Pérez');
+});
+
+test('a consumer invoice from $25,000 requires the receiver identification', function (array $receiver, string $field, string $message) {
+    Sanctum::actingAs(DteApiTestData::user(DteApiTestData::company(), Role::USER));
+
+    $this->postJson(route('api.v1.dtes.store'), [
+        'tipoDte' => '01',
+        'receptor' => $receiver,
+        'items' => [['descripcion' => 'Maquinaria', 'cantidad' => 2, 'precioUni' => 12500]],
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([$field => $message]);
+})->with([
+    'document type' => [[], 'receptor.tipoDocumento', 'El tipo de documento del receptor es obligatorio en operaciones de $25,000.00 o más.'],
+    'document number' => [[], 'receptor.numDocumento', 'El número de documento del receptor es obligatorio en operaciones de $25,000.00 o más.'],
+    'name' => [['tipoDocumento' => '13', 'numDocumento' => '012345678'], 'receptor.nombre', 'El nombre del receptor es obligatorio en operaciones de $25,000.00 o más.'],
+]);
+
+test('the $25,000 identification rule only applies to the consumer invoice', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+    $payload = DteApiTestData::validExcludedSubjectPayload();
+    $payload['items'] = [['descripcion' => 'Maquinaria', 'cantidad' => 1, 'precioUni' => 25000]];
+
+    $this->postJson(route('api.v1.dtes.store'), $payload)->assertCreated();
+});
+
 test('a line without type or unit is a service with the unit of measure 99', function () {
     Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
 
