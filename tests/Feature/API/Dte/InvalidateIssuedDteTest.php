@@ -51,7 +51,7 @@ test('the invalidation of an issued document carries the receiver identity of it
 })->with([
     'anonymous consumer invoice' => [DteApiTestData::validDtePayload(), null, null],
     'tax credit' => [DteApiTestData::validTaxCreditPayload(), '36', '06141505921015'],
-    'excluded subject' => [DteApiTestData::validExcludedSubjectPayload(), '13', '01234567-8'],
+    'excluded subject' => [DteApiTestData::validExcludedSubjectPayload(), '13', '012345678'],
 ]);
 
 test('an invalidation due to an error references the replacement document in uppercase', function () {

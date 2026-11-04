@@ -17,8 +17,14 @@ class MhCatalog
     /** Normativa 2.0, Anexo IV: 9 or 14 digits, without hyphens or other special characters. */
     public const NIT_PATTERN = '/^(?:[0-9]{14}|[0-9]{9})$/';
 
+    /** Normativa 2.0, Anexo IV: 9 digits, without hyphens or other special characters. */
+    public const DUI_PATTERN = '/^[0-9]{9}$/';
+
     /** CAT-022: NIT. */
     public const NIT_DOCUMENT_TYPE = '36';
+
+    /** CAT-022: DUI. */
+    public const DUI_DOCUMENT_TYPE = '13';
 
     /** CAT-015: Impuesto al Valor Agregado 13%. */
     public const IVA_TAX_CODE = '20';

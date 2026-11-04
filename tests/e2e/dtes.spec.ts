@@ -130,7 +130,7 @@ test.describe('DTEs', () => {
         const record = body.data.record;
 
         expect(record.dte_type).toBe('01');
-        expect(record.receiver_document).toBe('0614-280390-112-1');
+        expect(record.receiver_document).toBe('06142803901121');
         expect(record.total_amount).toBe(5000);
         expect(record.original_json.identificacion.fecEmi).toMatch(/^\d{4}-\d{2}-\d{2}$/);
         expect(record.original_json.identificacion.horEmi).toMatch(/^\d{2}:\d{2}:\d{2}$/);
@@ -139,6 +139,7 @@ test.describe('DTEs', () => {
         await expect(
             page.getByText('CLIENTE PLAYWRIGHT FACTURA', { exact: true }),
         ).toBeVisible();
+        await expect(page.getByText('Doc: 0614-280390-112-1', { exact: true })).toBeVisible();
 
         const [year, month, day] = record.original_json.identificacion.fecEmi.split('-');
         await expect(

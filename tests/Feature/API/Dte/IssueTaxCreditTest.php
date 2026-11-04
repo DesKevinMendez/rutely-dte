@@ -114,6 +114,17 @@ test('a tax credit line without value does not declare IVA', function () {
         ->and($document['resumen']['tributos'])->toBeNull();
 });
 
+test('a tax credit sends the receiver NIT without hyphens', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), taxCreditReceiver(['nit' => '0614-150592-101-5']))->assertCreated();
+
+    $dte = Dte::query()->findOrFail($response->json('data.record.id'));
+
+    expect($dte->receiver_document)->toBe('06141505921015')
+        ->and(signedDocument($dte->signed_json)['receptor']['nit'])->toBe('06141505921015');
+});
+
 test('tax credit validation returns 422 with the official limits', function (array $payload, string $field, string $message) {
     Sanctum::actingAs(DteApiTestData::user(DteApiTestData::company(), Role::USER));
 
@@ -127,7 +138,7 @@ test('tax credit validation returns 422 with the official limits', function (arr
     'document number prohibited' => [taxCreditReceiver(['numDocumento' => '06141505921015']), 'receptor.numDocumento', 'El campo receptor.num documento está prohibido.'],
     'NIT required' => [taxCreditWithoutReceiverField('nit'), 'receptor.nit', 'El campo NIT del receptor es obligatorio.'],
     'NIT must be string' => [taxCreditReceiver(['nit' => ['0614']]), 'receptor.nit', 'El campo NIT del receptor debe ser una cadena de caracteres.'],
-    'NIT format' => [taxCreditReceiver(['nit' => '0614-150592-101-5']), 'receptor.nit', 'El formato del campo NIT del receptor no es válido.'],
+    'NIT format' => [taxCreditReceiver(['nit' => '0614-150592']), 'receptor.nit', 'El formato del campo NIT del receptor no es válido.'],
     'NRC minimum' => [taxCreditReceiver(['nrc' => '1']), 'receptor.nrc', 'El campo receptor.nrc debe contener al menos 2 caracteres.'],
     'NRC maximum' => [taxCreditReceiver(['nrc' => '123456789']), 'receptor.nrc', 'El campo receptor.nrc no debe contener más de 8 caracteres.'],
     'name required' => [taxCreditWithoutReceiverField('nombre'), 'receptor.nombre', 'El campo receptor.nombre es obligatorio.'],

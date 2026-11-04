@@ -89,7 +89,7 @@ test('issues a consumer invoice to an identified receiver and stores the receive
     $response = $this->postJson(route('api.v1.dtes.store'), consumerInvoicePayload([
         'receptor' => [
             'tipoDocumento' => '13',
-            'numDocumento' => '01234567-8',
+            'numDocumento' => '012345678',
             'nrc' => '123456',
             'nombre' => 'María Pérez',
             'codActividad' => '62010',
@@ -104,7 +104,7 @@ test('issues a consumer invoice to an identified receiver and stores the receive
     $receiver = Receivers::query()->firstOrFail();
 
     expect(MhSchema::errors(signedDocument($dte->signed_json), MhSchema::CONSUMER_INVOICE))->toBe([])
-        ->and($dte->receiver_document)->toBe('01234567-8')
+        ->and($dte->receiver_document)->toBe('012345678')
         ->and($dte->receiver_id)->toBe($receiver->id)
         ->and($dte->original_json['receptor']['direccion'])->toBe(DteApiTestData::receiverAddress());
 
@@ -112,10 +112,32 @@ test('issues a consumer invoice to an identified receiver and stores the receive
         'id' => $receiver->id,
         'company_id' => $company->id,
         'document_type' => '13',
-        'document_number' => '01234567-8',
+        'document_number' => '012345678',
         'district_id' => $company->district_id,
     ]);
 });
+
+test('a consumer invoice sends and stores NIT and DUI without hyphens', function (string $type, string $written, string $sent) {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), consumerInvoiceReceiver([
+        'tipoDocumento' => $type,
+        'numDocumento' => $written,
+    ]))->assertCreated();
+
+    $dte = Dte::query()->findOrFail($response->json('data.record.id'));
+
+    expect($dte->receiver_document)->toBe($sent)
+        ->and(signedDocument($dte->signed_json)['receptor']['numDocumento'])->toBe($sent)
+        ->and(Receivers::query()->firstOrFail()->document_number)->toBe($sent);
+})->with([
+    'DUI with its hyphen' => ['13', '01234567-8', '012345678'],
+    'DUI in digits' => ['13', '012345678', '012345678'],
+    'NIT with its hyphens' => ['36', '0614-150592-101-5', '06141505921015'],
+    'NIT in digits' => ['36', '06141505921015', '06141505921015'],
+    'NIT of 9 digits' => ['36', '01234567-8', '012345678'],
+    'passport keeps its own format' => ['03', 'A-1234567', 'A-1234567'],
+]);
 
 test('consumer invoice applies the item discount and the withheld IVA', function () {
     $company = companyReadyToIssue();
@@ -201,7 +223,10 @@ test('consumer invoice validation returns 422 with the official limits', functio
     'receiver commercial name prohibited' => [consumerInvoiceReceiver(['nombreComercial' => 'Comercial']), 'receptor.nombreComercial', 'El campo nombre comercial del receptor está prohibido.'],
     'document type required with number' => [consumerInvoiceReceiver(['numDocumento' => '012345678']), 'receptor.tipoDocumento', 'El campo tipo de documento del receptor es obligatorio cuando receptor.num documento está presente.'],
     'document number required with type' => [consumerInvoiceReceiver(['tipoDocumento' => '13']), 'receptor.numDocumento', 'El campo receptor.num documento es obligatorio cuando tipo de documento del receptor está presente.'],
-    'document number maximum' => [consumerInvoiceReceiver(['tipoDocumento' => '13', 'numDocumento' => str_repeat('1', 21)]), 'receptor.numDocumento', 'El campo receptor.num documento no debe contener más de 20 caracteres.'],
+    'document number maximum' => [consumerInvoiceReceiver(['tipoDocumento' => '03', 'numDocumento' => str_repeat('1', 21)]), 'receptor.numDocumento', 'El campo receptor.num documento no debe contener más de 20 caracteres.'],
+    'DUI with 9 digits' => [consumerInvoiceReceiver(['tipoDocumento' => '13', 'numDocumento' => '0123456-7']), 'receptor.numDocumento', 'El formato del campo receptor.num documento no es válido.'],
+    'DUI with digits only' => [consumerInvoiceReceiver(['tipoDocumento' => '13', 'numDocumento' => '0123456A8']), 'receptor.numDocumento', 'El formato del campo receptor.num documento no es válido.'],
+    'NIT with 9 or 14 digits' => [consumerInvoiceReceiver(['tipoDocumento' => '36', 'numDocumento' => '0614-150592']), 'receptor.numDocumento', 'El formato del campo receptor.num documento no es válido.'],
     'NRC minimum' => [consumerInvoiceReceiver(['nrc' => '1']), 'receptor.nrc', 'El campo receptor.nrc debe contener al menos 2 caracteres.'],
     'NRC maximum' => [consumerInvoiceReceiver(['nrc' => '123456789']), 'receptor.nrc', 'El campo receptor.nrc no debe contener más de 8 caracteres.'],
     'name maximum' => [consumerInvoiceReceiver(['nombre' => str_repeat('a', 251)]), 'receptor.nombre', 'El campo receptor.nombre no debe contener más de 250 caracteres.'],

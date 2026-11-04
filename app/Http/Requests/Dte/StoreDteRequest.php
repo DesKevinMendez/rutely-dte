@@ -40,6 +40,30 @@ class StoreDteRequest extends FormRequest
         return $principal?->can('create', Dte::class) ?? false;
     }
 
+    /**
+     * NIT and DUI are written with hyphens in El Salvador, but Hacienda receives only their digits.
+     */
+    protected function prepareForValidation(): void
+    {
+        $receiver = $this->input('receptor');
+
+        if (! is_array($receiver)) {
+            return;
+        }
+
+        if (is_string($receiver['nit'] ?? null)) {
+            $receiver['nit'] = str_replace('-', '', $receiver['nit']);
+        }
+
+        $hasDigitsOnlyDocument = in_array($receiver['tipoDocumento'] ?? null, [MhCatalog::DUI_DOCUMENT_TYPE, MhCatalog::NIT_DOCUMENT_TYPE], true);
+
+        if ($hasDigitsOnlyDocument && is_string($receiver['numDocumento'] ?? null)) {
+            $receiver['numDocumento'] = str_replace('-', '', $receiver['numDocumento']);
+        }
+
+        $this->merge(['receptor' => $receiver]);
+    }
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
@@ -143,7 +167,7 @@ class StoreDteRequest extends FormRequest
             'receptor.nit' => ['prohibited'],
             'receptor.nombreComercial' => ['prohibited'],
             'receptor.tipoDocumento' => ['bail', 'nullable', 'required_with:receptor.numDocumento', 'string', Rule::exists(DocumentType::class, 'code')],
-            'receptor.numDocumento' => ['nullable', 'required_with:receptor.tipoDocumento', 'string', 'max:20'],
+            'receptor.numDocumento' => ['nullable', 'required_with:receptor.tipoDocumento', 'string', 'max:20', ...$this->documentNumberFormat()],
             'receptor.nrc' => ['sometimes', 'nullable', 'string', 'min:2', 'max:8'],
             'receptor.nombre' => ['sometimes', 'nullable', 'string', 'max:250'],
             'receptor.codActividad' => ['bail', 'sometimes', 'nullable', 'string', Rule::exists(EconomicActivity::class, 'code')],
@@ -182,7 +206,7 @@ class StoreDteRequest extends FormRequest
             'receptor.nrc' => ['prohibited'],
             'receptor.nombreComercial' => ['prohibited'],
             'receptor.tipoDocumento' => ['bail', 'required', 'string', Rule::exists(DocumentType::class, 'code')],
-            'receptor.numDocumento' => ['required', 'string', 'max:20'],
+            'receptor.numDocumento' => ['required', 'string', 'max:20', ...$this->documentNumberFormat()],
             'receptor.nombre' => ['required', 'string', 'max:250'],
             'receptor.codActividad' => ['bail', 'sometimes', 'nullable', 'string', Rule::exists(EconomicActivity::class, 'code')],
             'receptor.descActividad' => ['sometimes', 'nullable', 'string', 'min:5', 'max:150'],
@@ -190,6 +214,16 @@ class StoreDteRequest extends FormRequest
             ...$this->receiverAddressRules(),
             ...$this->receiverContactRules(6),
         ];
+    }
+
+    /** @return array<int, string> */
+    private function documentNumberFormat(): array
+    {
+        return match ($this->input('receptor.tipoDocumento')) {
+            MhCatalog::DUI_DOCUMENT_TYPE => ['regex:'.MhCatalog::DUI_PATTERN],
+            MhCatalog::NIT_DOCUMENT_TYPE => ['regex:'.MhCatalog::NIT_PATTERN],
+            default => [],
+        };
     }
 
     /** @return array<string, mixed> */

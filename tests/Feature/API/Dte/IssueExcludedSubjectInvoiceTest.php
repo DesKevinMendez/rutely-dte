@@ -54,7 +54,7 @@ test('issues an excluded subject invoice without IVA and with the income tax wit
         ->and($dte->version)->toBe('2')
         ->and($dte->dte_type)->toBe('14')
         ->and($dte->total_amount)->toBe(9000)
-        ->and($dte->receiver_document)->toBe('01234567-8')
+        ->and($dte->receiver_document)->toBe('012345678')
         ->and($document)->not->toHaveKey('documentoRelacionado')
         ->and($document['emisor'])->not->toHaveKey('nombreComercial')
         ->and($document['receptor'])->toBe($payload['receptor'])
@@ -71,7 +71,7 @@ test('issues an excluded subject invoice without IVA and with the income tax wit
         'id' => $dte->receiver_id,
         'company_id' => $company->id,
         'document_type' => '13',
-        'document_number' => '01234567-8',
+        'document_number' => '012345678',
     ]);
 });
 
@@ -87,6 +87,17 @@ test('excluded subject invoice does not withhold income tax unless the client se
     expect(MhSchema::errors($document, MhSchema::EXCLUDED_SUBJECT))->toBe([])
         ->and($document['resumen']['reteRenta'])->toEqual(0)
         ->and($document['resumen']['totalPagar'])->toEqual(25);
+});
+
+test('an excluded subject invoice sends the DUI without its hyphen', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), excludedSubjectReceiver(['numDocumento' => '01234567-8']))->assertCreated();
+
+    $dte = Dte::query()->findOrFail($response->json('data.record.id'));
+
+    expect($dte->receiver_document)->toBe('012345678')
+        ->and(signedDocument($dte->signed_json)['receptor']['numDocumento'])->toBe('012345678');
 });
 
 test('excluded subject validation returns 422 with the official limits', function (array $payload, string $field, string $message) {
@@ -105,7 +116,9 @@ test('excluded subject validation returns 422 with the official limits', functio
     'document type must be string' => [excludedSubjectReceiver(['tipoDocumento' => ['13']]), 'receptor.tipoDocumento', 'El campo tipo de documento del receptor debe ser una cadena de caracteres.'],
     'document type in catalog' => [excludedSubjectReceiver(['tipoDocumento' => '99']), 'receptor.tipoDocumento', 'El valor seleccionado para tipo de documento del receptor no es válido.'],
     'document number required' => [excludedSubjectWithoutReceiverField('numDocumento'), 'receptor.numDocumento', 'El campo receptor.num documento es obligatorio.'],
-    'document number maximum' => [excludedSubjectReceiver(['numDocumento' => str_repeat('1', 21)]), 'receptor.numDocumento', 'El campo receptor.num documento no debe contener más de 20 caracteres.'],
+    'document number maximum' => [excludedSubjectReceiver(['tipoDocumento' => '03', 'numDocumento' => str_repeat('1', 21)]), 'receptor.numDocumento', 'El campo receptor.num documento no debe contener más de 20 caracteres.'],
+    'DUI with 9 digits' => [excludedSubjectReceiver(['numDocumento' => '0123456-7']), 'receptor.numDocumento', 'El formato del campo receptor.num documento no es válido.'],
+    'NIT with 9 or 14 digits' => [excludedSubjectReceiver(['tipoDocumento' => '36', 'numDocumento' => '0614-150592']), 'receptor.numDocumento', 'El formato del campo receptor.num documento no es válido.'],
     'name required' => [excludedSubjectWithoutReceiverField('nombre'), 'receptor.nombre', 'El campo receptor.nombre es obligatorio.'],
     'name maximum' => [excludedSubjectReceiver(['nombre' => str_repeat('a', 251)]), 'receptor.nombre', 'El campo receptor.nombre no debe contener más de 250 caracteres.'],
     'activity code in catalog' => [excludedSubjectReceiver(['codActividad' => '99999']), 'receptor.codActividad', 'El valor seleccionado para receptor.cod actividad no es válido.'],

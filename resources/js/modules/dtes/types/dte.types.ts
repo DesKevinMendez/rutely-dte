@@ -21,6 +21,7 @@ export interface DteApiRecord {
         } | null;
         receptor?: {
             nombre?: string | null;
+            tipoDocumento?: string | null;
             numDocumento?: string | null;
         } | null;
     } | null;

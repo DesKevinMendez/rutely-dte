@@ -185,7 +185,7 @@ class DteApiTestData
             'tipoDte' => '14',
             'receptor' => [
                 'tipoDocumento' => '13',
-                'numDocumento' => '01234567-8',
+                'numDocumento' => '012345678',
                 'nombre' => 'María Pérez',
                 'codActividad' => '62010',
                 'descActividad' => 'Programación informática',
