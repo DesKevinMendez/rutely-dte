@@ -6,11 +6,44 @@ use App\Models\MhCertificates;
 use App\Models\MhCredentials;
 use App\Models\User;
 use App\Role;
+use App\Services\Mh\MhAuthService;
 use App\Services\Mh\MhCertificateService;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Rutely\DteSigned\Certificate\MhCertificate;
+
+beforeEach(function () {
+    Http::preventStrayRequests();
+});
+
+/**
+ * @param  array<string, mixed>  $body
+ */
+function fakeMhLogin(array $body = ['status' => 'OK', 'body' => ['token' => 'Bearer mh-token']], int $status = 200): void
+{
+    Http::fake(['https://apitest.dtes.mh.gob.sv/seguridad/auth' => Http::response($body, $status)]);
+}
+
+/**
+ * @return array{data: array<string, mixed>}
+ */
+function mhCredentialsJson(Company $company, string $loginStatus): array
+{
+    $credentials = MhCredentials::query()->where('company_id', $company->id)->firstOrFail();
+
+    return ['data' => [
+        'id' => $credentials->id,
+        'environment' => $credentials->environment->value,
+        'nit' => $credentials->nit,
+        'active' => $credentials->active,
+        'login_status' => $loginStatus,
+        'updated_at' => $credentials->updated_at?->toJSON(),
+    ]];
+}
 
 function mhConfigurationCompany(): Company
 {
@@ -63,6 +96,7 @@ function mhConfigurationAdmin(Company $company, Role $role = Role::ADMIN): User
 test('admin can store and show MH credentials without exposing the password', function () {
     $company = mhConfigurationCompany();
     Sanctum::actingAs(mhConfigurationAdmin($company));
+    fakeMhLogin();
 
     $store = $this->postJson(route('api.v1.mh-credentials.store'), [
         'environment' => Environment::SANDBOX->value,
@@ -76,6 +110,7 @@ test('admin can store and show MH credentials without exposing the password', fu
         'environment' => Environment::SANDBOX->value,
         'nit' => $company->nit,
         'active' => true,
+        'login_status' => 'authenticated',
         'updated_at' => $updatedAt,
     ]];
 
@@ -107,6 +142,7 @@ test('MH credentials are tenant isolated and update the environment singleton', 
         'active' => true,
     ]);
     Sanctum::actingAs(mhConfigurationAdmin($company));
+    fakeMhLogin();
 
     $first = $this->postJson(route('api.v1.mh-credentials.store'), [
         'environment' => Environment::SANDBOX->value,
@@ -130,6 +166,7 @@ test('MH credentials are tenant isolated and update the environment singleton', 
             'environment' => Environment::SANDBOX->value,
             'nit' => $company->nit,
             'active' => true,
+            'login_status' => 'authenticated',
             'updated_at' => $own->updated_at?->toJSON(),
         ]]);
 });
@@ -166,9 +203,10 @@ test('store MH credentials request validation returns 422', function (array $pay
     'password must be a string' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => ['secret']], 'pwd', 'El campo contraseña de Hacienda debe ser una cadena de caracteres.'],
 ]);
 
-test('store MH credentials keeps only the digits of a NIT written with hyphens', function () {
+test('store MH credentials stores and sends to Hacienda only the digits of a NIT written with hyphens', function () {
     $company = mhConfigurationCompany();
     Sanctum::actingAs(mhConfigurationAdmin($company));
+    fakeMhLogin();
 
     $this->postJson(route('api.v1.mh-credentials.store'), [
         'environment' => '00',
@@ -177,10 +215,219 @@ test('store MH credentials keeps only the digits of a NIT written with hyphens',
     ])->assertOk()->assertJsonPath('data.nit', '06142812901015');
 
     expect(MhCredentials::query()->where('company_id', $company->id)->value('nit'))->toBe('06142812901015');
+    Http::assertSentCount(1);
+    Http::assertSent(fn (Request $request): bool => $request->isForm()
+        && $request['user'] === '06142812901015'
+        && $request['pwd'] === 'Hacienda-Prueba-01');
+});
+
+test('store MH credentials logs in to the Hacienda environment of the credentials', function (Environment $environment, string $url) {
+    Sanctum::actingAs(mhConfigurationAdmin(mhConfigurationCompany()));
+    Http::fake([$url => Http::response(['status' => 'OK', 'body' => ['token' => 'mh-token']])]);
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => $environment->value,
+        'nit' => '06142812901015',
+        'pwd' => 'Hacienda-Prueba-01',
+    ])->assertOk()->assertJsonPath('data.login_status', 'authenticated');
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === $url);
+})->with([
+    'sandbox' => [Environment::SANDBOX, 'https://apitest.dtes.mh.gob.sv/seguridad/auth'],
+    'production' => [Environment::PRODUCTION, 'https://api.dtes.mh.gob.sv/seguridad/auth'],
+]);
+
+test('store MH credentials does not save what Hacienda rejects', function (array $body, int $status) {
+    $company = mhConfigurationCompany();
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Exceptions::fake();
+    fakeMhLogin($body, $status);
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => $company->nit,
+        'pwd' => 'Hacienda-Incorrecta-01',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['pwd' => 'Hacienda rechazó el NIT o la contraseña. Las credenciales no se guardaron.']);
+
+    expect(MhCredentials::query()->where('company_id', $company->id)->exists())->toBeFalse();
+    $this->getJson(route('api.v1.mh-credentials.show'))->assertNotFound();
+    Exceptions::assertReportedCount(1);
+})->with([
+    'controlled error' => [['status' => 'ERROR', 'error' => 'Unauthorized', 'message' => 'Usuario no valido'], 200],
+    'unauthorized' => [['status' => 'ERROR', 'message' => 'Usuario no valido'], 401],
+]);
+
+test('store MH credentials does not save when Hacienda is unavailable', function (Closure $failure) {
+    $company = mhConfigurationCompany();
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Exceptions::fake();
+    Http::fake(['https://apitest.dtes.mh.gob.sv/seguridad/auth' => $failure()]);
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => $company->nit,
+        'pwd' => 'Hacienda-Prueba-01',
+    ])
+        ->assertServiceUnavailable()
+        ->assertExactJson(['message' => 'No se pudo contactar a Hacienda para comprobar el login. Las credenciales no se guardaron; inténtelo de nuevo.']);
+
+    expect(MhCredentials::query()->where('company_id', $company->id)->exists())->toBeFalse();
+    Exceptions::assertReportedCount(1);
+})->with([
+    'server error' => fn () => fn () => Http::response('Service Unavailable', 503),
+    'connection failure' => fn () => fn () => Http::failedConnection(),
+]);
+
+test('store MH credentials keeps the working ones when Hacienda rejects the new ones', function () {
+    $company = mhConfigurationCompany();
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Exceptions::fake();
+    Http::fakeSequence('https://apitest.dtes.mh.gob.sv/seguridad/auth')
+        ->push(['status' => 'OK', 'body' => ['token' => 'mh-token']])
+        ->push(['status' => 'ERROR', 'message' => 'Usuario no valido'], 401);
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => $company->nit,
+        'pwd' => 'Hacienda-Correcta-01',
+    ])->assertOk();
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => $company->nit,
+        'pwd' => 'Hacienda-Incorrecta-02',
+    ])->assertUnprocessable();
+
+    expect(MhCredentials::query()->where('company_id', $company->id)->firstOrFail()->password)->toBe('Hacienda-Correcta-01')
+        ->and(app(MhAuthService::class)->token($company->id, Environment::SANDBOX))->toBe('mh-token');
+    $this->getJson(route('api.v1.mh-credentials.show'))
+        ->assertOk()
+        ->assertExactJson(mhCredentialsJson($company, 'authenticated'));
+    Http::assertSentCount(2);
+});
+
+test('store MH credentials sends again a password that was rejected, since nothing was saved', function () {
+    $company = mhConfigurationCompany();
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Exceptions::fake();
+    Http::fakeSequence('https://apitest.dtes.mh.gob.sv/seguridad/auth')
+        ->push(['status' => 'ERROR', 'message' => 'Usuario no valido'], 401)
+        ->push(['status' => 'OK', 'body' => ['token' => 'mh-token']]);
+    $payload = ['environment' => '00', 'nit' => $company->nit, 'pwd' => 'Hacienda-Prueba-01'];
+
+    $this->postJson(route('api.v1.mh-credentials.store'), $payload)->assertUnprocessable();
+    $this->postJson(route('api.v1.mh-credentials.store'), $payload)
+        ->assertOk()
+        ->assertExactJson(mhCredentialsJson($company, 'authenticated'));
+
+    Http::assertSentCount(2);
+});
+
+test('store MH credentials logs in again when the same credentials are saved and transmissions reuse that session', function () {
+    $company = mhConfigurationCompany();
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    fakeMhLogin();
+    $payload = ['environment' => '00', 'nit' => $company->nit, 'pwd' => 'Hacienda-Prueba-01'];
+
+    $this->postJson(route('api.v1.mh-credentials.store'), $payload)->assertOk();
+    $this->postJson(route('api.v1.mh-credentials.store'), $payload)
+        ->assertOk()
+        ->assertExactJson(mhCredentialsJson($company, 'authenticated'));
+
+    expect(app(MhAuthService::class)->token($company->id, Environment::SANDBOX))->toBe('mh-token');
+    Http::assertSentCount(2);
+});
+
+test('store MH credentials lifts the rejection of stored credentials once Hacienda accepts them', function () {
+    $company = mhConfigurationCompany();
+    MhCredentials::query()->create([
+        'company_id' => $company->id,
+        'environment' => Environment::SANDBOX->value,
+        'nit' => $company->nit,
+        'password' => 'Hacienda-Prueba-01',
+        'active' => true,
+    ]);
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Http::fakeSequence('https://apitest.dtes.mh.gob.sv/seguridad/auth')
+        ->push(['status' => 'ERROR', 'message' => 'Usuario bloqueado'], 401)
+        ->push(['status' => 'OK', 'body' => ['token' => 'mh-token']])
+        ->push(['status' => 'OK', 'body' => ['token' => 'mh-token-2']]);
+    $service = app(MhAuthService::class);
+
+    expect(fn () => $service->token($company->id, Environment::SANDBOX))
+        ->toThrow(RuntimeException::class, 'Hacienda rechazó las credenciales');
+    $this->getJson(route('api.v1.mh-credentials.show'))
+        ->assertOk()
+        ->assertExactJson(mhCredentialsJson($company, 'rejected'));
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => $company->nit,
+        'pwd' => 'Hacienda-Prueba-01',
+    ])->assertOk()->assertExactJson(mhCredentialsJson($company, 'authenticated'));
+
+    $this->travel(24)->hours();
+
+    expect($service->token($company->id, Environment::SANDBOX))->toBe('mh-token-2');
+    Http::assertSentCount(3);
+});
+
+test('store MH credentials is limited to five attempts per minute', function () {
+    $company = mhConfigurationCompany();
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    fakeMhLogin();
+    $payload = ['environment' => '00', 'nit' => $company->nit, 'pwd' => 'Hacienda-Prueba-01'];
+
+    foreach (range(1, 5) as $attempt) {
+        $this->postJson(route('api.v1.mh-credentials.store'), $payload)->assertOk();
+    }
+
+    $this->postJson(route('api.v1.mh-credentials.store'), $payload)->assertTooManyRequests();
+
+    Http::assertSentCount(5);
+});
+
+test('show MH credentials reports them as unverified without contacting Hacienda', function () {
+    $company = mhConfigurationCompany();
+    MhCredentials::query()->create([
+        'company_id' => $company->id,
+        'environment' => Environment::SANDBOX->value,
+        'nit' => $company->nit,
+        'password' => 'Hacienda-Prueba-01',
+        'active' => true,
+    ]);
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Http::fake();
+
+    $this->getJson(route('api.v1.mh-credentials.show'))
+        ->assertOk()
+        ->assertExactJson(mhCredentialsJson($company, 'unverified'));
+
+    Http::assertNothingSent();
+});
+
+test('show MH credentials stops reporting the login as authenticated when the token expires', function () {
+    $company = mhConfigurationCompany();
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    fakeMhLogin();
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => $company->nit,
+        'pwd' => 'Hacienda-Prueba-01',
+    ])->assertOk()->assertJsonPath('data.login_status', 'authenticated');
+
+    $this->travel(24)->hours();
+
+    $this->getJson(route('api.v1.mh-credentials.show'))
+        ->assertOk()
+        ->assertExactJson(mhCredentialsJson($company, 'unverified'));
 });
 
 test('store MH credentials accepts a 9 digit NIT and any non-empty password', function (string $nit, string $password) {
     Sanctum::actingAs(mhConfigurationAdmin(mhConfigurationCompany()));
+    fakeMhLogin();
 
     $this->postJson(route('api.v1.mh-credentials.store'), [
         'environment' => '00',

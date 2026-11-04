@@ -71,6 +71,10 @@ return [
         'items.*.tipoItem' => [
             'not_in' => 'El tipo de ítem 4 (otros tributos por ítem) todavía no se puede emitir.',
         ],
+        'pwd' => [
+            'mh_rejected' => 'Hacienda rechazó el NIT o la contraseña. Las credenciales no se guardaron.',
+            'mh_unavailable' => 'No se pudo contactar a Hacienda para comprobar el login. Las credenciales no se guardaron; inténtelo de nuevo.',
+        ],
     ],
 
     'attributes' => [

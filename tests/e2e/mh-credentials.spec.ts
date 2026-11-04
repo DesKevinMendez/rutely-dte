@@ -1,9 +1,86 @@
+import { faker } from '@faker-js/faker';
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { authenticateDeveloper } from './support/auth';
 
+type MhLoginStatus = 'authenticated' | 'rejected' | 'unverified';
+
+const REJECTED_MESSAGE =
+    'Hacienda rechazó el NIT o la contraseña. Las credenciales no se guardaron.';
+const UNAVAILABLE_MESSAGE =
+    'No se pudo contactar a Hacienda para comprobar el login. Las credenciales no se guardaron; inténtelo de nuevo.';
+
+function storedCredentials(loginStatus: MhLoginStatus): Record<string, unknown> {
+    return {
+        id: faker.string.uuid(),
+        environment: '00',
+        nit: '06142803901121',
+        active: true,
+        login_status: loginStatus,
+        updated_at: new Date().toISOString(),
+    };
+}
+
+// The API is mocked because storing credentials logs in to Hacienda for real.
+// What the backend stores and answers is covered by MhConfigurationTest.
+async function mockMhCredentialsApi(
+    page: Page,
+    {
+        failedLogins = [],
+        stored = null,
+    }: {
+        failedLogins?: Array<{ status: number; message: string }>;
+        stored?: Record<string, unknown> | null;
+    } = {},
+): Promise<void> {
+    const session = JSON.parse(process.env.E2E_SESSION ?? 'null') as {
+        user: Record<string, unknown>;
+    };
+    let credentials = stored;
+
+    await page.route('**/api/user', async (route) => {
+        await route.fulfill({ json: session.user });
+    });
+
+    await page.route('**/api/v1/mh-credentials*', async (route) => {
+        if (route.request().method() === 'POST') {
+            const failedLogin = failedLogins.shift();
+
+            if (failedLogin) {
+                await route.fulfill({
+                    status: failedLogin.status,
+                    json: { message: failedLogin.message },
+                });
+
+                return;
+            }
+
+            credentials = storedCredentials('authenticated');
+        }
+
+        if (credentials === null) {
+            await route.fulfill({
+                status: 404,
+                json: { message: 'No encontrado.' },
+            });
+
+            return;
+        }
+
+        await route.fulfill({ json: { data: credentials } });
+    });
+}
+
+async function fillAndSave(page: Page, password: string): Promise<void> {
+    await page.locator('#mh-nit').fill('06142803901121');
+    await page.locator('#mh-password').fill(password);
+    await page.getByRole('button', { name: 'Guardar Credenciales MH' }).click();
+}
+
 test.describe('MH credentials', () => {
-    test('stores fictitious credentials once and reloads persisted metadata without duplicate requests', async ({ page }) => {
+    test('stores credentials once and reloads the metadata without duplicate requests', async ({ page }) => {
         await authenticateDeveloper(page);
+        await mockMhCredentialsApi(page);
 
         const credentialsRequests: Array<{
             method: string;
@@ -45,9 +122,6 @@ test.describe('MH credentials', () => {
 
         const saveButton = page.getByRole('button', { name: 'Guardar Credenciales MH' });
 
-        await page.locator('#mh-password').fill('playwright-secret');
-        await expect(saveButton).toBeDisabled();
-
         await page.locator('#mh-password').fill('Playwright-secret-01');
 
         const credentialsResponsePromise = page.waitForResponse(
@@ -80,10 +154,11 @@ test.describe('MH credentials', () => {
 
         await expect(page.getByText('ACTIVO', { exact: true })).toBeVisible();
         await expect(page.getByText('0614-280390-112-1', { exact: true })).toBeVisible();
-        await expect(page.getByText(/Credenciales guardadas correctamente/)).toBeVisible();
+        await expect(page.getByText(/Login exitoso en Hacienda/)).toBeVisible();
+        await expect(page.getByText('Exitoso', { exact: true })).toBeVisible();
+        await expect(page.locator('#mh-nit')).toHaveValue('');
+        await expect(page.locator('#mh-password')).toHaveValue('');
 
-        // Reload to prove the metadata was persisted in the database rather
-        // than only being kept in the current Vue state.
         credentialsRequests.length = 0;
         await page.reload();
 
@@ -105,4 +180,80 @@ test.describe('MH credentials', () => {
         const reloadGetUrl = new URL(reloadGetRequests[0].url);
         expect(reloadGetUrl.searchParams.get('environment')).toBe('00');
     });
+
+    test('shows the error of a rejected login, stores nothing and lets the password be corrected', async ({ page }) => {
+        await authenticateDeveloper(page);
+        await mockMhCredentialsApi(page, {
+            failedLogins: [{ status: 422, message: REJECTED_MESSAGE }],
+        });
+
+        await page.goto('/#/mh-credentials');
+        await fillAndSave(page, 'Playwright-wrong-01');
+
+        await expect(page.getByText(REJECTED_MESSAGE)).toBeVisible();
+        await expect(page.getByText('Sin Credenciales Registradas', { exact: true })).toBeVisible();
+        await expect(page.locator('#mh-nit')).toHaveValue('0614-280390-112-1');
+        await expect(page.locator('#mh-password')).toHaveValue('Playwright-wrong-01');
+
+        await page.locator('#mh-password').fill('Playwright-right-02');
+        await page.getByRole('button', { name: 'Guardar Credenciales MH' }).click();
+
+        await expect(page.getByText(/Login exitoso en Hacienda/)).toBeVisible();
+        await expect(page.getByText(REJECTED_MESSAGE)).toHaveCount(0);
+        await expect(page.getByText('Exitoso', { exact: true })).toBeVisible();
+        await expect(page.locator('#mh-nit')).toHaveValue('');
+        await expect(page.locator('#mh-password')).toHaveValue('');
+    });
+
+    test('shows the error when Hacienda is unavailable and keeps the stored credentials', async ({ page }) => {
+        await authenticateDeveloper(page);
+        await mockMhCredentialsApi(page, {
+            failedLogins: [{ status: 503, message: UNAVAILABLE_MESSAGE }],
+            stored: storedCredentials('authenticated'),
+        });
+
+        await page.goto('/#/mh-credentials');
+        await fillAndSave(page, 'Playwright-secret-01');
+
+        await expect(page.getByText(UNAVAILABLE_MESSAGE)).toBeVisible();
+        await expect(page.getByText(/Login exitoso en Hacienda/)).toHaveCount(0);
+        await expect(page.getByText('Exitoso', { exact: true })).toBeVisible();
+        await expect(page.locator('#mh-password')).toHaveValue('Playwright-secret-01');
+    });
+
+    const loginStates: Array<{
+        loginStatus: MhLoginStatus;
+        badge: string;
+        note: RegExp;
+    }> = [
+        {
+            loginStatus: 'authenticated',
+            badge: 'Exitoso',
+            note: /Hacienda aceptó estas credenciales/,
+        },
+        {
+            loginStatus: 'rejected',
+            badge: 'Rechazado',
+            note: /Hacienda rechazó estas credenciales/,
+        },
+        {
+            loginStatus: 'unverified',
+            badge: 'Sin verificar',
+            note: /No hay un login reciente/,
+        },
+    ];
+
+    for (const { loginStatus, badge, note } of loginStates) {
+        test(`shows the stored credentials as ${loginStatus}`, async ({ page }) => {
+            await authenticateDeveloper(page);
+            await mockMhCredentialsApi(page, {
+                stored: storedCredentials(loginStatus),
+            });
+
+            await page.goto('/#/mh-credentials');
+
+            await expect(page.getByText(badge, { exact: true })).toBeVisible();
+            await expect(page.getByText(note)).toBeVisible();
+        });
+    }
 });
