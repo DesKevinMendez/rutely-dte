@@ -88,6 +88,19 @@ function mhConfigurationCompany(): Company
     ]);
 }
 
+function mhConfigurationOtherCompany(Company $company): Company
+{
+    return Company::query()->create(array_merge($company->only([
+        'address', 'phone', 'nrc', 'commercial_name', 'economic_activity_code', 'establishment_type',
+        'departament_id', 'municipality_id', 'district_id', 'mh_establishment_code', 'mh_pos_code',
+        'own_establishment_code', 'own_pos_code',
+    ]), [
+        'name' => 'Other Company',
+        'nit' => '06142812901016',
+        'email' => 'other@rutely.biz',
+    ]));
+}
+
 function mhConfigurationAdmin(Company $company, Role $role = Role::ADMIN): User
 {
     return User::factory()->withRole($role)->create(['company_id' => $company->id]);
@@ -324,19 +337,209 @@ test('store MH credentials sends again a password that was rejected, since nothi
     Http::assertSentCount(2);
 });
 
-test('store MH credentials logs in again when the same credentials are saved and transmissions reuse that session', function () {
+test('store MH credentials logs in again when a record exists and updates it along with the session', function (string $password) {
     $company = mhConfigurationCompany();
     Sanctum::actingAs(mhConfigurationAdmin($company));
-    fakeMhLogin();
-    $payload = ['environment' => '00', 'nit' => $company->nit, 'pwd' => 'Hacienda-Prueba-01'];
+    Http::fakeSequence('https://apitest.dtes.mh.gob.sv/seguridad/auth')
+        ->push(['status' => 'OK', 'body' => ['token' => 'mh-token-1']])
+        ->push(['status' => 'OK', 'body' => ['token' => 'mh-token-2']]);
 
-    $this->postJson(route('api.v1.mh-credentials.store'), $payload)->assertOk();
-    $this->postJson(route('api.v1.mh-credentials.store'), $payload)
-        ->assertOk()
-        ->assertExactJson(mhCredentialsJson($company, 'authenticated'));
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => $company->nit,
+        'pwd' => 'Hacienda-Prueba-01',
+    ])->assertOk();
+    $firstUpdatedAt = MhCredentials::query()->where('company_id', $company->id)->firstOrFail()->updated_at;
 
-    expect(app(MhAuthService::class)->token($company->id, Environment::SANDBOX))->toBe('mh-token');
+    $this->travel(1)->hours();
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => $company->nit,
+        'pwd' => $password,
+    ])->assertOk()->assertExactJson(mhCredentialsJson($company, 'authenticated'));
+
+    $credentials = MhCredentials::query()->where('company_id', $company->id)->sole();
+
+    expect($credentials->password)->toBe($password)
+        ->and($credentials->updated_at->greaterThan($firstUpdatedAt))->toBeTrue()
+        ->and(app(MhAuthService::class)->token($company->id, Environment::SANDBOX))->toBe('mh-token-2');
     Http::assertSentCount(2);
+})->with([
+    'same password' => ['Hacienda-Prueba-01'],
+    'new password' => ['Hacienda-Nueva-02'],
+]);
+
+test('store MH credentials is forbidden with a NIT registered to another company', function (string $nit) {
+    $company = mhConfigurationCompany();
+    $otherCompany = mhConfigurationOtherCompany($company);
+    MhCredentials::query()->create([
+        'company_id' => $otherCompany->id,
+        'environment' => Environment::SANDBOX->value,
+        'nit' => '012345678',
+        'password' => 'other-secret',
+        'active' => true,
+    ]);
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Http::fake();
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => $nit,
+        'pwd' => 'Hacienda-Prueba-01',
+    ])
+        ->assertForbidden()
+        ->assertJson(['message' => 'No está autorizado para registrar credenciales con este NIT.']);
+
+    Http::assertNothingSent();
+    expect(MhCredentials::query()->where('company_id', $company->id)->exists())->toBeFalse()
+        ->and(MhCredentials::query()->where('company_id', $otherCompany->id)->sole()->password)->toBe('other-secret');
+})->with([
+    'NIT of the company' => ['06142812901016'],
+    'NIT of the company written with hyphens' => ['0614-281290-101-6'],
+    'NIT stored in the credentials of the company' => ['012345678'],
+]);
+
+test('store MH credentials validates the payload before checking who the NIT belongs to', function () {
+    $company = mhConfigurationCompany();
+    mhConfigurationOtherCompany($company);
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Http::fake();
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => '06142812901016',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['pwd' => 'El campo contraseña de Hacienda es obligatorio.']);
+
+    Http::assertNothingSent();
+});
+
+test('store MH credentials accepts a NIT that only the own company has registered', function () {
+    $company = mhConfigurationCompany();
+    mhConfigurationOtherCompany($company);
+    MhCredentials::query()->create([
+        'company_id' => $company->id,
+        'environment' => Environment::PRODUCTION->value,
+        'nit' => '012345678',
+        'password' => 'Hacienda-Prueba-01',
+        'active' => true,
+    ]);
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    fakeMhLogin();
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => '012345678',
+        'pwd' => 'Hacienda-Prueba-01',
+    ])->assertOk()->assertJsonPath('data.nit', '012345678');
+});
+
+test('store MH credentials accepts the same NIT of a company in sandbox and production', function (string $firstEnvironment, string $secondEnvironment) {
+    $company = mhConfigurationCompany();
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Http::fake(['*/seguridad/auth' => Http::response(['status' => 'OK', 'body' => ['token' => 'mh-token']])]);
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => $firstEnvironment,
+        'nit' => $company->nit,
+        'pwd' => 'Hacienda-Prueba-01',
+    ])->assertOk();
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => $secondEnvironment,
+        'nit' => '0614-281290-101-5',
+        'pwd' => 'Hacienda-Prueba-01',
+    ])->assertOk();
+
+    expect(MhCredentials::query()->where('company_id', $company->id)->where('nit', $company->nit)->count())->toBe(2);
+
+    foreach ([$firstEnvironment, $secondEnvironment] as $environment) {
+        $this->getJson(route('api.v1.mh-credentials.show', ['environment' => $environment]))
+            ->assertOk()
+            ->assertJson(['data' => [
+                'environment' => $environment,
+                'nit' => $company->nit,
+                'login_status' => 'authenticated',
+            ]]);
+    }
+
+    Http::assertSentCount(2);
+})->with([
+    'sandbox first' => ['00', '01'],
+    'production first' => ['01', '00'],
+]);
+
+test('store MH credentials is forbidden with a NIT different from the other environment of the company', function (Environment $otherEnvironment, string $environment) {
+    $company = mhConfigurationCompany();
+    MhCredentials::query()->create([
+        'company_id' => $company->id,
+        'environment' => $otherEnvironment->value,
+        'nit' => $company->nit,
+        'password' => 'Hacienda-Prueba-01',
+        'active' => true,
+    ]);
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Http::fake();
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => $environment,
+        'nit' => '012345678',
+        'pwd' => 'Hacienda-Prueba-01',
+    ])
+        ->assertForbidden()
+        ->assertJson(['message' => 'El NIT debe ser el mismo en los ambientes de pruebas y producción.']);
+
+    Http::assertNothingSent();
+    expect(MhCredentials::query()->where('company_id', $company->id)->sole()->nit)->toBe($company->nit);
+})->with([
+    'production differs from sandbox' => [Environment::SANDBOX, '01'],
+    'sandbox differs from production' => [Environment::PRODUCTION, '00'],
+]);
+
+test('store MH credentials lets a company change the NIT while the other environment is empty', function () {
+    $company = mhConfigurationCompany();
+    MhCredentials::query()->create([
+        'company_id' => $company->id,
+        'environment' => Environment::SANDBOX->value,
+        'nit' => $company->nit,
+        'password' => 'Hacienda-Prueba-01',
+        'active' => true,
+    ]);
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    fakeMhLogin();
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '00',
+        'nit' => '012345678',
+        'pwd' => 'Hacienda-Prueba-01',
+    ])->assertOk()->assertExactJson(mhCredentialsJson($company, 'authenticated'));
+
+    expect(MhCredentials::query()->where('company_id', $company->id)->sole()->nit)->toBe('012345678');
+});
+
+test('store MH credentials reports a NIT of another company before comparing it with the other environment', function () {
+    $company = mhConfigurationCompany();
+    mhConfigurationOtherCompany($company);
+    MhCredentials::query()->create([
+        'company_id' => $company->id,
+        'environment' => Environment::SANDBOX->value,
+        'nit' => $company->nit,
+        'password' => 'Hacienda-Prueba-01',
+        'active' => true,
+    ]);
+    Sanctum::actingAs(mhConfigurationAdmin($company));
+    Http::fake();
+
+    $this->postJson(route('api.v1.mh-credentials.store'), [
+        'environment' => '01',
+        'nit' => '06142812901016',
+        'pwd' => 'Hacienda-Prueba-01',
+    ])
+        ->assertForbidden()
+        ->assertJson(['message' => 'No está autorizado para registrar credenciales con este NIT.']);
+
+    Http::assertNothingSent();
 });
 
 test('store MH credentials lifts the rejection of stored credentials once Hacienda accepts them', function () {

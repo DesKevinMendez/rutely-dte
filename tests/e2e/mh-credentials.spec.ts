@@ -9,6 +9,8 @@ const REJECTED_MESSAGE =
     'Hacienda rechazó el NIT o la contraseña. Las credenciales no se guardaron.';
 const UNAVAILABLE_MESSAGE =
     'No se pudo contactar a Hacienda para comprobar el login. Las credenciales no se guardaron; inténtelo de nuevo.';
+const FORBIDDEN_NIT_MESSAGE =
+    'No está autorizado para registrar credenciales con este NIT.';
 
 function storedCredentials(loginStatus: MhLoginStatus): Record<string, unknown> {
     return {
@@ -26,10 +28,10 @@ function storedCredentials(loginStatus: MhLoginStatus): Record<string, unknown> 
 async function mockMhCredentialsApi(
     page: Page,
     {
-        failedLogins = [],
+        failedSaves = [],
         stored = null,
     }: {
-        failedLogins?: Array<{ status: number; message: string }>;
+        failedSaves?: Array<{ status: number; message: string }>;
         stored?: Record<string, unknown> | null;
     } = {},
 ): Promise<void> {
@@ -44,12 +46,12 @@ async function mockMhCredentialsApi(
 
     await page.route('**/api/v1/mh-credentials*', async (route) => {
         if (route.request().method() === 'POST') {
-            const failedLogin = failedLogins.shift();
+            const failedSave = failedSaves.shift();
 
-            if (failedLogin) {
+            if (failedSave) {
                 await route.fulfill({
-                    status: failedLogin.status,
-                    json: { message: failedLogin.message },
+                    status: failedSave.status,
+                    json: { message: failedSave.message },
                 });
 
                 return;
@@ -184,7 +186,7 @@ test.describe('MH credentials', () => {
     test('shows the error of a rejected login, stores nothing and lets the password be corrected', async ({ page }) => {
         await authenticateDeveloper(page);
         await mockMhCredentialsApi(page, {
-            failedLogins: [{ status: 422, message: REJECTED_MESSAGE }],
+            failedSaves: [{ status: 422, message: REJECTED_MESSAGE }],
         });
 
         await page.goto('/#/mh-credentials');
@@ -208,7 +210,7 @@ test.describe('MH credentials', () => {
     test('shows the error when Hacienda is unavailable and keeps the stored credentials', async ({ page }) => {
         await authenticateDeveloper(page);
         await mockMhCredentialsApi(page, {
-            failedLogins: [{ status: 503, message: UNAVAILABLE_MESSAGE }],
+            failedSaves: [{ status: 503, message: UNAVAILABLE_MESSAGE }],
             stored: storedCredentials('authenticated'),
         });
 
@@ -219,6 +221,19 @@ test.describe('MH credentials', () => {
         await expect(page.getByText(/Login exitoso en Hacienda/)).toHaveCount(0);
         await expect(page.getByText('Exitoso', { exact: true })).toBeVisible();
         await expect(page.locator('#mh-password')).toHaveValue('Playwright-secret-01');
+    });
+
+    test('shows the error when the NIT belongs to another company and stores nothing', async ({ page }) => {
+        await authenticateDeveloper(page);
+        await mockMhCredentialsApi(page, {
+            failedSaves: [{ status: 403, message: FORBIDDEN_NIT_MESSAGE }],
+        });
+
+        await page.goto('/#/mh-credentials');
+        await fillAndSave(page, 'Playwright-secret-01');
+
+        await expect(page.getByText(FORBIDDEN_NIT_MESSAGE)).toBeVisible();
+        await expect(page.getByText('Sin Credenciales Registradas', { exact: true })).toBeVisible();
     });
 
     const loginStates: Array<{

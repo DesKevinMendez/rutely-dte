@@ -9,17 +9,22 @@ use App\Http\Requests\Mh\StoreMhCredentialsRequest;
 use App\Models\MhCredentials;
 use App\Response\CommonResponse;
 use App\Services\Mh\MhAuthService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 class MhCredentialsController extends Controller
 {
+    use AuthorizesRequests;
+
     public function __construct(private readonly MhAuthService $authService) {}
 
     public function store(StoreMhCredentialsRequest $request): CommonResponse
     {
         $data = $request->validated();
+
+        $this->authorize('createWithNit', [MhCredentials::class, $data['nit'], $data['environment']]);
 
         try {
             $token = $this->authService->login($data['nit'], $data['pwd'], $data['environment']);
@@ -47,6 +52,7 @@ class MhCredentialsController extends Controller
             ],
         );
 
+        $credentials->touch();
         $credentials->refresh();
         $this->authService->rememberToken($credentials, $token);
 
