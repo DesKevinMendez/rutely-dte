@@ -361,8 +361,8 @@ class DteSeeder extends Seeder
      */
     private function controlNumber(Company $company, array $fixture): string
     {
-        $establishment = strtoupper(str_pad((string) $company->own_establishment_code, 4, '0', STR_PAD_LEFT));
-        $pointOfSale = strtoupper(str_pad((string) $company->own_pos_code, 4, '0', STR_PAD_LEFT));
+        $establishment = strtoupper(str_pad((string) $company->mh_establishment_code, 4, '0', STR_PAD_LEFT));
+        $pointOfSale = strtoupper(str_pad((string) $company->mh_pos_code, 4, '0', STR_PAD_LEFT));
         $sequence = str_pad((string) $fixture['sequence'], 15, '0', STR_PAD_LEFT);
 
         return sprintf('DTE-%s-%s%s-%s', $fixture['dte_type'], $establishment, $pointOfSale, $sequence);

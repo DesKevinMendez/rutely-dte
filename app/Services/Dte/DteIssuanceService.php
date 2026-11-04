@@ -100,8 +100,8 @@ class DteIssuanceService
         return sprintf(
             'DTE-%s-%s%s-%s',
             $dteType,
-            $company->own_establishment_code,
-            $company->own_pos_code,
+            $company->mh_establishment_code,
+            $company->mh_pos_code,
             str_pad((string) $correlative, 15, '0', STR_PAD_LEFT),
         );
     }

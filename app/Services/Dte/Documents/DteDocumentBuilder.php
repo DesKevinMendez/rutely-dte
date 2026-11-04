@@ -55,11 +55,11 @@ abstract class DteDocumentBuilder
             throw new DteIssuerProfileException('La empresa no tiene un distrito configurado, es obligatorio para emitir DTE.');
         }
 
-        if (preg_match(MhCatalog::ESTABLISHMENT_CODE_PATTERN, (string) $company->own_establishment_code) !== 1) {
+        if (preg_match(MhCatalog::ESTABLISHMENT_CODE_PATTERN, (string) $company->mh_establishment_code) !== 1) {
             throw new DteIssuerProfileException('El código de establecimiento de la empresa debe iniciar con M, B, S o P seguido de 3 números.');
         }
 
-        if (preg_match(MhCatalog::POS_CODE_PATTERN, (string) $company->own_pos_code) !== 1) {
+        if (preg_match(MhCatalog::POS_CODE_PATTERN, (string) $company->mh_pos_code) !== 1) {
             throw new DteIssuerProfileException('El código de punto de venta de la empresa debe iniciar con P seguido de 3 números.');
         }
     }

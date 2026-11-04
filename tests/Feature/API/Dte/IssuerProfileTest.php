@@ -27,8 +27,8 @@ test('a company with an incomplete issuer profile cannot issue and consumes no c
         ->and(DteCorrelative::query()->count())->toBe(0);
 })->with([
     'no district' => [['district_id' => null], DteApiTestData::validDtePayload(), 'La empresa no tiene un distrito configurado, es obligatorio para emitir DTE.'],
-    'establishment code without letter' => [['own_establishment_code' => '0001'], DteApiTestData::validDtePayload(), 'El código de establecimiento de la empresa debe iniciar con M, B, S o P seguido de 3 números.'],
-    'point of sale code without letter' => [['own_pos_code' => '0001'], DteApiTestData::validDtePayload(), 'El código de punto de venta de la empresa debe iniciar con P seguido de 3 números.'],
+    'establishment code without letter' => [['mh_establishment_code' => '0001'], DteApiTestData::validDtePayload(), 'El código de establecimiento de la empresa debe iniciar con M, B, S o P seguido de 3 números.'],
+    'point of sale code without letter' => [['mh_pos_code' => '0001'], DteApiTestData::validDtePayload(), 'El código de punto de venta de la empresa debe iniciar con P seguido de 3 números.'],
     'consumer invoice without NRC' => [['nrc' => null], DteApiTestData::validDtePayload(), 'La empresa no tiene un NRC configurado, es obligatorio para emitir este tipo de DTE.'],
     'tax credit without NRC' => [['nrc' => null], DteApiTestData::validTaxCreditPayload(), 'La empresa no tiene un NRC configurado, es obligatorio para emitir este tipo de DTE.'],
 ]);

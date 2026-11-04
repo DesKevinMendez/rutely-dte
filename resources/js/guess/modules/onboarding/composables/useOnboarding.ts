@@ -182,9 +182,8 @@ export default function useOnboarding(
         municipality_id: form.municipalityId,
         district_id: form.districtId || null,
         email: form.email,
-        mh_establishment_code:
-            initialCompany?.mh_establishment_code ?? form.ownEstablishmentCode,
-        mh_pos_code: initialCompany?.mh_pos_code ?? form.ownPosCode,
+        mh_establishment_code: form.ownEstablishmentCode,
+        mh_pos_code: form.ownPosCode,
         own_establishment_code: form.ownEstablishmentCode,
         own_pos_code: form.ownPosCode,
     });

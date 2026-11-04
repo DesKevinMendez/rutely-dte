@@ -57,8 +57,8 @@ function companyCrudPayload(): array
         'municipality_id' => $municipalityId,
         'district_id' => $districtId,
         'email' => 'billing@rutely.biz',
-        'mh_establishment_code' => '0001',
-        'mh_pos_code' => '0001',
+        'mh_establishment_code' => 'M001',
+        'mh_pos_code' => 'P001',
         'own_establishment_code' => 'M001',
         'own_pos_code' => 'P001',
     ];
@@ -227,9 +227,9 @@ test('update company request validation returns 422', function (string $field, m
     'own establishment code cannot be null' => ['own_establishment_code', null, 'El campo código propio de establecimiento es obligatorio.'],
     'own establishment code must be a string' => ['own_establishment_code', ['0001'], 'El campo código propio de establecimiento debe ser una cadena de caracteres.'],
     'own establishment code has size four' => ['own_establishment_code', '001', 'El campo código propio de establecimiento debe contener 4 caracteres.'],
-    'own establishment code has the official format' => ['own_establishment_code', '0001', 'El formato del campo código propio de establecimiento no es válido.'],
+    'MH establishment code has the official format' => ['mh_establishment_code', '0001', 'El formato del campo código de establecimiento MH no es válido.'],
     'own pos code cannot be null' => ['own_pos_code', null, 'El campo código propio de punto de venta es obligatorio.'],
     'own pos code must be a string' => ['own_pos_code', ['0001'], 'El campo código propio de punto de venta debe ser una cadena de caracteres.'],
     'own pos code has size four' => ['own_pos_code', '001', 'El campo código propio de punto de venta debe contener 4 caracteres.'],
-    'own point of sale code has the official format' => ['own_pos_code', '0001', 'El formato del campo código propio de punto de venta no es válido.'],
+    'MH point of sale code has the official format' => ['mh_pos_code', '0001', 'El formato del campo código de punto de venta MH no es válido.'],
 ]);

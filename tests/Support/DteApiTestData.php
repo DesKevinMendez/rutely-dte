@@ -84,8 +84,8 @@ class DteApiTestData
             'municipality_id' => $municipalityId,
             'district_id' => $districtId,
             'email' => 'billing@rutely.biz',
-            'mh_establishment_code' => '0001',
-            'mh_pos_code' => '0001',
+            'mh_establishment_code' => 'M001',
+            'mh_pos_code' => 'P001',
             'own_establishment_code' => 'M001',
             'own_pos_code' => 'P001',
         ], $overrides));

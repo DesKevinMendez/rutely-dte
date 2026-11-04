@@ -31,10 +31,10 @@ class UpdateCompanyRequest extends FormRequest
             'municipality_id' => ['sometimes', 'required', 'uuid', 'exists:municipalities,id'],
             'district_id' => ['bail', 'sometimes', 'required', 'uuid', 'exists:districts,id'],
             'email' => ['sometimes', 'required', 'email', 'min:6', 'max:100'],
-            'mh_establishment_code' => ['sometimes', 'required', 'string', 'size:4'],
-            'mh_pos_code' => ['sometimes', 'required', 'string', 'size:4'],
-            'own_establishment_code' => ['sometimes', 'required', 'string', 'size:4', 'regex:'.MhCatalog::ESTABLISHMENT_CODE_PATTERN],
-            'own_pos_code' => ['sometimes', 'required', 'string', 'size:4', 'regex:'.MhCatalog::POS_CODE_PATTERN],
+            'mh_establishment_code' => ['sometimes', 'required', 'string', 'size:4', 'regex:'.MhCatalog::ESTABLISHMENT_CODE_PATTERN],
+            'mh_pos_code' => ['sometimes', 'required', 'string', 'size:4', 'regex:'.MhCatalog::POS_CODE_PATTERN],
+            'own_establishment_code' => ['sometimes', 'required', 'string', 'size:4'],
+            'own_pos_code' => ['sometimes', 'required', 'string', 'size:4'],
         ];
     }
 }

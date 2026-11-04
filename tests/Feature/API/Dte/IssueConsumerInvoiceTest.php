@@ -282,6 +282,24 @@ test('control numbers follow the official structure with a correlative per docum
         ->and($controlNumber(DteApiTestData::validExcludedSubjectPayload()))->toBe('DTE-14-M001P001-000000000000001');
 });
 
+test('the control number uses the codes assigned by Hacienda and the issuer keeps its own', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue([
+        'mh_establishment_code' => 'S005',
+        'mh_pos_code' => 'P007',
+        'own_establishment_code' => 'INT1',
+        'own_pos_code' => 'CAJ1',
+    ]), Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), DteApiTestData::validDtePayload())->assertCreated();
+
+    $document = signedDocument(Dte::query()->findOrFail($response->json('data.record.id'))->signed_json);
+
+    expect(MhSchema::errors($document, MhSchema::CONSUMER_INVOICE))->toBe([])
+        ->and($document['identificacion']['numeroControl'])->toBe('DTE-01-S005P007-000000000000001')
+        ->and($document['emisor']['codEstable'])->toBe('INT1')
+        ->and($document['emisor']['codPuntoVenta'])->toBe('CAJ1');
+});
+
 test('a company API token issues the consumer invoice for its own company', function () {
     $company = companyReadyToIssue();
     $token = $company->createToken('External ERP', ['create:dte'])->plainTextToken;
