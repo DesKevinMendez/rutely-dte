@@ -68,6 +68,9 @@ return [
         'certificadoXml' => [
             'max' => 'El certificado de Hacienda no debe pesar más de 2 MB.',
         ],
+        'items.*.tipoItem' => [
+            'not_in' => 'El tipo de ítem 4 (otros tributos por ítem) todavía no se puede emitir.',
+        ],
     ],
 
     'attributes' => [
