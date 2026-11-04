@@ -213,7 +213,7 @@ class DteSeeder extends Seeder
             [
                 'generation_code' => 'A5555555-5555-4555-8555-555555555555',
                 'dte_type' => '03',
-                'sequence' => 1,
+                'sequence' => 5,
                 'date' => '2026-10-22',
                 'time' => '09:18:00',
                 'seal' => 'DEMO-SELLO-MH-ADM-0005',
@@ -369,11 +369,11 @@ class DteSeeder extends Seeder
     }
 
     /**
-     * @param  array{dte_type: string, sequence: int}  $fixture
+     * @param  array{date: string, sequence: int}  $fixture
      */
     private function syncCorrelative(Company $company, array $fixture): void
     {
-        $key = sprintf('%s-%s%s', $fixture['dte_type'], $company->own_establishment_code, $company->own_pos_code);
+        $key = DteCorrelative::keyFor($company, (int) substr($fixture['date'], 0, 4));
         $correlative = DteCorrelative::query()->firstOrCreate(
             ['company_id' => $company->id, 'key' => $key],
             ['last_value' => (string) $fixture['sequence']],

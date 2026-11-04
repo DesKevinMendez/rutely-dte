@@ -6,6 +6,7 @@ use App\Role;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\DteTypeSeeder;
 use Database\Seeders\ItemTypeSeeder;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
 use Tests\Support\MhSchema;
@@ -268,7 +269,55 @@ test('consumer invoice on credit keeps the payment terms sent by the client', fu
         ]]);
 });
 
-test('control numbers follow the official structure with a correlative per document type', function () {
+test('document types and points of sale share the consecutive of their establishment', function () {
+    $company = companyReadyToIssue();
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+
+    $controlNumber = fn (array $payload): string => $this->postJson(route('api.v1.dtes.store'), $payload)
+        ->assertCreated()
+        ->json('data.record.control_number');
+
+    expect($controlNumber(DteApiTestData::validDtePayload()))->toBe('DTE-01-M001P001-000000000000001')
+        ->and($controlNumber(DteApiTestData::validTaxCreditPayload()))->toBe('DTE-03-M001P001-000000000000002');
+
+    $company->update(['mh_pos_code' => 'P002']);
+
+    expect($controlNumber(DteApiTestData::validExcludedSubjectPayload()))->toBe('DTE-14-M001P002-000000000000003');
+});
+
+test('each establishment keeps its own consecutive', function () {
+    $company = companyReadyToIssue();
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+
+    $controlNumber = fn (): string => $this->postJson(route('api.v1.dtes.store'), DteApiTestData::validDtePayload())
+        ->assertCreated()
+        ->json('data.record.control_number');
+
+    expect($controlNumber())->toBe('DTE-01-M001P001-000000000000001');
+
+    $company->update(['mh_establishment_code' => 'S002']);
+
+    expect($controlNumber())->toBe('DTE-01-S002P001-000000000000001');
+});
+
+test('the consecutive restarts with each fiscal year in El Salvador', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+
+    $controlNumber = fn (): string => $this->postJson(route('api.v1.dtes.store'), DteApiTestData::validDtePayload())
+        ->assertCreated()
+        ->json('data.record.control_number');
+
+    $this->travelTo(Carbon::parse('2026-12-31 23:59:00', 'America/El_Salvador'));
+
+    expect($controlNumber())->toBe('DTE-01-M001P001-000000000000001')
+        ->and($controlNumber())->toBe('DTE-01-M001P001-000000000000002');
+
+    $this->travelTo(Carbon::parse('2027-01-01 00:00:00', 'America/El_Salvador'));
+
+    expect($controlNumber())->toBe('DTE-01-M001P001-000000000000001');
+});
+
+test('control numbers follow the official structure', function () {
     $company = companyReadyToIssue();
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
 
@@ -278,8 +327,8 @@ test('control numbers follow the official structure with a correlative per docum
 
     expect($controlNumber(DteApiTestData::validDtePayload()))->toBe('DTE-01-M001P001-000000000000001')
         ->and($controlNumber(DteApiTestData::validDtePayload()))->toBe('DTE-01-M001P001-000000000000002')
-        ->and($controlNumber(DteApiTestData::validTaxCreditPayload()))->toBe('DTE-03-M001P001-000000000000001')
-        ->and($controlNumber(DteApiTestData::validExcludedSubjectPayload()))->toBe('DTE-14-M001P001-000000000000001');
+        ->and($controlNumber(DteApiTestData::validTaxCreditPayload()))->toBe('DTE-03-M001P001-000000000000003')
+        ->and($controlNumber(DteApiTestData::validExcludedSubjectPayload()))->toBe('DTE-14-M001P001-000000000000004');
 });
 
 test('the control number uses the codes assigned by Hacienda and the issuer keeps its own', function () {

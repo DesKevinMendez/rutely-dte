@@ -34,10 +34,10 @@ class DteIssuanceService
         $builder->ensureIssuerCanEmit($company);
 
         $environment = (string) $company->environment;
-        $correlative = $this->nextCorrelative($company, $dteType->value);
+        $now = now('America/El_Salvador');
+        $correlative = $this->nextCorrelative($company, $now->year);
         $generationCode = strtoupper((string) Str::uuid());
         $controlNumber = $this->controlNumber($company, $dteType->value, $correlative);
-        $now = now('America/El_Salvador');
 
         $document = $builder->build($company, $payload, $controlNumber, $generationCode, $now);
         $receiverIdentity = DteDocumentBuilder::receiverIdentity($document['receptor']);
@@ -78,9 +78,9 @@ class DteIssuanceService
         ];
     }
 
-    private function nextCorrelative(Company $company, string $dteType): int
+    private function nextCorrelative(Company $company, int $fiscalYear): int
     {
-        $key = sprintf('%s-%s%s', $dteType, $company->own_establishment_code, $company->own_pos_code);
+        $key = DteCorrelative::keyFor($company, $fiscalYear);
 
         return DB::transaction(function () use ($company, $key): int {
             $row = DteCorrelative::query()->firstOrCreate(

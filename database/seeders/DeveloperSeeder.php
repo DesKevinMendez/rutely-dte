@@ -173,7 +173,7 @@ class DeveloperSeeder extends Seeder
         DteCorrelative::query()->updateOrCreate(
             [
                 'company_id' => $company->id,
-                'key' => '01-M001P001',
+                'key' => DteCorrelative::keyFor($company, now('America/El_Salvador')->year),
             ],
             ['last_value' => '3'],
         );
