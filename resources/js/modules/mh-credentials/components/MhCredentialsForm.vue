@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BaseButton, Card, FormInput } from 'ornito';
+import { Alert, BaseButton, Card, FormInput } from 'ornito';
 import { computed, ref, watch } from 'vue';
 import type {
     MhCredentialsPayload,
@@ -9,10 +9,12 @@ import type {
 const {
     selectedEnvironment,
     saveSuccess,
+    saveError = null,
     isSubmitting = false,
 } = defineProps<{
     selectedEnvironment: MhEnvironment;
     saveSuccess: boolean;
+    saveError?: string | null;
     isSubmitting?: boolean;
 }>();
 
@@ -57,15 +59,6 @@ const submit = (): void => {
         subtitle="Configure o rote el NIT y la contraseña de autenticación para el portal del Ministerio de Hacienda."
     >
         <form class="space-y-5" @submit.prevent="submit">
-            <div
-                v-if="saveSuccess"
-                class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-            >
-                Credenciales guardadas correctamente para el ambiente de
-                <strong>{{ selectedEnvironment }}</strong
-                >.
-            </div>
-
             <div
                 class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/60 dark:text-blue-300"
             >
@@ -148,6 +141,16 @@ const submit = (): void => {
                 placeholder="Ingrese la contraseña del portal MH"
             />
 
+            <Alert v-if="saveError" type="danger">
+                {{ saveError }}
+            </Alert>
+            <Alert v-else-if="saveSuccess" type="success">
+                Login exitoso en Hacienda. Credenciales guardadas para el
+                ambiente de
+                <strong>{{ selectedEnvironment }}</strong
+                >.
+            </Alert>
+
             <div
                 class="flex justify-end border-t border-gray-200 pt-3 dark:border-gray-700"
             >
@@ -158,7 +161,9 @@ const submit = (): void => {
                     :disabled="!canSubmit"
                 >
                     {{
-                        isSubmitting ? 'Guardando…' : 'Guardar Credenciales MH'
+                        isSubmitting
+                            ? 'Verificando con Hacienda…'
+                            : 'Guardar Credenciales MH'
                     }}
                 </BaseButton>
             </div>

@@ -7,6 +7,7 @@ import MhCredentialsStatusCard from './MhCredentialsStatusCard.vue';
 const {
     selectedEnvironment,
     saveSuccess,
+    saveError,
     credentialsMetadata,
     isLoading,
     error,
@@ -44,6 +45,7 @@ const {
                 <MhCredentialsForm
                     :selected-environment="selectedEnvironment"
                     :save-success="saveSuccess"
+                    :save-error="saveError"
                     :is-submitting="isLoading"
                     @environment-change="changeEnvironment"
                     @save="saveCredentials"

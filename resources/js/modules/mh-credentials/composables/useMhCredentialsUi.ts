@@ -23,12 +23,14 @@ const mapMetadata = (
     nit: metadata.nit,
     environment: fromApiEnvironment(metadata.environment),
     active: metadata.active,
+    loginStatus: metadata.login_status,
     updatedAt: metadata.updated_at,
 });
 
 export async function useMhCredentialsUi() {
     const selectedEnvironment = ref<MhEnvironment>('PRUEBAS');
     const saveSuccess = ref(false);
+    const saveError = ref<string | null>(null);
     const metadataByEnvironment = ref<
         Record<MhEnvironment, MhCredentialsMetadata | null>
     >({
@@ -78,12 +80,16 @@ export async function useMhCredentialsUi() {
     ): Promise<void> => {
         selectedEnvironment.value = environment;
         saveSuccess.value = false;
+        saveError.value = null;
         await loadCredentials(environment);
     };
 
     const saveCredentials = async (
         payload: MhCredentialsPayload,
     ): Promise<boolean> => {
+        saveSuccess.value = false;
+        saveError.value = null;
+
         const normalizedNit = payload.nit.replace(/\s/g, '');
         const requestPayload: MhCredentialsStorePayload = {
             environment: toApiEnvironment(selectedEnvironment.value),
@@ -96,8 +102,7 @@ export async function useMhCredentialsUi() {
         >('/api/v1/mh-credentials', requestPayload);
 
         if (!response.data.value) {
-            saveSuccess.value = false;
-            error.value =
+            saveError.value =
                 response.error.value ??
                 'No se pudieron guardar las credenciales MH.';
 
@@ -118,6 +123,7 @@ export async function useMhCredentialsUi() {
     return {
         selectedEnvironment,
         saveSuccess,
+        saveError,
         credentialsMetadata,
         isLoading,
         error,

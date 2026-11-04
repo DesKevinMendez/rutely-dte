@@ -3,16 +3,42 @@
 namespace App\Http\Controllers;
 
 use App\Environment;
+use App\Exceptions\MhCredentialsRejectedException;
 use App\Http\Requests\Mh\ShowMhCredentialsRequest;
 use App\Http\Requests\Mh\StoreMhCredentialsRequest;
 use App\Models\MhCredentials;
 use App\Response\CommonResponse;
+use App\Services\Mh\MhAuthService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class MhCredentialsController extends Controller
 {
+    use AuthorizesRequests;
+
+    public function __construct(private readonly MhAuthService $authService) {}
+
     public function store(StoreMhCredentialsRequest $request): CommonResponse
     {
         $data = $request->validated();
+
+        $this->authorize('createWithNit', [MhCredentials::class, $data['nit'], $data['environment']]);
+
+        try {
+            $token = $this->authService->login($data['nit'], $data['pwd'], $data['environment']);
+        } catch (MhCredentialsRejectedException $exception) {
+            report($exception);
+
+            throw ValidationException::withMessages([
+                'pwd' => __('validation.custom.pwd.mh_rejected'),
+            ]);
+        } catch (ConnectionException|RuntimeException $exception) {
+            report($exception);
+
+            return new CommonResponse(null, 503, __('validation.custom.pwd.mh_unavailable'));
+        }
 
         $credentials = MhCredentials::query()->updateOrCreate(
             [
@@ -26,7 +52,11 @@ class MhCredentialsController extends Controller
             ],
         );
 
-        return new CommonResponse($this->metadata($credentials->refresh()));
+        $credentials->touch();
+        $credentials->refresh();
+        $this->authService->rememberToken($credentials, $token);
+
+        return new CommonResponse($this->metadata($credentials));
     }
 
     public function show(ShowMhCredentialsRequest $request): CommonResponse
@@ -49,6 +79,7 @@ class MhCredentialsController extends Controller
             'environment' => $credentials->environment->value,
             'nit' => $credentials->nit,
             'active' => $credentials->active,
+            'login_status' => $this->authService->loginStatus($credentials)->value,
             'updated_at' => $credentials->updated_at?->toJSON(),
         ];
     }

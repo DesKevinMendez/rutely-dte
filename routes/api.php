@@ -70,6 +70,7 @@ Route::group(['prefix' => 'v1'], function () {
         Route::get('mh-credentials', [MhCredentialsController::class, 'show'])
             ->name('api.v1.mh-credentials.show');
         Route::post('mh-credentials', [MhCredentialsController::class, 'store'])
+            ->middleware('throttle:5,1')
             ->name('api.v1.mh-credentials.store');
         Route::get('mh-certificates', [MhCertificatesController::class, 'show'])
             ->name('api.v1.mh-certificates.show');
