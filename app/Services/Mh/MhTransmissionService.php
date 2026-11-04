@@ -28,6 +28,7 @@ class MhTransmissionService
                 'version' => (int) $dte->version,
                 'tipoDte' => $dte->dte_type,
                 'documento' => $dte->signed_json,
+                'codigoGeneracion' => $dte->generation_code,
             ],
         );
     }
@@ -76,7 +77,7 @@ class MhTransmissionService
     }
 
     /**
-     * @param array<string, mixed> $body
+     * @param  array<string, mixed>  $body
      * @return array<string, mixed>
      */
     private function transmit(Model $model, string $operation, string $endpoint, array $body): array
