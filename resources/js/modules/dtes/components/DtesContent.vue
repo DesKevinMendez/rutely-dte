@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Alert, Badge, BaseButton, Card, DataTable, FormSelect } from 'ornito';
+import { Badge, BaseButton, Card, DataTable, FormSelect } from 'ornito';
 import type { BadgeVariant, TableField } from 'ornito';
 import { computed, ref } from 'vue';
 import { formatIdentityDocument } from '@/core/composables/formatIdentityDocument';
@@ -9,7 +9,7 @@ import CreateDteModal from './CreateDteModal.vue';
 
 const isCreateModalOpen = ref(false);
 const tableKey = ref(0);
-const { filterTipoDte, filterEstado, isLoading, error, createDte } = useDtesUi();
+const { filterTipoDte, filterEstado, isLoading, createDte } = useDtesUi();
 
 const tipoDteOptions = [
     { value: '', label: 'Todos los tipos' },
@@ -45,7 +45,9 @@ const formatEmissionDateTime = (record: DteApiRecord): string => {
         const formattedDate =
             year && month && day ? `${day}/${month}/${year}` : emissionDate;
 
-        return emissionTime ? `${formattedDate} ${emissionTime}` : formattedDate;
+        return emissionTime
+            ? `${formattedDate} ${emissionTime}`
+            : formattedDate;
     }
 
     return new Date(record.created_at).toLocaleString('es-SV', {
@@ -103,7 +105,8 @@ const receiverDocument = (record: DteApiRecord): string => {
     }
 
     const hasOwnFormat =
-        receiver?.tipoDocumento && !['13', '36'].includes(receiver.tipoDocumento);
+        receiver?.tipoDocumento &&
+        !['13', '36'].includes(receiver.tipoDocumento);
 
     return hasOwnFormat ? document : formatIdentityDocument(document);
 };
@@ -126,10 +129,20 @@ const refreshTable = (): void => {
     tableKey.value += 1;
 };
 
-const handleCreated = async (draft: DteDraft): Promise<void> => {
-    if (await createDte(draft)) {
+const handleCreated = async (
+    draft: DteDraft,
+    setServerErrors: (
+        errors: Record<string, string>,
+        message: string | null,
+    ) => void,
+): Promise<void> => {
+    const result = await createDte(draft);
+
+    if (result.success) {
         isCreateModalOpen.value = false;
         refreshTable();
+    } else {
+        setServerErrors(result.validationErrors, result.serverError);
     }
 };
 </script>
@@ -169,10 +182,6 @@ const handleCreated = async (draft: DteDraft): Promise<void> => {
                 </BaseButton>
             </div>
         </div>
-
-        <Alert v-if="error" type="danger">
-            {{ error }}
-        </Alert>
 
         <Card title="Listado de Comprobantes Emitidos">
             <template #headerButtons>

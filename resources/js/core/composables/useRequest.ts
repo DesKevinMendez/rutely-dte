@@ -24,6 +24,7 @@ export function useRequest() {
     const statusCode: Ref<number | null> = ref(null);
     const isLoading: Ref<boolean> = ref(false);
     const error: Ref<string | null> = ref(null);
+    const validationErrors: Ref<Record<string, string>> = ref({});
 
     const makeRequest = async <T = unknown, B = unknown>(
         url: string,
@@ -33,6 +34,7 @@ export function useRequest() {
         statusCode: Ref<number | null>;
         isLoading: Ref<boolean>;
         error: Ref<string | null>;
+        validationErrors: Ref<Record<string, string>>;
     }> => {
         const { method = 'GET', body, headers: customHeaders = {} } = options;
         const isFormData =
@@ -41,6 +43,7 @@ export function useRequest() {
 
         isLoading.value = true;
         error.value = null;
+        validationErrors.value = {};
 
         const headers: Record<string, string> = {
             Accept: 'application/json',
@@ -89,6 +92,33 @@ export function useRequest() {
             }
 
             if (!response.ok) {
+                if (
+                    typeof result === 'object' &&
+                    result !== null &&
+                    typeof result.errors === 'object' &&
+                    result.errors !== null
+                ) {
+                    validationErrors.value = Object.fromEntries(
+                        Object.entries(result.errors).flatMap(
+                            ([field, messages]) => {
+                                const fieldMessage = Array.isArray(messages)
+                                    ? messages
+                                          .filter(
+                                              (message): message is string =>
+                                                  typeof message === 'string',
+                                          )
+                                          .join(' ')
+                                    : messages;
+
+                                return typeof fieldMessage === 'string' &&
+                                    fieldMessage.length > 0
+                                    ? [[field, fieldMessage]]
+                                    : [];
+                            },
+                        ),
+                    );
+                }
+
                 const errorMsg =
                     (typeof result === 'object' && result?.error) ||
                     (typeof result === 'object' && result?.message) ||
@@ -106,6 +136,7 @@ export function useRequest() {
             error.value =
                 err instanceof Error ? err.message : 'Error de conexión de red';
             data.value = null;
+            validationErrors.value = {};
         } finally {
             isLoading.value = false;
         }
@@ -115,6 +146,7 @@ export function useRequest() {
             statusCode,
             isLoading,
             error,
+            validationErrors,
         };
     };
 
@@ -141,6 +173,7 @@ export function useRequest() {
         statusCode,
         isLoading,
         error,
+        validationErrors,
         makeRequest,
         get,
         post,
