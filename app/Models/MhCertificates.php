@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Environment;
 use Database\Factories\MhCertificatesFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'encrypted_private_key_password',
     'active',
 ])]
+#[Hidden(['encrypted_certificate', 'encrypted_private_key_password'])]
 class MhCertificates extends Model
 {
     /** @use HasFactory<MhCertificatesFactory> */

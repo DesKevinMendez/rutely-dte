@@ -22,7 +22,7 @@ class StoreMhCertificatesRequest extends FormRequest
     {
         return [
             'environment' => ['required', 'string', Rule::enum(Environment::class)],
-            'certificadoXml' => ['required', 'string'],
+            'certificadoXml' => ['required', 'string', 'max:2097152'],
             'passwordPri' => ['nullable', 'string', 'max:255'],
         ];
     }
