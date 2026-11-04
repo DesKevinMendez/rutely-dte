@@ -53,10 +53,10 @@ class MhCatalog
     /** CAT-011: Servicios. */
     public const SERVICE_ITEM_TYPE = 2;
 
-    /** Normativa 2.0, Anexo IV: CAT-011 types that must use the unit of measure 99. */
-    public const ITEM_TYPES_WITHOUT_UNIT = [self::SERVICE_ITEM_TYPE, 4];
+    /** CAT-011: Otros tributos por ítem. It needs codTributo, which the API doesn't support yet. */
+    public const OTHER_TAXES_ITEM_TYPE = 4;
 
-    /** CAT-014: Otra. */
+    /** CAT-014: Otra. Normativa 2.0, Anexo IV: the unit of a service. */
     public const OTHER_UNIT_OF_MEASURE = 99;
 
     /** CAT-014: Unidad de Medida. */

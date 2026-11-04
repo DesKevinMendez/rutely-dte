@@ -97,10 +97,18 @@ class StoreDteRequest extends FormRequest
             'items.*.cantidad' => ['required', ...$this->amountRules(8), 'gt:0'],
             'items.*.precioUni' => ['required', ...$this->amountRules(8)],
             'items.*.montoDescu' => ['sometimes', ...$this->amountRules(8)],
-            'items.*.tipoItem' => ['bail', 'sometimes', 'integer', Rule::exists(ItemType::class, 'code')],
+            'items.*.tipoItem' => ['bail', 'sometimes', 'integer', Rule::exists(ItemType::class, 'code'), Rule::notIn([MhCatalog::OTHER_TAXES_ITEM_TYPE])],
             'items.*.codigo' => ['sometimes', 'nullable', 'string', 'max:25'],
             'items.*.uniMedida' => ['bail', 'sometimes', 'integer', Rule::in(MhCatalog::UNITS_OF_MEASURE)],
             ...$this->summaryRules(),
+        ];
+    }
+
+    /** @return array<string, string> */
+    public function messages(): array
+    {
+        return [
+            'items.*.tipoItem.not_in' => 'El tipo de ítem 4 (otros tributos por ítem) todavía no se puede emitir.',
         ];
     }
 
@@ -123,10 +131,10 @@ class StoreDteRequest extends FormRequest
                         );
                     }
 
-                    if ($this->usesAUnitItsTypeDoesNotAllow($item)) {
+                    if ($this->isServiceWithAnotherUnit($item)) {
                         $validator->errors()->add(
                             "items.{$index}.uniMedida",
-                            'Los servicios y los otros tributos por ítem deben usar la unidad de medida 99 (Otra).',
+                            'Los servicios deben usar la unidad de medida 99 (Otra).',
                         );
                     }
                 }
@@ -168,12 +176,12 @@ class StoreDteRequest extends FormRequest
     }
 
     /** @param  array<string, mixed>  $item */
-    private function usesAUnitItsTypeDoesNotAllow(array $item): bool
+    private function isServiceWithAnotherUnit(array $item): bool
     {
         $itemType = (int) ($item['tipoItem'] ?? MhCatalog::SERVICE_ITEM_TYPE);
         $unit = (int) ($item['uniMedida'] ?? MhCatalog::OTHER_UNIT_OF_MEASURE);
 
-        return in_array($itemType, MhCatalog::ITEM_TYPES_WITHOUT_UNIT, true)
+        return $itemType === MhCatalog::SERVICE_ITEM_TYPE
             && $unit !== MhCatalog::OTHER_UNIT_OF_MEASURE;
     }
 

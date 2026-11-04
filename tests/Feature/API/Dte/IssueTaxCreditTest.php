@@ -153,6 +153,7 @@ test('tax credit validation returns 422 with the official limits', function (arr
     'address required' => [taxCreditWithoutReceiverField('direccion'), 'receptor.direccion', 'El campo receptor.direccion es obligatorio.'],
     'phone minimum' => [taxCreditReceiver(['telefono' => '1234567']), 'receptor.telefono', 'El campo receptor.telefono debe contener al menos 8 caracteres.'],
     'email maximum' => [taxCreditReceiver(['correo' => str_repeat('a', 92).'@mail.com']), 'receptor.correo', 'El campo correo del receptor no debe contener más de 100 caracteres.'],
+    'other taxes per item not available' => [[...DteApiTestData::validTaxCreditPayload(), 'items' => [['descripcion' => 'Línea', 'cantidad' => 1, 'precioUni' => 1, 'tipoItem' => 4]]], 'items.0.tipoItem', 'El tipo de ítem 4 (otros tributos por ítem) todavía no se puede emitir.'],
     'income tax prohibited' => [[...DteApiTestData::validTaxCreditPayload(), 'resumen' => ['reteRenta' => 1]], 'resumen.reteRenta', 'El campo retención de renta está prohibido.'],
     'perceived IVA numeric' => [[...DteApiTestData::validTaxCreditPayload(), 'resumen' => ['ivaPerci' => 'x']], 'resumen.ivaPerci', 'El campo IVA percibido debe ser un número.'],
     'perceived IVA nonnegative' => [[...DteApiTestData::validTaxCreditPayload(), 'resumen' => ['ivaPerci' => -1]], 'resumen.ivaPerci', 'El campo IVA percibido debe ser mayor o igual que 0.'],

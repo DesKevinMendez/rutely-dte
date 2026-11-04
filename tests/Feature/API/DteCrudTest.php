@@ -364,7 +364,7 @@ test('store DTE request validation returns 422', function (array $payload, strin
     'item unit must be integer' => [dteValidationPayload(['items' => [['uniMedida' => 'x']]]), 'items.0.uniMedida', 'El campo unidad de medida del ítem debe ser un número entero.'],
 ]);
 
-test('store DTE accepts every seeded catalog code', function (string $field, string|int $code) {
+test('store DTE accepts the catalog codes it can issue', function (string $field, string|int $code) {
     $company = DteApiTestData::company();
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
     $payload = DteApiTestData::validDtePayload();
@@ -388,7 +388,6 @@ test('store DTE accepts every seeded catalog code', function (string $field, str
     'item type 1' => ['items.*.tipoItem', 1],
     'item type 2' => ['items.*.tipoItem', 2],
     'item type 3' => ['items.*.tipoItem', 3],
-    'item type 4' => ['items.*.tipoItem', 4],
 ]);
 
 test('store DTE accepts the DTE types that can be issued', function (array $payload) {
