@@ -43,7 +43,12 @@ test.describe('MH credentials', () => {
         await nitInput.fill('06142803901121');
         await expect(nitInput).toHaveValue('0614-280390-112-1');
 
+        const saveButton = page.getByRole('button', { name: 'Guardar Credenciales MH' });
+
         await page.locator('#mh-password').fill('playwright-secret');
+        await expect(saveButton).toBeDisabled();
+
+        await page.locator('#mh-password').fill('Playwright-secret-01');
 
         const credentialsResponsePromise = page.waitForResponse(
             (response) =>
@@ -51,7 +56,7 @@ test.describe('MH credentials', () => {
                 new URL(response.url()).pathname === '/api/v1/mh-credentials',
         );
 
-        await page.getByRole('button', { name: 'Guardar Credenciales MH' }).click();
+        await saveButton.click();
 
         const credentialsResponse = await credentialsResponsePromise;
         expect(credentialsResponse.status()).toBe(200);
@@ -64,7 +69,7 @@ test.describe('MH credentials', () => {
         expect(postRequests[0].postData).toEqual({
             environment: '00',
             nit: '0614-280390-112-1',
-            pwd: 'playwright-secret',
+            pwd: 'Playwright-secret-01',
         });
 
         // Saving updates the UI from the POST response; it must not trigger

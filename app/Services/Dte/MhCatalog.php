@@ -14,7 +14,7 @@ class MhCatalog
     /** Manual Funcional V 2.0, section XI: positions 5 to 8 of the control number. */
     public const POS_CODE_PATTERN = '/^P[0-9]{3}$/';
 
-    /** NIT format published in the invalidation schema V3 (identificacion.fusion). */
+    /** Normativa 2.0, Anexo IV: 9 or 14 digits, without hyphens or other special characters. */
     public const NIT_PATTERN = '/^(?:[0-9]{14}|[0-9]{9})$/';
 
     /** CAT-022: NIT. */

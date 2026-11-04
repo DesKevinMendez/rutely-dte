@@ -43,6 +43,11 @@ return [
         'string' => 'El campo :attribute debe contener al menos :min caracteres.',
     ],
     'numeric' => 'El campo :attribute debe ser un número.',
+    'password' => [
+        'letters' => 'El campo :attribute debe contener al menos una letra.',
+        'numbers' => 'El campo :attribute debe contener al menos un número.',
+        'symbols' => 'El campo :attribute debe contener al menos un carácter especial.',
+    ],
     'prohibited' => 'El campo :attribute está prohibido.',
     'prohibited_if' => 'El campo :attribute está prohibido cuando :other es :value.',
     'regex' => 'El formato del campo :attribute no es válido.',

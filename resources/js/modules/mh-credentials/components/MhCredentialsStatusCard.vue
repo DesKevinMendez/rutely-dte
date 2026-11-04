@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Card } from 'ornito';
+import { formatIdentityDocument } from '@/core/composables/formatIdentityDocument';
 import type {
     MhCredentialsMetadata,
     MhEnvironment,
@@ -43,7 +44,7 @@ const { metadata, selectedEnvironment } = defineProps<{
                     >
                     <span
                         class="font-mono font-bold text-gray-900 dark:text-white"
-                        >{{ metadata.nit }}</span
+                        >{{ formatIdentityDocument(metadata.nit) }}</span
                     >
                 </div>
                 <div
