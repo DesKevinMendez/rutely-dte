@@ -158,3 +158,23 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Do NOT delete tests without approval.
 
 </laravel-boost-guidelines>
+
+## Backend facts
+
+Facts that backend tooling (e.g. the `laravel-backend-conventions` skill) needs about this repo. Verified 2026-10-29 from a surface survey; if the code disagrees, trust the code and update this section.
+
+- **Docker:**
+  - App service `rutelydte`; the compose file also defines `db`, `db-testing` and `test`.
+  - Shortcuts: `artd <command>` (= `docker compose exec rutelydte php artisan`) and `artdt <TestName>`.
+- **Roles** (`App\Role` enum): `ADMIN` (`admin`), `USER` (`user`), `SUPERADMIN` (`superadmin`).
+- **Tenant key:** `company_id`.
+- **Route files** (`routes/`): `superadmin.php` (`role:superadmin`), `guess.php` (public), plus `api.php`. There's no `admin.php` or shared file yet. Create them, required from `routes/api.php`, when an admin/user or shared endpoint appears.
+- **Controllers:** `app/Http/Controllers/API/Data/`, `app/Http/Controllers/Superadmin/`, `app/Http/Controllers/auth/` (namespaces `API`, `Superadmin`, `auth`).
+- **Requests:** grouped by feature in `app/Http/Requests/{Feature}/` (`Company/`, `Dte/`, `ApiToken/`, ...).
+- **Responses:** `CommonResource`, `CommonCollection` (`app/Http/Resources`) and `CommonResponse` (`app/Response`).
+- **Pagination macro:** none, so use Laravel's `->paginate()`. Existing controllers pass `$request->integer('per_page', 10)` (legacy).
+- **Tests:**
+  - **Pest** (`tests/Pest.php`).
+  - `Tests\TestCase::setUp()` seeds `RoleSeeder`; there's no default login.
+  - Test root `tests/Feature/` with `API/` and `Services/`. There are no role folders yet; add the role segment when creating tests.
+- **Validation messages:** `lang/es/`.
