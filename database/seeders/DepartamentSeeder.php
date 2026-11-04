@@ -11,6 +11,7 @@ class DepartamentSeeder extends Seeder
     public function run(): void
     {
         $departaments = [
+            ['code' => '00', 'name' => 'Otro (Para extranjeros)'],
             ['code' => '01', 'name' => 'Ahuachapán'],
             ['code' => '02', 'name' => 'Santa Ana'],
             ['code' => '03', 'name' => 'Sonsonate'],

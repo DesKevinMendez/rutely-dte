@@ -42,9 +42,9 @@ test.describe('DTEs', () => {
             page.getByRole('heading', { name: 'Documentos Tributarios Electrónicos (DTEs)' }),
         ).toBeVisible();
 
-        await expect(page.getByText('DTE-01-00010001-000000000000001', { exact: true })).toBeVisible();
-        await expect(page.getByText('DTE-01-00010001-000000000000002', { exact: true })).toBeVisible();
-        await expect(page.getByText('DTE-01-00010001-000000000000003', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000002', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000003', { exact: true })).toBeVisible();
 
         const table = page.getByRole('table');
 
@@ -56,9 +56,9 @@ test.describe('DTEs', () => {
     test('filters DTEs by status', async ({ page }) => {
         await page.locator('#filter-estado').selectOption('PROCESADO');
 
-        await expect(page.getByText('DTE-01-00010001-000000000000001', { exact: true })).toBeVisible();
-        await expect(page.getByText('DTE-01-00010001-000000000000002', { exact: true })).toHaveCount(0);
-        await expect(page.getByText('DTE-01-00010001-000000000000003', { exact: true })).toHaveCount(0);
+        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000002', { exact: true })).toHaveCount(0);
+        await expect(page.getByText('DTE-01-M001P001-000000000000003', { exact: true })).toHaveCount(0);
     });
 
     test('refreshes the DTE list from the API', async ({ page }) => {
@@ -71,12 +71,12 @@ test.describe('DTEs', () => {
         await page.getByRole('button', { name: 'Actualizar', exact: true }).click();
 
         expect((await dtesResponse).status()).toBe(200);
-        await expect(page.getByText('DTE-01-00010001-000000000000001', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
     });
 
     test('creates a Factura 01 from the UI against the Laravel backend', async ({ page }) => {
         await storeRepositoryCertificate(page);
-        await expect(page.getByText('DTE-01-00010001-000000000000001', { exact: true })).toBeVisible();
+        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
 
         await page.getByRole('button', { name: 'Emitir Nuevo DTE', exact: true }).click();
         await expect(page.locator('#tipo-dte')).toBeVisible();

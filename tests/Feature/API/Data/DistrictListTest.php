@@ -35,7 +35,7 @@ test('districts return the exact collection response', function () {
         ->assertExactJson([
             'data' => $expected,
             'pagination' => [
-                'total' => 262,
+                'total' => 263,
                 'per_page' => 10,
                 'current_page' => 1,
                 'last_page' => 27,

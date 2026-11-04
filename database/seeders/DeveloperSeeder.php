@@ -32,6 +32,10 @@ class DeveloperSeeder extends Seeder
             ->where('departament_code', '06')
             ->where('code', '23')
             ->value('id');
+        $districtId = DB::table('districts')
+            ->where('municipality_id', $municipalityId)
+            ->where('code', '14')
+            ->value('id');
 
         $company = Company::query()->updateOrCreate(
             ['nit' => '06142812901015'],
@@ -45,11 +49,12 @@ class DeveloperSeeder extends Seeder
                 'establishment_type' => '01',
                 'departament_id' => $departamentId,
                 'municipality_id' => $municipalityId,
+                'district_id' => $districtId,
                 'email' => 'billing.playwright@rutely.biz',
                 'mh_establishment_code' => '0001',
                 'mh_pos_code' => '0001',
-                'own_establishment_code' => '0001',
-                'own_pos_code' => '0001',
+                'own_establishment_code' => 'M001',
+                'own_pos_code' => 'P001',
             ],
         );
         $company->forceFill(['environment' => '00'])->save();
@@ -66,11 +71,12 @@ class DeveloperSeeder extends Seeder
                 'establishment_type' => '01',
                 'departament_id' => $departamentId,
                 'municipality_id' => $municipalityId,
+                'district_id' => $districtId,
                 'email' => 'admin@dte.com',
                 'mh_establishment_code' => '0002',
                 'mh_pos_code' => '0002',
-                'own_establishment_code' => '0002',
-                'own_pos_code' => '0002',
+                'own_establishment_code' => 'M002',
+                'own_pos_code' => 'P002',
             ],
         );
         $adminCompany->forceFill(['environment' => '00'])->save();
@@ -117,21 +123,21 @@ class DeveloperSeeder extends Seeder
         $dtes = [
             [
                 'generation_code' => '11111111-1111-4111-8111-111111111111',
-                'control_number' => 'DTE-01-00010001-000000000000001',
+                'control_number' => 'DTE-01-M001P001-000000000000001',
                 'status' => 'PROCESADO',
                 'total_amount' => 1130,
                 'received_seal' => 'PLAYWRIGHT-SEAL-1',
             ],
             [
                 'generation_code' => '22222222-2222-4222-8222-222222222222',
-                'control_number' => 'DTE-01-00010001-000000000000002',
+                'control_number' => 'DTE-01-M001P001-000000000000002',
                 'status' => 'RECHAZADO',
                 'total_amount' => 2260,
                 'received_seal' => null,
             ],
             [
                 'generation_code' => '33333333-3333-4333-8333-333333333333',
-                'control_number' => 'DTE-01-00010001-000000000000003',
+                'control_number' => 'DTE-01-M001P001-000000000000003',
                 'status' => 'INVALIDADO',
                 'total_amount' => 3390,
                 'received_seal' => 'PLAYWRIGHT-SEAL-3',
@@ -167,7 +173,7 @@ class DeveloperSeeder extends Seeder
         DteCorrelative::query()->updateOrCreate(
             [
                 'company_id' => $company->id,
-                'key' => '01-00010001',
+                'key' => '01-M001P001',
             ],
             ['last_value' => '3'],
         );
