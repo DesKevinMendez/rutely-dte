@@ -3,6 +3,16 @@
 use App\Models\User;
 use App\Role;
 
+/** @return array{email: string, password: string, device_name: string} */
+function loginPayload(string $email, string $password = 'wrong-password'): array
+{
+    return [
+        'email' => $email,
+        'password' => $password,
+        'device_name' => 'test-device',
+    ];
+}
+
 test('an user can do login', function () {
     $user = User::factory()->create();
 
@@ -109,4 +119,71 @@ test('password should be required', function () {
 
     $response->assertUnprocessable();
     $response->assertJsonValidationErrors(['password' => 'El campo contraseña es obligatorio.']);
+});
+
+test('login is blocked after five attempts, even with the right password', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 5) as $attempt) {
+        $this->postJson(route('login'), loginPayload($user->email))->assertUnprocessable();
+    }
+
+    $this->postJson(route('login'), loginPayload($user->email, 'password'))
+        ->assertTooManyRequests()
+        ->assertHeader('Retry-After')
+        ->assertJson(['message' => 'Too Many Attempts.']);
+});
+
+test('successful logins count toward the login rate limit', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 5) as $attempt) {
+        $this->postJson(route('login'), loginPayload($user->email, 'password'))->assertOk();
+    }
+
+    $this->postJson(route('login'), loginPayload($user->email, 'password'))->assertTooManyRequests();
+});
+
+test('login rate limit also blocks attempts that rotate the email from the same IP address', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 5) as $attempt) {
+        $this->postJson(route('login'), loginPayload(fake()->unique()->safeEmail()))->assertUnprocessable();
+    }
+
+    $this->postJson(route('login'), loginPayload($user->email, 'password'))->assertTooManyRequests();
+});
+
+test('login rate limit does not block another IP address', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 5) as $attempt) {
+        $this->postJson(route('login'), loginPayload($user->email))->assertUnprocessable();
+    }
+
+    $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10'])
+        ->postJson(route('login'), loginPayload($user->email, 'password'))
+        ->assertOk();
+});
+
+test('login rate limit expires after a minute', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 5) as $attempt) {
+        $this->postJson(route('login'), loginPayload($user->email))->assertUnprocessable();
+    }
+
+    $this->travel(61)->seconds();
+
+    $this->postJson(route('login'), loginPayload($user->email, 'password'))->assertOk();
+});
+
+test('login with a non string email returns a validation error', function () {
+    $this->postJson(route('login'), [
+        'email' => ['user@example.com'],
+        'password' => 'password',
+        'device_name' => 'test-device',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['email' => 'El campo correo electrónico debe ser una dirección de correo electrónico válida.']);
 });

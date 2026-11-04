@@ -26,7 +26,7 @@ Route::get('/user', function (Request $request) {
 
 Route::group(['prefix' => 'v1'], function () {
     Route::post('register', RegisterController::class)->name('register');
-    Route::post('login', LoginController::class)->name('login');
+    Route::post('login', LoginController::class)->middleware('throttle:5,1')->name('login');
 
     Route::middleware(['auth:sanctum', 'dte-company-abilities:list:dte'])->group(function () {
         Route::get('dtes', [DteController::class, 'index'])
