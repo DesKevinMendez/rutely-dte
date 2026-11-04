@@ -274,7 +274,7 @@ class DteSeeder extends Seeder
                 'tipoItem' => 2,
                 'cantidad' => $quantity,
                 'codigo' => $item['codigo'],
-                'uniMedida' => 59,
+                'uniMedida' => 99,
                 'descripcion' => $item['descripcion'],
                 'precioUni' => $unitPrice,
                 'montoDescu' => 0,
