@@ -37,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Date::use(CarbonImmutable::class);
 
+        ini_set('zend.exception_ignore_args', '1');
         ini_set('zend.exception_string_param_max_len', '6');
 
         DB::prohibitDestructiveCommands(

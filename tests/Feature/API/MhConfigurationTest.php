@@ -250,6 +250,24 @@ test('store MH credentials logs in to the Hacienda environment of the credential
     'production' => [Environment::PRODUCTION, 'https://api.dtes.mh.gob.sv/seguridad/auth'],
 ]);
 
+test('a certificate password stays out of the stack trace', function (Closure $useCertificatePassword) {
+    $trace = '';
+
+    try {
+        $useCertificatePassword();
+    } catch (Throwable $exception) {
+        $trace = $exception->getTraceAsString();
+    }
+
+    expect($trace)
+        ->not->toBe('')
+        ->not->toContain("'Secret");
+})->with([
+    'certificate parsing' => fn () => MhCertificate::fromXml('<invalid/>', 'Secreto-Llave-01'),
+    'company validation' => fn () => app(MhCertificateService::class)
+        ->validateForCompany('company', '<invalid/>', 'Secreto-Llave-01'),
+]);
+
 test('store MH credentials does not save what Hacienda rejects', function (array $body, int $status) {
     $company = mhConfigurationCompany();
     Sanctum::actingAs(mhConfigurationAdmin($company));
