@@ -241,24 +241,25 @@ watch(
             <div
                 class="flex min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-gray-900"
             >
-                <Navbar @toggle-mobile-sidebar="toggleMobileSidebar">
+                <Navbar
+                    class="max-sm:px-2"
+                    @toggle-mobile-sidebar="toggleMobileSidebar"
+                >
                     <template #right>
-                        <div class="hidden sm:block">
-                            <Tabs
-                                v-model="selectedEnvironmentIndex"
-                                :tabs="environmentTabs"
-                                variant="segmented"
-                                label="Ambiente"
-                                class="!space-y-0 [&_.tab-content]:hidden [&>div:first-child]:!h-auto"
-                            >
-                                <template #tab-0>
-                                    <span class="hidden" aria-hidden="true" />
-                                </template>
-                                <template #tab-1>
-                                    <span class="hidden" aria-hidden="true" />
-                                </template>
-                            </Tabs>
-                        </div>
+                        <Tabs
+                            v-model="selectedEnvironmentIndex"
+                            :tabs="environmentTabs"
+                            variant="segmented"
+                            label="Ambiente"
+                            class="!space-y-0 [&_.tab-content]:hidden max-sm:[&_[role=tab]]:px-2 max-sm:[&_[role=tablist]]:px-1 [&>div:first-child]:!h-auto"
+                        >
+                            <template #tab-0>
+                                <span class="hidden" aria-hidden="true" />
+                            </template>
+                            <template #tab-1>
+                                <span class="hidden" aria-hidden="true" />
+                            </template>
+                        </Tabs>
 
                         <UserProfileDropdown
                             :user-name="userName"

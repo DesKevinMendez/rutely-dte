@@ -4,6 +4,7 @@ import type { Page } from '@playwright/test';
 import { authenticateDeveloper } from './support/auth';
 
 type MhLoginStatus = 'authenticated' | 'rejected' | 'unverified';
+type ApiEnvironment = '00' | '01';
 
 const REJECTED_MESSAGE =
     'Hacienda rechazó el NIT o la contraseña del Usuario API. Las credenciales no se guardaron.';
@@ -12,10 +13,13 @@ const UNAVAILABLE_MESSAGE =
 const FORBIDDEN_NIT_MESSAGE =
     'No está autorizado para registrar credenciales con este NIT.';
 
-function storedCredentials(loginStatus: MhLoginStatus): Record<string, unknown> {
+function storedCredentials(
+    loginStatus: MhLoginStatus,
+    environment: ApiEnvironment = '00',
+) {
     return {
         id: faker.string.uuid(),
-        environment: '00',
+        environment,
         nit: '06142803901121',
         active: true,
         login_status: loginStatus,
@@ -32,19 +36,31 @@ async function mockMhCredentialsApi(
         stored = null,
     }: {
         failedSaves?: Array<{ status: number; message: string }>;
-        stored?: Record<string, unknown> | null;
+        stored?: ReturnType<typeof storedCredentials> | null;
     } = {},
 ): Promise<void> {
     const session = JSON.parse(process.env.E2E_SESSION ?? 'null') as {
-        user: Record<string, unknown>;
+        user: { company: { environment: ApiEnvironment } };
     };
+    session.user.company.environment = '00';
     let credentials = stored;
 
     await page.route('**/api/user', async (route) => {
         await route.fulfill({ json: session.user });
     });
 
+    await page.route('**/api/v1/companies/*/environment', async (route) => {
+        const { environment } = route.request().postDataJSON() as {
+            environment: ApiEnvironment;
+        };
+        session.user.company.environment = environment;
+        await route.fulfill({ json: { data: { user: session.user } } });
+    });
+
     await page.route('**/api/v1/mh-credentials*', async (route) => {
+        const url = new URL(route.request().url());
+        let environment = url.searchParams.get('environment');
+
         if (route.request().method() === 'POST') {
             const failedSave = failedSaves.shift();
 
@@ -57,10 +73,14 @@ async function mockMhCredentialsApi(
                 return;
             }
 
-            credentials = storedCredentials('authenticated');
+            const payload = route.request().postDataJSON() as {
+                environment: ApiEnvironment;
+            };
+            environment = payload.environment;
+            credentials = storedCredentials('authenticated', payload.environment);
         }
 
-        if (credentials === null) {
+        if (credentials === null || credentials.environment !== environment) {
             await route.fulfill({
                 status: 404,
                 json: { message: 'No encontrado.' },
@@ -80,7 +100,8 @@ async function fillAndSave(page: Page, password: string): Promise<void> {
 }
 
 test.describe('MH credentials', () => {
-    test('stores credentials once and reloads the metadata without duplicate requests', async ({ page }) => {
+    test('uses the navbar environment to load and store credentials without duplicate requests', async ({ page }) => {
+        await page.setViewportSize({ width: 320, height: 800 });
         await authenticateDeveloper(page);
         await mockMhCredentialsApi(page);
 
@@ -111,6 +132,7 @@ test.describe('MH credentials', () => {
         await expect(page.getByLabel('Contraseña del Usuario API')).toBeVisible();
         await expect(page.getByText(/Gestión de Usuario API, opción Cambiar Password/)).toBeVisible();
         await expect(page.getByText('Portal MH')).toHaveCount(0);
+        await expect(page.getByText('Ambiente de Destino')).toHaveCount(0);
         await page.waitForLoadState('networkidle');
 
         const initialGetRequests = credentialsRequests.filter(
@@ -122,6 +144,26 @@ test.describe('MH credentials', () => {
         expect(initialGetUrl.searchParams.get('environment')).toBe('00');
 
         const nitInput = page.locator('#mh-nit');
+        const passwordInput = page.locator('#mh-password');
+        await nitInput.fill('06142803901121');
+        await passwordInput.fill('Playwright-draft');
+
+        const navbar = page.getByRole('navigation').filter({
+            has: page.getByRole('tablist', { name: 'Ambiente' }),
+        });
+        const productionTab = navbar.getByRole('tab', { name: 'Producción' });
+        await expect(productionTab).toBeInViewport({ ratio: 1 });
+        await productionTab.click();
+
+        const dialog = page.getByRole('dialog');
+        await dialog.getByRole('textbox', { name: 'Confirmación' }).fill('Confirmar');
+        await dialog.getByRole('button', { name: 'Confirmar', exact: true }).click();
+
+        await expect(productionTab).toHaveAttribute('aria-selected', 'true');
+        await expect(page.getByText('Ambiente seleccionado: PRODUCCION')).toBeVisible();
+        await expect(nitInput).toHaveValue('');
+        await expect(passwordInput).toHaveValue('');
+
         await nitInput.fill('06142803901121');
         await expect(nitInput).toHaveValue('0614-280390-112-1');
 
@@ -146,7 +188,7 @@ test.describe('MH credentials', () => {
         );
         expect(postRequests).toHaveLength(1);
         expect(postRequests[0].postData).toEqual({
-            environment: '00',
+            environment: '01',
             nit: '0614-280390-112-1',
             pwd: 'Playwright-secret-01',
         });
@@ -154,8 +196,10 @@ test.describe('MH credentials', () => {
         // Saving updates the UI from the POST response; it must not trigger
         // an unnecessary second GET for the same credentials.
         expect(
-            credentialsRequests.filter((request) => request.method === 'GET'),
-        ).toHaveLength(1);
+            credentialsRequests
+                .filter((request) => request.method === 'GET')
+                .map(({ url }) => new URL(url).searchParams.get('environment')),
+        ).toEqual(['00', '01']);
 
         await expect(page.getByText('ACTIVO', { exact: true })).toBeVisible();
         await expect(page.getByText('0614-280390-112-1', { exact: true })).toBeVisible();
@@ -183,7 +227,7 @@ test.describe('MH credentials', () => {
         ).toHaveLength(0);
 
         const reloadGetUrl = new URL(reloadGetRequests[0].url);
-        expect(reloadGetUrl.searchParams.get('environment')).toBe('00');
+        expect(reloadGetUrl.searchParams.get('environment')).toBe('01');
     });
 
     test('shows the error of a rejected login, stores nothing and lets the password be corrected', async ({ page }) => {
