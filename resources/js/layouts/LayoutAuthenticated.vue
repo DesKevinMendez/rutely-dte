@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import {
     IconAlertTriangle,
-    IconApi,
     IconCertificate,
     IconDashboard,
     IconFileText,
@@ -14,10 +13,11 @@ import {
     ConfirmationModal,
     Navbar,
     Sidebar,
+    Tabs,
     UserProfileDropdown,
     useSidebar,
 } from 'ornito';
-import type { DropdownMenuItem, RoutesLink } from 'ornito';
+import type { DropdownMenuItem, RoutesLink, Tab } from 'ornito';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '@/core/stores/auth';
@@ -31,6 +31,10 @@ const { isCollapsed, toggleCollapse } = useSidebar();
 const isMobileSidebarOpen = ref(false);
 const environment = ref<Environment>('PRUEBAS');
 const pendingEnvironment = ref<Environment | null>(null);
+const environmentTabs: Tab[] = [
+    { id: 'PRUEBAS', label: 'Pruebas' },
+    { id: 'PRODUCCION', label: 'Producción' },
+];
 
 const navigation: RoutesLink[] = [
     { route: '/dashboard', name: 'Dashboard DTE', icon: IconDashboard },
@@ -39,7 +43,6 @@ const navigation: RoutesLink[] = [
     { route: '/queue', name: 'Cola Reintentos', icon: IconRefresh },
     { route: '/certificates', name: 'Certificados MH', icon: IconCertificate },
     { route: '/mh-credentials', name: 'Credenciales MH', icon: IconKey },
-    { route: '/tokens', name: 'Tokens API', icon: IconApi },
 ];
 
 const userName = computed(() => auth.user?.name ?? 'Usuario');
@@ -78,6 +81,13 @@ const requestEnvironmentChange = (targetEnvironment: Environment): void => {
 
     pendingEnvironment.value = targetEnvironment;
 };
+
+const selectedEnvironmentIndex = computed<number>({
+    get: () => (environment.value === 'PRUEBAS' ? 0 : 1),
+    set: (index) => {
+        requestEnvironmentChange(index === 0 ? 'PRUEBAS' : 'PRODUCCION');
+    },
+});
 
 const cancelEnvironmentChange = (): void => {
     pendingEnvironment.value = null;
@@ -174,33 +184,17 @@ watch(
             >
                 <Navbar @toggle-mobile-sidebar="toggleMobileSidebar">
                     <template #right>
-                        <div
-                            class="hidden items-center rounded-lg border border-gray-200 bg-gray-50 p-1 text-xs sm:flex dark:border-gray-700 dark:bg-gray-800"
-                        >
-                            <button
-                                type="button"
-                                class="rounded-md border px-2.5 py-1.5 font-semibold transition-colors"
-                                :class="
-                                    environment === 'PRUEBAS'
-                                        ? 'border-primary-500 bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                                "
-                                @click="requestEnvironmentChange('PRUEBAS')"
+                        <div class="hidden sm:block">
+                            <Tabs
+                                v-model="selectedEnvironmentIndex"
+                                :tabs="environmentTabs"
+                                variant="segmented"
+                                label="Ambiente"
+                                class="!space-y-0 [&_.tab-content]:hidden [&>div:first-child]:!h-auto"
                             >
-                                Pruebas
-                            </button>
-                            <button
-                                type="button"
-                                class="rounded-md border px-2.5 py-1.5 font-semibold transition-colors"
-                                :class="
-                                    environment === 'PRODUCCION'
-                                        ? 'border-primary-500 bg-white text-primary-700 dark:bg-gray-900 dark:text-primary-300'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-                                "
-                                @click="requestEnvironmentChange('PRODUCCION')"
-                            >
-                                Producción
-                            </button>
+                                <template #tab-0 />
+                                <template #tab-1 />
+                            </Tabs>
                         </div>
 
                         <UserProfileDropdown
