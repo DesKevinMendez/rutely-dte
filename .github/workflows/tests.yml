@@ -13,6 +13,26 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    services:
+      db-testing:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: rutelydte_testing
+          POSTGRES_USER: rutely
+          POSTGRES_PASSWORD: rutely_local
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+      db-e2e:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: rutelydte_e2e
+          POSTGRES_USER: rutely_e2e
+          POSTGRES_PASSWORD: rutely_e2e_local
+        ports:
+          - 5440:5432
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -24,7 +44,11 @@ jobs:
         with:
           php-version: '8.5'
           tools: composer:v2
+          extensions: pdo_pgsql
           coverage: none
+
+      - name: Resolve test database hosts
+        run: echo "127.0.0.1 db-testing db-e2e" | sudo tee -a /etc/hosts
 
       - name: Setup Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -59,4 +83,6 @@ jobs:
           pnpm types:check
 
       - name: Run Playwright E2E Tests
+        env:
+          E2E_DB_PORT: 5440
         run: pnpm test:e2e

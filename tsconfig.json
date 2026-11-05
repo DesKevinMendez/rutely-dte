@@ -126,6 +126,7 @@
         "resources/js/App.vue",
         "tests/e2e/**/*.ts",
         "playwright.config.ts",
+        "playwright.codex.config.ts",
         "auto-imports.d.ts",
         "components.d.ts"
     ]
