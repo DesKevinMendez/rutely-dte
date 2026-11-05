@@ -1,6 +1,7 @@
 <?php
 
 use App\Environment;
+use App\Exceptions\MhCredentialsRejectedException;
 use App\Models\Company;
 use App\Models\MhCredentials;
 use App\Services\Mh\MhAuthService;
@@ -94,4 +95,22 @@ test('a company has no token without active credentials', function () {
         ->toThrow(RuntimeException::class, 'No hay credenciales de Hacienda configuradas');
 
     Http::assertNothingSent();
+});
+
+test('the password stays out of the stack trace of a rejected login', function () {
+    $previousSetting = ini_set('zend.exception_ignore_args', '0');
+    Http::fake([MH_AUTH_URL => Http::response(['status' => 'ERROR', 'body' => ['codigoMsg' => '106']])]);
+    $trace = '';
+
+    try {
+        app(MhAuthService::class)->login('06142812901015', 'Secreto-API-01', Environment::SANDBOX->value);
+    } catch (MhCredentialsRejectedException $exception) {
+        $trace = $exception->getTraceAsString();
+    } finally {
+        ini_set('zend.exception_ignore_args', (string) $previousSetting);
+    }
+
+    expect($trace)
+        ->toContain('MhAuthService->login(')
+        ->not->toContain("'Secret");
 });

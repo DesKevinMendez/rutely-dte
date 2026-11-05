@@ -10,6 +10,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use SensitiveParameter;
 
 class MhAuthService
 {
@@ -57,7 +58,7 @@ class MhAuthService
      * @throws ConnectionException when Hacienda cannot be reached
      * @throws RuntimeException when Hacienda answers with a server error
      */
-    public function login(string $nit, string $password, string $environment): string
+    public function login(string $nit, #[SensitiveParameter] string $password, string $environment): string
     {
         $response = Http::asForm()
             ->timeout(10)
