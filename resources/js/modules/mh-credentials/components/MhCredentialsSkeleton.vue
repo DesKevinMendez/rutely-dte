@@ -42,14 +42,6 @@ import { Card } from 'ornito';
                         <div
                             class="h-16 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800"
                         />
-                        <div class="grid grid-cols-2 gap-3">
-                            <div
-                                class="h-16 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800"
-                            />
-                            <div
-                                class="h-16 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800"
-                            />
-                        </div>
                         <div
                             class="h-10 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800"
                         />

@@ -1,5 +1,6 @@
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRequest } from '@/core/composables/useRequest';
+import { useAuth } from '@/core/stores/auth';
 import type { ApiResponse } from '@/core/types/api.types';
 import type {
     CertificateApiEnvironment,
@@ -9,10 +10,6 @@ import type {
     CertificateStorePayload,
     CertificateUploadPayload,
 } from '../types/certificate.types';
-
-const toApiEnvironment = (
-    environment: CertificateEnvironment,
-): CertificateApiEnvironment => (environment === 'PRODUCCION' ? '01' : '00');
 
 const fromApiEnvironment = (
     environment: CertificateApiEnvironment,
@@ -29,99 +26,107 @@ const mapMetadata = (
 });
 
 export async function useCertificateUi() {
-    const selectedEnvironment = ref<CertificateEnvironment>('PRUEBAS');
-    const uploadSuccess = ref(false);
-    const metadataByEnvironment = ref<
-        Record<CertificateEnvironment, CertificateMetadata | null>
-    >({
-        PRUEBAS: null,
-        PRODUCCION: null,
-    });
-    const error = ref<string | null>(null);
-    const { get, post, isLoading } = useRequest();
-
-    const certificateMetadata = computed(
-        () => metadataByEnvironment.value[selectedEnvironment.value],
+    const auth = useAuth();
+    const apiEnvironment = computed(
+        () => auth.user?.company?.environment ?? '00',
     );
+    const selectedEnvironment = computed(() =>
+        fromApiEnvironment(apiEnvironment.value),
+    );
+    const uploadSuccess = ref(false);
+    const certificateMetadata = ref<CertificateMetadata | null>(null);
+    const error = ref<string | null>(null);
+    const isSubmitting = ref(false);
+    const { get } = useRequest();
+    const { post } = useRequest();
+    let latestLoad = 0;
 
     const loadCertificate = async (
-        environment: CertificateEnvironment = selectedEnvironment.value,
-    ): Promise<boolean> => {
-        const apiEnvironment = toApiEnvironment(environment);
+        environment: CertificateApiEnvironment,
+    ): Promise<void> => {
+        const load = ++latestLoad;
         const response = await get<ApiResponse<CertificateApiMetadata>>(
-            `/api/v1/mh-certificates?environment=${apiEnvironment}`,
+            `/api/v1/mh-certificates?environment=${environment}`,
         );
 
+        if (load !== latestLoad) {
+            return;
+        }
+
         if (response.data.value) {
-            metadataByEnvironment.value[environment] = mapMetadata(
-                response.data.value.data,
-            );
-            error.value = null;
-
-            return true;
+            certificateMetadata.value = mapMetadata(response.data.value.data);
+        } else if (response.statusCode.value !== 404) {
+            error.value =
+                response.error.value ??
+                'No se pudo cargar el certificado digital.';
         }
-
-        if (response.statusCode.value === 404) {
-            metadataByEnvironment.value[environment] = null;
-            error.value = null;
-
-            return true;
-        }
-
-        error.value =
-            response.error.value ?? 'No se pudo cargar el certificado digital.';
-
-        return false;
     };
 
-    const changeEnvironment = async (
-        environment: CertificateEnvironment,
-    ): Promise<void> => {
-        selectedEnvironment.value = environment;
+    watch(apiEnvironment, (environment) => {
+        certificateMetadata.value = null;
+        error.value = null;
         uploadSuccess.value = false;
-        await loadCertificate(environment);
-    };
+
+        void loadCertificate(environment);
+    });
 
     const uploadCertificate = async (
         payload: CertificateUploadPayload,
-    ): Promise<boolean> => {
-        const requestPayload: CertificateStorePayload = {
-            environment: toApiEnvironment(selectedEnvironment.value),
-            certificadoXml: await payload.file.text(),
-            passwordPri: payload.password.trim() || null,
-        };
-        const response = await post<
-            ApiResponse<CertificateApiMetadata>,
-            CertificateStorePayload
-        >('/api/v1/mh-certificates', requestPayload);
-
-        if (!response.data.value) {
-            uploadSuccess.value = false;
-            error.value =
-                response.error.value ??
-                'No se pudo guardar el certificado digital.';
-
-            return false;
+    ): Promise<void> => {
+        if (isSubmitting.value) {
+            return;
         }
 
-        metadataByEnvironment.value[selectedEnvironment.value] = mapMetadata(
-            response.data.value.data,
-        );
-        uploadSuccess.value = true;
+        const environment = apiEnvironment.value;
+        isSubmitting.value = true;
+        uploadSuccess.value = false;
         error.value = null;
 
-        return true;
+        try {
+            const requestPayload: CertificateStorePayload = {
+                environment,
+                certificadoXml: await payload.file.text(),
+                passwordPri: payload.password.trim() || null,
+            };
+            const response = await post<
+                ApiResponse<CertificateApiMetadata>,
+                CertificateStorePayload
+            >('/api/v1/mh-certificates', requestPayload);
+
+            if (environment !== apiEnvironment.value) {
+                return;
+            }
+
+            if (!response.data.value) {
+                error.value =
+                    response.error.value ??
+                    'No se pudo guardar el certificado digital.';
+
+                return;
+            }
+
+            // The upload response supersedes any pending metadata request.
+            latestLoad++;
+            certificateMetadata.value = mapMetadata(response.data.value.data);
+            uploadSuccess.value = true;
+            error.value = null;
+        } catch {
+            if (environment === apiEnvironment.value) {
+                error.value = 'No se pudo guardar el certificado digital.';
+            }
+        } finally {
+            isSubmitting.value = false;
+        }
     };
 
-    await loadCertificate();
+    await loadCertificate(apiEnvironment.value);
 
     return {
         selectedEnvironment,
         uploadSuccess,
         certificateMetadata,
-        isLoading,
+        isSubmitting,
         error,
-        changeEnvironment,
         uploadCertificate,
     };
 }

@@ -9,9 +9,8 @@ const {
     saveSuccess,
     saveError,
     credentialsMetadata,
-    isLoading,
+    isSubmitting,
     error,
-    changeEnvironment,
     saveCredentials,
 } = await useMhCredentialsUi();
 </script>
@@ -43,11 +42,11 @@ const {
             </div>
             <div class="lg:col-span-2">
                 <MhCredentialsForm
+                    :key="selectedEnvironment"
                     :selected-environment="selectedEnvironment"
                     :save-success="saveSuccess"
                     :save-error="saveError"
-                    :is-submitting="isLoading"
-                    @environment-change="changeEnvironment"
+                    :is-submitting="isSubmitting"
                     @save="saveCredentials"
                 />
             </div>

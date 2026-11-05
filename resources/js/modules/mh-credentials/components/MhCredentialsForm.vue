@@ -19,7 +19,6 @@ const {
 }>();
 
 const emit = defineEmits<{
-    environmentChange: [environment: MhEnvironment];
     save: [payload: MhCredentialsPayload];
 }>();
 
@@ -67,58 +66,6 @@ const submit = (): void => {
                 <strong>NIT</strong> como la
                 <strong>contraseña del Usuario API</strong> completos para el
                 ambiente seleccionado.
-            </div>
-
-            <div>
-                <p
-                    class="mb-2 block text-sm font-semibold text-gray-700 dark:text-gray-300"
-                >
-                    Ambiente de Destino
-                </p>
-                <div class="grid grid-cols-2 gap-3">
-                    <BaseButton
-                        type="button"
-                        variant="outline"
-                        size="auto"
-                        class="h-auto justify-start py-3 text-left"
-                        :disabled="isSubmitting"
-                        :class="
-                            selectedEnvironment === 'PRUEBAS'
-                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30'
-                                : ''
-                        "
-                        @click="emit('environmentChange', 'PRUEBAS')"
-                    >
-                        <span class="flex flex-col items-start leading-tight">
-                            <span class="font-semibold">Pruebas (Sandbox)</span>
-                            <span
-                                class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400"
-                                >Ambiente de pruebas MH</span
-                            >
-                        </span>
-                    </BaseButton>
-                    <BaseButton
-                        type="button"
-                        variant="outline"
-                        size="auto"
-                        class="h-auto justify-start py-3 text-left"
-                        :disabled="isSubmitting"
-                        :class="
-                            selectedEnvironment === 'PRODUCCION'
-                                ? 'border-primary-500 bg-primary-50 dark:bg-primary-950/30'
-                                : ''
-                        "
-                        @click="emit('environmentChange', 'PRODUCCION')"
-                    >
-                        <span class="flex flex-col items-start leading-tight">
-                            <span class="font-semibold">Producción</span>
-                            <span
-                                class="mt-1 text-xs font-normal text-gray-500 dark:text-gray-400"
-                                >Emisión real de DTEs</span
-                            >
-                        </span>
-                    </BaseButton>
-                </div>
             </div>
 
             <FormInput
