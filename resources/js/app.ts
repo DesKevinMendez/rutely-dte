@@ -1,12 +1,9 @@
 import { initTheme, useRequestKey } from 'ornito';
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';
-import '../css/app.css';
 import App from '@/App.vue';
 import { useRequest } from '@/core/composables/useRequest';
 import router from '@/router';
-
-import 'ornito/style.css';
 
 initTheme();
 
