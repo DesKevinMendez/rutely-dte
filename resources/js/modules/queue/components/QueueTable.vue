@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { Badge, DataTable } from 'ornito';
+import { ref } from 'vue';
+import { Badge, BottomModal, DataTable, InfoItem } from 'ornito';
 import type { BadgeVariant, TableField } from 'ornito';
 import type { QueueJob } from '../types/queue.types';
 
 const { jobs } = defineProps<{
     jobs: QueueJob[];
 }>();
+
+const isDetailsOpen = ref(false);
+const selectedJob = ref<QueueJob | null>(null);
+
+const showDetails = (job: QueueJob): void => {
+    selectedJob.value = job;
+    isDetailsOpen.value = true;
+};
 
 const statusVariant = (status: string): BadgeVariant => {
     switch (status) {
@@ -46,11 +55,31 @@ const columns: TableField<QueueJob>[] = [
 </script>
 
 <template>
-    <DataTable :columns="columns" :data="jobs" :show-search="false">
+    <DataTable
+        :columns="columns"
+        :data="jobs"
+        :show-search="false"
+        @row-selected="showDetails"
+    >
         <template #status="{ row }">
             <Badge :variant="statusVariant(row.status)" text="xs">
                 {{ row.status }}
             </Badge>
         </template>
     </DataTable>
+
+    <BottomModal
+        v-model:open="isDetailsOpen"
+        title="Información de Hacienda"
+        subtitle="Último error de la transmisión seleccionada."
+    >
+        <InfoItem label="Último error">
+            <p class="break-words whitespace-pre-wrap">
+                {{
+                    selectedJob?.lastError ||
+                    'Hacienda no reportó errores en esta transmisión.'
+                }}
+            </p>
+        </InfoItem>
+    </BottomModal>
 </template>

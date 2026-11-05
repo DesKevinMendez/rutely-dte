@@ -4,3 +4,18 @@
 @source '../../node_modules/ornito/dist';
 
 @custom-variant dark (&:is(.dark *));
+
+:root.dark {
+    --ds-color-bottom-modal-panel-bg-dark: var(--ds-color-card-bg-dark);
+    --ds-color-bottom-modal-text-dark: var(--ds-color-table-body-text-dark);
+    --ds-color-bottom-modal-title-text-dark: var(
+        --ds-color-card-title-text-dark
+    );
+    --ds-color-bottom-modal-subtitle-text-dark: var(
+        --ds-color-card-subtitle-text-dark
+    );
+    --ds-color-bottom-modal-close-text-dark: var(--ds-color-neutral-400);
+    --ds-color-bottom-modal-close-bg-hover-dark: var(--ds-color-neutral-700);
+    --ds-color-bottom-modal-close-text-hover-dark: var(--ds-color-white);
+    --ds-color-bottom-modal-close-ring-focus-dark: var(--ds-color-primary-400);
+}
