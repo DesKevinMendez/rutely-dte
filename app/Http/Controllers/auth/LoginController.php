@@ -14,7 +14,7 @@ class LoginController extends Controller
     /**
      * Handle the incoming request.
      */
-    public function __invoke(LoginRequest $request)
+    public function __invoke(LoginRequest $request): CommonResource
     {
         $validate = $request->validated();
 
@@ -27,7 +27,7 @@ class LoginController extends Controller
         }
 
         $token = $user->createToken($validate['device_name'])->plainTextToken;
-        $user->load('roles');
+        $user->load(['roles', 'company']);
 
         return CommonResource::make([
             'token' => $token,

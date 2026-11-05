@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Company\UpdateCompanyEnvironmentRequest;
 use App\Models\Company;
+use App\Models\User;
 use App\Response\CommonResponse;
 use Illuminate\Support\Facades\Gate;
 
@@ -20,10 +21,16 @@ class CompanyEnvironmentController extends Controller
 
     public function update(UpdateCompanyEnvironmentRequest $request, Company $company): CommonResponse
     {
-        $company->forceFill($request->validated())->save();
+        $company->forceFill([
+            'environment' => $request->validated('environment'),
+        ])->save();
+
+        /** @var User $user */
+        $user = $request->user();
+        $user->load(['roles', 'company']);
 
         return new CommonResponse([
-            'environment' => $company->refresh()->environment,
+            'user' => $user->makeHidden('status'),
         ]);
     }
 }

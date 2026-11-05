@@ -20,16 +20,38 @@ import {
 import type { DropdownMenuItem, RoutesLink, Tab } from 'ornito';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useRequest } from '@/core/composables/useRequest';
 import { useAuth } from '@/core/stores/auth';
+import type { AuthUser } from '@/core/types/auth.types';
+import type {
+    ApiEnvironment,
+    Environment,
+} from '@/core/types/environment.types';
 
-type Environment = 'PRUEBAS' | 'PRODUCCION';
+interface EnvironmentUpdateResponse {
+    data: {
+        user: AuthUser;
+    };
+}
+
+const toApiEnvironment = (environment: Environment): ApiEnvironment =>
+    environment === 'PRODUCCION' ? '01' : '00';
+
+const fromApiEnvironment = (
+    environment: ApiEnvironment | undefined,
+): Environment => (environment === '01' ? 'PRODUCCION' : 'PRUEBAS');
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuth();
 const { isCollapsed, toggleCollapse } = useSidebar();
+const { put } = useRequest();
 const isMobileSidebarOpen = ref(false);
-const environment = ref<Environment>('PRUEBAS');
+const isEnvironmentUpdating = ref(false);
+const environmentUpdateError = ref<string | null>(null);
+const environment = computed<Environment>(() =>
+    fromApiEnvironment(auth.user?.company?.environment),
+);
 const pendingEnvironment = ref<Environment | null>(null);
 const environmentTabs: Tab[] = [
     { id: 'PRUEBAS', label: 'Pruebas' },
@@ -67,11 +89,14 @@ const environmentConfirmationTitle = computed(() => {
 });
 
 const environmentConfirmationSubtitle = computed(() => {
-    if (pendingEnvironment.value === 'PRODUCCION') {
-        return '¿Está seguro de cambiar a Producción? Los DTE emitidos en este ambiente corresponden a emisión real ante el Ministerio de Hacienda.';
-    }
+    const confirmationText =
+        pendingEnvironment.value === 'PRODUCCION'
+            ? '¿Está seguro de cambiar a Producción? Los DTE emitidos en este ambiente corresponden a emisión real ante el Ministerio de Hacienda.'
+            : '¿Está seguro de cambiar a Pruebas? Las operaciones se realizarán en el ambiente de pruebas del Ministerio de Hacienda.';
 
-    return '¿Está seguro de cambiar a Pruebas? Las operaciones se realizarán en el ambiente de pruebas del Ministerio de Hacienda.';
+    return environmentUpdateError.value
+        ? `${confirmationText} ${environmentUpdateError.value}`
+        : confirmationText;
 });
 
 const requestEnvironmentChange = (targetEnvironment: Environment): void => {
@@ -79,6 +104,7 @@ const requestEnvironmentChange = (targetEnvironment: Environment): void => {
         return;
     }
 
+    environmentUpdateError.value = null;
     pendingEnvironment.value = targetEnvironment;
 };
 
@@ -90,16 +116,49 @@ const selectedEnvironmentIndex = computed<number>({
 });
 
 const cancelEnvironmentChange = (): void => {
-    pendingEnvironment.value = null;
-};
-
-const confirmEnvironmentChange = (): void => {
-    if (!pendingEnvironment.value) {
+    if (isEnvironmentUpdating.value) {
         return;
     }
 
-    environment.value = pendingEnvironment.value;
     pendingEnvironment.value = null;
+    environmentUpdateError.value = null;
+};
+
+const confirmEnvironmentChange = async (): Promise<void> => {
+    if (!pendingEnvironment.value || isEnvironmentUpdating.value) {
+        return;
+    }
+
+    const companyId = auth.user?.company_id;
+
+    if (!companyId) {
+        environmentUpdateError.value =
+            'No se encontró la empresa para actualizar el ambiente.';
+
+        return;
+    }
+
+    isEnvironmentUpdating.value = true;
+    environmentUpdateError.value = null;
+
+    const response = await put<
+        EnvironmentUpdateResponse,
+        { environment: ApiEnvironment }
+    >(`/api/v1/companies/${encodeURIComponent(companyId)}/environment`, {
+        environment: toApiEnvironment(pendingEnvironment.value),
+    });
+    const updatedUser = response.data.value?.data.user;
+
+    if (updatedUser) {
+        auth.setUser(updatedUser);
+        pendingEnvironment.value = null;
+    } else {
+        environmentUpdateError.value =
+            response.error.value ??
+            'No se pudo actualizar el ambiente de la empresa.';
+    }
+
+    isEnvironmentUpdating.value = false;
 };
 
 const logout = async (): Promise<void> => {
@@ -223,6 +282,7 @@ watch(
 
         <ConfirmationModal
             :open="pendingEnvironment !== null"
+            :loading="isEnvironmentUpdating"
             :title="environmentConfirmationTitle"
             :subtitle="environmentConfirmationSubtitle"
             @close="cancelEnvironmentChange"

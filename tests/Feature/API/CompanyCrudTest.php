@@ -5,6 +5,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Role;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 
@@ -124,6 +125,9 @@ test('company access is tenant isolated', function () {
 
     $this->getJson(route('api.v1.companies.show', $otherCompany))->assertForbidden();
     $this->patchJson(route('api.v1.companies.update', $otherCompany), ['name' => 'Nope'])->assertForbidden();
+    $this->patchJson(route('api.v1.companies.environment.update', $otherCompany), [
+        'environment' => Environment::PRODUCTION->value,
+    ])->assertForbidden();
 });
 
 test('company show and update require authentication', function () {
@@ -131,6 +135,9 @@ test('company show and update require authentication', function () {
 
     $this->getJson(route('api.v1.companies.show', $company))->assertUnauthorized();
     $this->patchJson(route('api.v1.companies.update', $company), ['name' => 'Nope'])->assertUnauthorized();
+    $this->patchJson(route('api.v1.companies.environment.update', $company), [
+        'environment' => Environment::PRODUCTION->value,
+    ])->assertUnauthorized();
 });
 
 test('company members can read environment and only privileged roles can update it', function (Role $role, bool $canUpdate) {
@@ -148,17 +155,48 @@ test('company members can read environment and only privileged roles can update 
 
     if (! $canUpdate) {
         $response->assertForbidden();
+        $this->patchJson(route('api.v1.companies.environment.update', $company), [
+            'environment' => '99',
+        ])->assertForbidden();
 
         return;
     }
 
-    $response->assertOk()->assertExactJson(['data' => ['environment' => Environment::PRODUCTION->value]]);
+    $expectedUser = $user->fresh()->load(['roles', 'company']);
+    $expectedUser->makeHidden('status');
+
+    $response->assertOk()->assertExactJson(['data' => ['user' => $expectedUser->toArray()]]);
     expect($company->fresh()->environment)->toBe(Environment::PRODUCTION->value);
+    expect($company->fresh()->name)->toBe('Rutely, S.A. de C.V.');
 })->with([
     'admin' => [Role::ADMIN, true],
     'user' => [Role::USER, false],
     'superadmin' => [Role::SUPERADMIN, true],
 ]);
+
+test('login returns company information with the authenticated user', function () {
+    $company = createCompanyCrudCompany();
+    $user = User::factory()->withRole(Role::ADMIN)->create([
+        'company_id' => $company->id,
+        'password' => Hash::make('secret'),
+    ]);
+    $expectedUser = $user->fresh()->load(['roles', 'company']);
+    $expectedUser->makeHidden('status');
+
+    $response = $this->postJson(route('login'), [
+        'email' => $user->email,
+        'password' => 'secret',
+        'device_name' => 'test-client',
+    ]);
+
+    $response->assertOk()->assertJson([
+        'data' => [
+            'user' => $expectedUser->toArray(),
+        ],
+    ]);
+
+    expect(array_key_exists('pivot', $response->json('data.user.roles.0')))->toBeFalse();
+});
 
 test('company environment request validation returns 422', function (string $field, mixed $value, string $message) {
     $company = createCompanyCrudCompany();

@@ -74,11 +74,54 @@ test.describe('Dashboard', () => {
         await confirmationDialog
             .getByRole('textbox', { name: 'Confirmación' })
             .fill('Confirmar');
+        const environmentResponsePromise = page.waitForResponse(
+            (response) =>
+                response.request().method() === 'PUT' &&
+                /\/api\/v1\/companies\/[^/]+\/environment$/.test(
+                    new URL(response.url()).pathname,
+                ),
+        );
         await confirmationDialog
             .getByRole('button', { name: 'Confirmar', exact: true })
             .click();
+        const environmentResponse = await environmentResponsePromise;
 
         await expect(confirmationDialog).not.toBeVisible();
         await expect(productionTab).toHaveAttribute('aria-selected', 'true');
+        expect(environmentResponse.status()).toBe(200);
+        expect(environmentResponse.request().postDataJSON()).toEqual({
+            environment: '01',
+        });
+
+        await page.reload();
+        await expect(productionTab).toHaveAttribute('aria-selected', 'true');
+
+        const resetResponseStatus = await page.evaluate(async () => {
+            const token = localStorage.getItem('auth_token');
+            const user = JSON.parse(
+                localStorage.getItem('auth_user') ?? 'null',
+            );
+
+            if (!token || !user?.company_id) {
+                return null;
+            }
+
+            const response = await fetch(
+                `/api/v1/companies/${encodeURIComponent(user.company_id)}/environment`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ environment: '00' }),
+                },
+            );
+
+            return response.status;
+        });
+
+        expect(resetResponseStatus).toBe(200);
     });
 });
