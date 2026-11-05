@@ -55,8 +55,8 @@ const submit = (): void => {
 
 <template>
     <Card
-        title="Credenciales Portal MH"
-        subtitle="Configure o rote el NIT y la contraseña de autenticación para el portal del Ministerio de Hacienda."
+        title="Credenciales del Usuario API"
+        subtitle="Configure o rote el NIT y la contraseña con los que el sistema se autentica en el API del Ministerio de Hacienda."
     >
         <form class="space-y-5" @submit.prevent="submit">
             <div
@@ -65,8 +65,8 @@ const submit = (): void => {
                 Las credenciales no admiten actualización parcial. Cada
                 actualización requiere ingresar tanto el
                 <strong>NIT</strong> como la
-                <strong>contraseña</strong> completos para el ambiente
-                seleccionado.
+                <strong>contraseña del Usuario API</strong> completos para el
+                ambiente seleccionado.
             </div>
 
             <div>
@@ -137,8 +137,9 @@ const submit = (): void => {
                 id="mh-password"
                 name="password"
                 type="password"
-                label="Contraseña del Portal MH"
-                placeholder="Ingrese la contraseña del portal MH"
+                label="Contraseña del Usuario API"
+                placeholder="Ingrese la contraseña del Usuario API"
+                help="Se define en el sitio Emisores DTE de Hacienda: inicie sesión en el ambiente seleccionado y abra Gestión de Usuario API, opción Cambiar Password. No use la clave de Servicios DGII ni la de la llave privada."
             />
 
             <Alert v-if="saveError" type="danger">

@@ -6,7 +6,7 @@ import { authenticateDeveloper } from './support/auth';
 type MhLoginStatus = 'authenticated' | 'rejected' | 'unverified';
 
 const REJECTED_MESSAGE =
-    'Hacienda rechazó el NIT o la contraseña. Las credenciales no se guardaron.';
+    'Hacienda rechazó el NIT o la contraseña del Usuario API. Las credenciales no se guardaron.';
 const UNAVAILABLE_MESSAGE =
     'No se pudo contactar a Hacienda para comprobar el login. Las credenciales no se guardaron; inténtelo de nuevo.';
 const FORBIDDEN_NIT_MESSAGE =
@@ -108,6 +108,9 @@ test.describe('MH credentials', () => {
             page.getByRole('heading', { name: 'Credenciales de Autenticación (MH)' }),
         ).toBeVisible();
         await expect(page.getByText('Sin Credenciales Registradas', { exact: true })).toBeVisible();
+        await expect(page.getByLabel('Contraseña del Usuario API')).toBeVisible();
+        await expect(page.getByText(/Gestión de Usuario API, opción Cambiar Password/)).toBeVisible();
+        await expect(page.getByText('Portal MH')).toHaveCount(0);
         await page.waitForLoadState('networkidle');
 
         const initialGetRequests = credentialsRequests.filter(

@@ -76,7 +76,7 @@ return [
             'other_environment' => 'El NIT debe ser el mismo en los ambientes de pruebas y producción.',
         ],
         'pwd' => [
-            'mh_rejected' => 'Hacienda rechazó el NIT o la contraseña. Las credenciales no se guardaron.',
+            'mh_rejected' => 'Hacienda rechazó el NIT o la contraseña del Usuario API. Las credenciales no se guardaron.',
             'mh_unavailable' => 'No se pudo contactar a Hacienda para comprobar el login. Las credenciales no se guardaron; inténtelo de nuevo.',
         ],
     ],
@@ -95,7 +95,7 @@ return [
         'district_id' => 'distrito',
         'email' => 'correo electrónico',
         'password' => 'contraseña',
-        'pwd' => 'contraseña de Hacienda',
+        'pwd' => 'contraseña del Usuario API',
         'certificadoXml' => 'certificado de Hacienda',
         'passwordPri' => 'contraseña privada',
         'active' => 'activo',
