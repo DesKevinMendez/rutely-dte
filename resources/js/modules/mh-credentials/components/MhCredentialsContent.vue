@@ -25,8 +25,8 @@ const {
                 Credenciales de Autenticación (MH)
             </h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Gestión y rotación de credenciales (NIT y contraseña) para la
-                autenticación en el portal del Ministerio de Hacienda
+                Gestión y rotación de credenciales (NIT y contraseña del Usuario
+                API) para la autenticación en el API del Ministerio de Hacienda
             </p>
         </div>
 

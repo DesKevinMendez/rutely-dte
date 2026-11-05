@@ -212,8 +212,8 @@ test('store MH credentials request validation returns 422', function (array $pay
     'nit must be a string' => [['environment' => '00', 'nit' => ['0614'], 'pwd' => 'Hacienda-Prueba-01'], 'nit', 'El campo NIT debe ser una cadena de caracteres.'],
     'nit with letters' => [['environment' => '00', 'nit' => '0614281290101A', 'pwd' => 'Hacienda-Prueba-01'], 'nit', 'El formato del campo NIT no es válido.'],
     'nit with an invalid length' => [['environment' => '00', 'nit' => str_repeat('1', 21), 'pwd' => 'Hacienda-Prueba-01'], 'nit', 'El formato del campo NIT no es válido.'],
-    'password is required' => [['environment' => '00', 'nit' => '06142812901015'], 'pwd', 'El campo contraseña de Hacienda es obligatorio.'],
-    'password must be a string' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => ['secret']], 'pwd', 'El campo contraseña de Hacienda debe ser una cadena de caracteres.'],
+    'password is required' => [['environment' => '00', 'nit' => '06142812901015'], 'pwd', 'El campo contraseña del Usuario API es obligatorio.'],
+    'password must be a string' => [['environment' => '00', 'nit' => '06142812901015', 'pwd' => ['secret']], 'pwd', 'El campo contraseña del Usuario API debe ser una cadena de caracteres.'],
 ]);
 
 test('store MH credentials stores and sends to Hacienda only the digits of a NIT written with hyphens', function () {
@@ -262,7 +262,7 @@ test('store MH credentials does not save what Hacienda rejects', function (array
         'pwd' => 'Hacienda-Incorrecta-01',
     ])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['pwd' => 'Hacienda rechazó el NIT o la contraseña. Las credenciales no se guardaron.']);
+        ->assertJsonValidationErrors(['pwd' => 'Hacienda rechazó el NIT o la contraseña del Usuario API. Las credenciales no se guardaron.']);
 
     expect(MhCredentials::query()->where('company_id', $company->id)->exists())->toBeFalse();
     $this->getJson(route('api.v1.mh-credentials.show'))->assertNotFound();
@@ -411,7 +411,7 @@ test('store MH credentials validates the payload before checking who the NIT bel
         'nit' => '06142812901016',
     ])
         ->assertUnprocessable()
-        ->assertJsonValidationErrors(['pwd' => 'El campo contraseña de Hacienda es obligatorio.']);
+        ->assertJsonValidationErrors(['pwd' => 'El campo contraseña del Usuario API es obligatorio.']);
 
     Http::assertNothingSent();
 });
