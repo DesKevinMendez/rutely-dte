@@ -192,8 +192,12 @@ watch(
                                 label="Ambiente"
                                 class="!space-y-0 [&_.tab-content]:hidden [&>div:first-child]:!h-auto"
                             >
-                                <template #tab-0 />
-                                <template #tab-1 />
+                                <template #tab-0>
+                                    <span class="hidden" aria-hidden="true" />
+                                </template>
+                                <template #tab-1>
+                                    <span class="hidden" aria-hidden="true" />
+                                </template>
                             </Tabs>
                         </div>
 
