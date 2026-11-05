@@ -1,11 +1,12 @@
 @import 'tailwindcss';
 @import 'ornito/theme.css';
+@import 'ornito/style.css';
 
 @source '../../node_modules/ornito/dist';
 
 @custom-variant dark (&:is(.dark *));
 
-:root.dark {
+:root {
     --ds-color-bottom-modal-panel-bg-dark: var(--ds-color-card-bg-dark);
     --ds-color-bottom-modal-text-dark: var(--ds-color-table-body-text-dark);
     --ds-color-bottom-modal-title-text-dark: var(
