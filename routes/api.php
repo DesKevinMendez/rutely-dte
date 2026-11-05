@@ -24,7 +24,9 @@ Route::get('/user', function (Request $request): User {
     /** @var User $user */
     $user = $request->user();
 
-    return $user->load(['roles', 'company'])->makeHidden('status');
+    $user->load(['roles', 'company']);
+
+    return $user->makeHidden('status');
 })->middleware(['auth:sanctum', 'user-token']);
 
 Route::group(['prefix' => 'v1'], function () {

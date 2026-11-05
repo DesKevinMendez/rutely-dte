@@ -162,7 +162,8 @@ test('company members can read environment and only privileged roles can update 
         return;
     }
 
-    $expectedUser = $user->fresh()->load(['roles', 'company'])->makeHidden('status');
+    $expectedUser = $user->fresh()->load(['roles', 'company']);
+    $expectedUser->makeHidden('status');
 
     $response->assertOk()->assertExactJson(['data' => ['user' => $expectedUser->toArray()]]);
     expect($company->fresh()->environment)->toBe(Environment::PRODUCTION->value);
@@ -179,17 +180,22 @@ test('login returns company information with the authenticated user', function (
         'company_id' => $company->id,
         'password' => Hash::make('secret'),
     ]);
-    $expectedUser = $user->fresh()->load(['roles', 'company'])->makeHidden('status');
+    $expectedUser = $user->fresh()->load(['roles', 'company']);
+    $expectedUser->makeHidden('status');
 
-    $this->postJson(route('login'), [
+    $response = $this->postJson(route('login'), [
         'email' => $user->email,
         'password' => 'secret',
         'device_name' => 'test-client',
-    ])->assertOk()->assertJson([
+    ]);
+
+    $response->assertOk()->assertJson([
         'data' => [
             'user' => $expectedUser->toArray(),
         ],
     ]);
+
+    expect(array_key_exists('pivot', $response->json('data.user.roles.0')))->toBeFalse();
 });
 
 test('company environment request validation returns 422', function (string $field, mixed $value, string $message) {
