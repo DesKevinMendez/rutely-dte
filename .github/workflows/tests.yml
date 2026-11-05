@@ -22,7 +22,11 @@ jobs:
           POSTGRES_PASSWORD: rutely_local
         ports:
           - 5432:5432
-        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+        options: >-
+          --health-cmd "pg_isready -U rutely -d rutelydte_testing"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
       db-e2e:
         image: postgres:17-alpine
         env:
@@ -31,7 +35,11 @@ jobs:
           POSTGRES_PASSWORD: rutely_e2e_local
         ports:
           - 5440:5432
-        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+        options: >-
+          --health-cmd "pg_isready -U rutely_e2e -d rutelydte_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout code
