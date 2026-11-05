@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\auth\LoginController;
 use App\Http\Controllers\auth\RegisterController;
 use App\Http\Controllers\CompanyController;
@@ -42,11 +41,6 @@ Route::group(['prefix' => 'v1'], function () {
     Route::middleware(['auth:sanctum', 'user-token'])->group(function () {
         Route::get('dashboard', [DashboardController::class, 'show'])
             ->name('api.v1.dashboard.show');
-
-        Route::get('tokens', [ApiTokenController::class, 'index'])
-            ->name('api.v1.tokens.index');
-        Route::post('tokens', [ApiTokenController::class, 'store'])
-            ->name('api.v1.tokens.store');
 
         Route::post('companies', [CompanyController::class, 'store'])
             ->name('api.v1.companies.store');

@@ -19,16 +19,14 @@ import CreateApiTokenModal from './CreateApiTokenModal.vue';
 import GeneratedApiTokenModal from './GeneratedApiTokenModal.vue';
 
 const { companyId } = defineProps<{
-    companyId?: string;
+    companyId: string;
 }>();
 
 const isCreateModalOpen = ref(false);
 const tokenPendingRevocation = ref<ApiTokenApiRecord | null>(null);
 const tableKey = ref(0);
-const tokensUrl = computed(() =>
-    companyId
-        ? `/api/v1/superadmin/companies/${encodeURIComponent(companyId)}/tokens`
-        : '/api/v1/tokens',
+const tokensUrl = computed(
+    () => `/api/v1/superadmin/companies/${encodeURIComponent(companyId)}/tokens`,
 );
 const {
     generatedToken,
@@ -104,7 +102,7 @@ const closeTokenRevocation = (): void => {
 const confirmTokenRevocation = async (): Promise<void> => {
     const token = tokenPendingRevocation.value;
 
-    if (!companyId || !token || isLoading.value) {
+    if (!token || isLoading.value) {
         return;
     }
 
@@ -122,7 +120,7 @@ const confirmTokenRevocation = async (): Promise<void> => {
         </Alert>
 
         <Card title="Tokens de acceso">
-            <template v-if="companyId" #headerButtons>
+            <template #headerButtons>
                 <BaseButton
                     variant="outline"
                     size="auto"
@@ -146,7 +144,7 @@ const confirmTokenRevocation = async (): Promise<void> => {
                         {{ row.token_preview }}
                     </code>
                 </template>
-                <template v-if="companyId" #actions="{ row }">
+                <template #actions="{ row }">
                     <IconButton
                         type="button"
                         :icon="IconTrash"

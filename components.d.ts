@@ -12,8 +12,6 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     ApiTokensContent: typeof import('./resources/js/modules/tokens/components/ApiTokensContent.vue')['default']
-    ApiTokensSkeleton: typeof import('./resources/js/modules/tokens/components/ApiTokensSkeleton.vue')['default']
-    ApiTokensView: typeof import('./resources/js/modules/tokens/views/ApiTokensView.vue')['default']
     App: typeof import('./resources/js/App.vue')['default']
     AuthHero: typeof import('./resources/js/modules/auth/components/AuthHero.vue')['default']
     CertificateRequirementsCard: typeof import('./resources/js/modules/certificates/components/CertificateRequirementsCard.vue')['default']
