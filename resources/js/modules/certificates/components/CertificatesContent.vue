@@ -9,9 +9,8 @@ const {
     selectedEnvironment,
     uploadSuccess,
     certificateMetadata,
-    isLoading,
+    isSubmitting,
     error,
-    changeEnvironment,
     uploadCertificate,
 } = await useCertificateUi();
 </script>
@@ -44,10 +43,10 @@ const {
             </div>
             <div class="lg:col-span-2">
                 <CertificateUploadForm
+                    :key="selectedEnvironment"
                     :selected-environment="selectedEnvironment"
                     :upload-success="uploadSuccess"
-                    :is-submitting="isLoading"
-                    @environment-change="changeEnvironment"
+                    :is-submitting="isSubmitting"
                     @upload="uploadCertificate"
                 />
             </div>

@@ -6,6 +6,24 @@ test.describe('Certificates', () => {
 
     test.beforeEach(async ({ page }) => {
         await authenticateDeveloper(page);
+
+        const { user } = JSON.parse(process.env.E2E_SESSION ?? 'null') as {
+            user: { company: { environment: '00' | '01' } };
+        };
+        user.company.environment = '00';
+        await page.route('**/api/user', (route) => route.fulfill({ json: user }));
+        await page.route('**/api/v1/companies/*/environment', (route) => {
+            const { environment } = route.request().postDataJSON() as {
+                environment: '00' | '01';
+            };
+            user.company.environment = environment;
+
+            return route.fulfill({ json: { data: { user } } });
+        });
+        await page.route('**/api/v1/mh-certificates?environment=*', (route) =>
+            route.fulfill({ status: 404, json: { message: 'No encontrado.' } }),
+        );
+
         await page.goto('/#/certificates');
     });
 
@@ -15,23 +33,84 @@ test.describe('Certificates', () => {
         await expect(page.getByText('Ambiente seleccionado: PRUEBAS', { exact: true })).toBeVisible();
     });
 
-    test('loads certificate state when changing environment', async ({ page }) => {
+    test('uses the navbar environment to load and upload the certificate', async ({ page }) => {
+        const certificateFile = {
+            name: 'playwright-certificate.xml',
+            mimeType: 'application/xml',
+            buffer: Buffer.from('<certificado />'),
+        };
+        const fileInput = page.locator('#certificate-file');
+        const passwordInput = page.locator('#certificate-password');
+        const submitButton = page.getByRole('button', {
+            name: 'Guardar y Encriptar Certificado',
+        });
+        await expect(page.getByText('Ambiente de Destino')).toHaveCount(0);
+        await fileInput.setInputFiles(certificateFile);
+        await passwordInput.fill('Playwright-draft');
+
+        const productionTab = page
+            .getByRole('tablist', { name: 'Ambiente' })
+            .getByRole('tab', { name: 'Producción' });
+        await productionTab.click();
+        const dialog = page.getByRole('dialog');
+        await dialog
+            .getByRole('textbox', { name: 'Confirmación' })
+            .fill('Confirmar');
+
         const certificateResponse = page.waitForResponse(
             (response) =>
                 response.request().method() === 'GET' &&
-                new URL(response.url()).pathname === '/api/v1/mh-certificates',
+                new URL(response.url()).pathname === '/api/v1/mh-certificates' &&
+                new URL(response.url()).searchParams.get('environment') === '01',
         );
 
-        await page
-            .getByRole('button', {
-                name: 'Producción Emisión real de DTEs',
-                exact: true,
-            })
+        await dialog
+            .getByRole('button', { name: 'Confirmar', exact: true })
             .click();
 
         expect((await certificateResponse).status()).toBe(404);
-        await expect(page.getByText('Ambiente seleccionado: PRODUCCION', { exact: true })).toBeVisible();
-        await expect(page.getByText('Sin Certificado Registrado', { exact: true })).toBeVisible();
+        await expect(productionTab).toHaveAttribute('aria-selected', 'true');
+        await expect(
+            page.getByText('Ambiente seleccionado: PRODUCCION', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByText('Sin Certificado Registrado', { exact: true }),
+        ).toBeVisible();
+        await expect(fileInput).toHaveValue('');
+        await expect(passwordInput).toHaveValue('');
+        await expect(submitButton).toBeDisabled();
+
+        await page.route('**/api/v1/mh-certificates', (route) =>
+            route.fulfill({
+                json: {
+                    data: {
+                        id: 'test-certificate',
+                        environment: '01',
+                        nit: '06142812901015',
+                        active: true,
+                        updated_at: null,
+                    },
+                },
+            }),
+        );
+        await fileInput.setInputFiles(certificateFile);
+        await passwordInput.fill('Playwright-certificate-password');
+        const uploadRequest = page.waitForRequest(
+            (request) =>
+                request.method() === 'POST' &&
+                new URL(request.url()).pathname === '/api/v1/mh-certificates',
+        );
+        await submitButton.click();
+
+        expect((await uploadRequest).postDataJSON()).toEqual({
+            environment: '01',
+            certificadoXml: '<certificado />',
+            passwordPri: 'Playwright-certificate-password',
+        });
+        await expect(
+            page.getByText(/Certificado guardado correctamente.*PRODUCCION/),
+        ).toBeVisible();
+        await expect(page.getByText('ACTIVO', { exact: true })).toBeVisible();
     });
 
     test('enables certificate submission after selecting a file', async ({ page }) => {
