@@ -87,7 +87,7 @@ test.describe('DTEs', () => {
         await page.locator('#receptor-correo').fill('factura.playwright@example.test');
         await page.locator('#item-desc-0').fill('Servicio E2E Playwright');
         await page.locator('#item-qty-0').fill('2');
-        await page.locator('#item-price-0').fill('25');
+        await page.locator('#item-price-0').fill('25.00');
 
         await expect(page.getByText('Total: $50.00 USD', { exact: true })).toBeVisible();
 
@@ -165,7 +165,7 @@ test.describe('DTEs', () => {
         await page.locator('#item-price-0').fill('24999.99');
         await expect(notice).toHaveCount(0);
 
-        await page.locator('#item-price-0').fill('25000');
+        await page.locator('#item-price-0').fill('25000.00');
         await expect(notice).toBeVisible();
 
         await page.locator('#tipo-dte').selectOption('14');

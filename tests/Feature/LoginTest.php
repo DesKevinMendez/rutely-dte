@@ -31,6 +31,7 @@ test('an user can do login', function () {
             'user' => [
                 'id' => $response->json('data.user.id'),
                 'company_id' => $user->company_id,
+                'company' => null,
                 'roles' => $response->json('data.user.roles'),
                 'phone' => $response->json('data.user.phone'),
                 'name' => $response->json('data.user.name'),

@@ -83,7 +83,7 @@ services:
       rutelydte-network:
         aliases:
           - rutelydtedb
-    healthcheck:
+    healthcheck: &postgres-healthcheck
       test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
       timeout: 5s
@@ -98,8 +98,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: rutelydte_testing
-      POSTGRES_USER: ${DB_USERNAME:-rutely}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-rutely_local}
+      POSTGRES_USER: rutely
+      POSTGRES_PASSWORD: rutely_local
     ports:
       - "127.0.0.1:${DB_TEST_FORWARD_PORT:-5439}:5432"
     volumes:
@@ -108,15 +108,11 @@ services:
       rutelydte-network:
         aliases:
           - rutelydtedbtesting
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+    healthcheck: *postgres-healthcheck
 
   test:
     <<: *app
+    image: rutelydte-rutelydte
     container_name: rutelydte-test
     profiles:
       - testing
@@ -125,16 +121,60 @@ services:
       db-testing:
         condition: service_healthy
     environment:
-      APP_NAME: rutelydte
       APP_ENV: testing
-      APP_DEBUG: "true"
+      APP_CONFIG_CACHE: bootstrap/cache/config-testing.php
       DB_CONNECTION: pgsql
       DB_HOST: db-testing
       DB_PORT: 5432
       DB_DATABASE: rutelydte_testing
-      DB_USERNAME: ${DB_USERNAME:-rutely}
-      DB_PASSWORD: ${DB_PASSWORD:-rutely_local}
+      DB_USERNAME: rutely
+      DB_PASSWORD: rutely_local
+      DB_URL: ""
     command: ["php", "artisan", "test", "--compact"]
+
+  db-e2e:
+    image: postgres:17-alpine
+    profiles:
+      - e2e
+    environment:
+      POSTGRES_DB: rutelydte_e2e
+      POSTGRES_USER: rutely_e2e
+      POSTGRES_PASSWORD: rutely_e2e_local
+    tmpfs:
+      - /var/lib/postgresql/data
+    networks:
+      - rutelydte-network
+    healthcheck: *postgres-healthcheck
+
+  e2e:
+    <<: *app
+    image: rutelydte-rutelydte
+    profiles:
+      - e2e
+    restart: "no"
+    init: true
+    depends_on:
+      db-e2e:
+        condition: service_healthy
+    env_file: []
+    environment:
+      E2E_SERVER_HOST: 0.0.0.0
+    ports:
+      - "127.0.0.1:9003:9003"
+    tmpfs:
+      - /var/www/public
+    volumes:
+      - ./:/var/www:ro
+      - ./public:/e2e-public:ro
+      - /var/www/storage
+      - /var/www/bootstrap/cache
+    command:
+      - sh
+      - -ec
+      - |
+        cp -R /e2e-public/. public/
+        rm -f public/hot
+        exec sh tests/e2e/support/serve.sh
 
   nginx:
     image: nginx:alpine

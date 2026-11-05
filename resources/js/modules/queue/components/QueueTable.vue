@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import { Badge, BottomModal, DataTable, InfoItem } from 'ornito';
 import type { BadgeVariant, TableField } from 'ornito';
+import { ref } from 'vue';
 import type { QueueJob } from '../types/queue.types';
 
 const { jobs } = defineProps<{
