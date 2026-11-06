@@ -28,6 +28,13 @@ test('DTE creation returns the created draft when signing material is not config
             'record' => $dte->toArray(),
             'mh_result' => null,
         ],
+    ])->assertJson([
+        'data' => [
+            'record' => [
+                'id' => $dte->id,
+                'status' => 'BORRADOR',
+            ],
+        ],
     ]);
 
     expect($dte->status)->toBe('BORRADOR')

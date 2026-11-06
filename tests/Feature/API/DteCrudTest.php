@@ -173,6 +173,14 @@ test('company API token can create a DTE when issuance has no MH result', functi
                 'record' => $record->toArray(),
                 'mh_result' => null,
             ],
+        ])
+        ->assertJson([
+            'data' => [
+                'record' => [
+                    'id' => $record->id,
+                    'status' => 'BORRADOR',
+                ],
+            ],
         ]);
 });
 

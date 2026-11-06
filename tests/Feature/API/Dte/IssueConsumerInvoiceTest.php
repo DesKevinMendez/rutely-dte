@@ -105,6 +105,15 @@ test('stores the status returned by Hacienda when it receives a consumer invoice
 
     $dte = Dte::query()->findOrFail($response->json('data.record.id'));
 
+    $response->assertJson([
+        'data' => [
+            'record' => [
+                'id' => $dte->id,
+                'status' => 'RECIBIDO',
+            ],
+        ],
+    ]);
+
     expect($dte->status)->toBe('RECIBIDO')
         ->and($response->json('data.mh_result'))->toBe($mhResult);
 });
