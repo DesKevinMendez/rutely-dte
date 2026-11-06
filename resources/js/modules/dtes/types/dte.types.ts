@@ -77,5 +77,5 @@ export interface DteStoreResult {
         estado?: string;
         selloRecibido?: string;
         observaciones?: string[];
-    };
+    } | null;
 }
