@@ -3,6 +3,7 @@
 use App\Models\Dte;
 use App\Models\Receivers;
 use App\Role;
+use App\Services\Mh\MhTransmissionService;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\DteTypeSeeder;
 use Database\Seeders\ItemTypeSeeder;
@@ -81,6 +82,64 @@ test('issues an anonymous consumer invoice whose prices already include IVA', fu
             'plazo' => null,
             'periodo' => null,
         ]]);
+});
+
+test('stores the status returned by Hacienda when it receives a consumer invoice', function () {
+    $company = companyReadyToIssue();
+    $mhResult = [
+        'estado' => 'RECIBIDO',
+        'selloRecibido' => str_repeat('B', 40),
+        'observaciones' => [],
+    ];
+
+    $this->mock(MhTransmissionService::class)
+        ->shouldReceive('transmitDte')
+        ->once()
+        ->andReturn($mhResult);
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), [
+        'tipoDte' => '01',
+        'items' => [['descripcion' => 'Servicio de monitoreo', 'cantidad' => 1, 'precioUni' => 100]],
+    ])->assertCreated();
+
+    $dte = Dte::query()->findOrFail($response->json('data.record.id'));
+
+    $response->assertJson([
+        'data' => [
+            'record' => [
+                'id' => $dte->id,
+                'status' => 'RECIBIDO',
+            ],
+        ],
+    ]);
+
+    expect($dte->status)->toBe('RECIBIDO')
+        ->and($response->json('data.mh_result'))->toBe($mhResult);
+});
+
+test('stores an unknown status when Hacienda does not return one', function () {
+    $company = companyReadyToIssue();
+    $mhResult = [
+        'selloRecibido' => str_repeat('C', 40),
+        'observaciones' => [],
+    ];
+
+    $this->mock(MhTransmissionService::class)
+        ->shouldReceive('transmitDte')
+        ->once()
+        ->andReturn($mhResult);
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+
+    $response = $this->postJson(route('api.v1.dtes.store'), [
+        'tipoDte' => '01',
+        'items' => [['descripcion' => 'Servicio de monitoreo', 'cantidad' => 1, 'precioUni' => 100]],
+    ])->assertCreated();
+
+    $dte = Dte::query()->findOrFail($response->json('data.record.id'));
+
+    expect($dte->status)->toBe('DESCONOCIDO')
+        ->and($response->json('data.mh_result'))->toBe($mhResult);
 });
 
 test('issues a consumer invoice to an identified receiver and stores the receiver', function () {

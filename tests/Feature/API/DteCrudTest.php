@@ -150,6 +150,40 @@ test('company API token with create dte ability can create a DTE for its company
         ]);
 });
 
+test('company API token can create a DTE when issuance has no MH result', function () {
+    $company = DteApiTestData::company();
+    $token = $company->createToken('POS', ['create:dte'])->plainTextToken;
+    $payload = DteApiTestData::validDtePayload();
+    $record = DteApiTestData::dte($company, [
+        'status' => 'BORRADOR',
+        'signed_json' => null,
+    ]);
+
+    $this->mock(DteIssuanceService::class)
+        ->shouldReceive('issue')
+        ->once()
+        ->with($company->id, $payload)
+        ->andReturn(['record' => $record, 'mhResult' => null]);
+
+    $this->withToken($token)
+        ->postJson(route('api.v1.dtes.store'), $payload)
+        ->assertCreated()
+        ->assertExactJson([
+            'data' => [
+                'record' => $record->toArray(),
+                'mh_result' => null,
+            ],
+        ])
+        ->assertJson([
+            'data' => [
+                'record' => [
+                    'id' => $record->id,
+                    'status' => 'BORRADOR',
+                ],
+            ],
+        ]);
+});
+
 test('company API token without create dte ability cannot create a DTE', function () {
     $company = DteApiTestData::company();
     $token = $company->createToken('External ERP', ['list:dte'])->plainTextToken;
@@ -364,7 +398,7 @@ test('store DTE request validation returns 422', function (array $payload, strin
     'item unit must be integer' => [dteValidationPayload(['items' => [['uniMedida' => 'x']]]), 'items.0.uniMedida', 'El campo unidad de medida del ítem debe ser un número entero.'],
 ]);
 
-test('store DTE accepts the catalog codes it can issue', function (string $field, string|int $code) {
+test('store DTE accepts the catalog codes it can issue without signing material', function (string $field, string|int $code) {
     $company = DteApiTestData::company();
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
     $payload = DteApiTestData::validDtePayload();
@@ -376,10 +410,7 @@ test('store DTE accepts the catalog codes it can issue', function (string $field
     }
 
     $this->postJson(route('api.v1.dtes.store'), $payload)
-        ->assertStatus(400)
-        ->assertExactJson([
-            'message' => 'No hay material de firma configurado para la empresa y el ambiente seleccionados.',
-        ]);
+        ->assertCreated();
 })->with([
     'establishment type 01' => ['emisor.tipoEstablecimiento', '01'],
     'establishment type 02' => ['emisor.tipoEstablecimiento', '02'],
@@ -390,14 +421,11 @@ test('store DTE accepts the catalog codes it can issue', function (string $field
     'item type 3' => ['items.*.tipoItem', 3],
 ]);
 
-test('store DTE accepts the DTE types that can be issued', function (array $payload) {
+test('store DTE accepts the DTE types that can be issued without signing material', function (array $payload) {
     Sanctum::actingAs(DteApiTestData::user(DteApiTestData::company(), Role::USER));
 
     $this->postJson(route('api.v1.dtes.store'), $payload)
-        ->assertBadRequest()
-        ->assertExactJson([
-            'message' => 'No hay material de firma configurado para la empresa y el ambiente seleccionados.',
-        ]);
+        ->assertCreated();
 })->with([
     'consumer invoice' => [DteApiTestData::validDtePayload()],
     'tax credit' => [DteApiTestData::validTaxCreditPayload()],

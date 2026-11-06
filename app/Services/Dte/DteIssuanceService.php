@@ -2,6 +2,7 @@
 
 namespace App\Services\Dte;
 
+use App\Exceptions\DteSigningException;
 use App\IssuableDteType;
 use App\Models\Company;
 use App\Models\Departament;
@@ -24,7 +25,7 @@ class DteIssuanceService
 
     /**
      * @param  array<string, mixed>  $payload
-     * @return array{record: Dte, mhResult: array<string, mixed>}
+     * @return array{record: Dte, mhResult: array<string, mixed>|null}
      */
     public function issue(string $companyId, array $payload): array
     {
@@ -58,15 +59,20 @@ class DteIssuanceService
             'original_json' => $document,
         ]);
 
-        $signedDocument = $this->firmador->signDocument($companyId, $document, $environment, $company->nit);
-        $dte->update([
-            'status' => 'FIRMADO',
-            'signed_json' => $signedDocument,
-        ]);
+        try {
+            $signedDocument = $this->firmador->signDocument($companyId, $document, $environment, $company->nit);
+        } catch (DteSigningException) {
+            return [
+                'record' => $dte->refresh(),
+                'mhResult' => null,
+            ];
+        }
+
+        $dte->update(['signed_json' => $signedDocument]);
 
         $mhResult = $this->transmission->transmitDte($dte->refresh());
         $dte->update([
-            'status' => ($mhResult['estado'] ?? null) === 'PROCESADO' ? 'PROCESADO' : 'RECHAZADO',
+            'status' => $mhResult['estado'] ?? 'DESCONOCIDO',
             'received_seal' => $mhResult['selloRecibido'] ?? null,
             'observations' => json_encode($mhResult['observaciones'] ?? [], JSON_UNESCAPED_UNICODE),
             'mh_response_json' => $mhResult,

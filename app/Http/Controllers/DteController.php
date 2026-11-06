@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\DteIssuerProfileException;
-use App\Exceptions\DteSigningException;
 use App\Http\Requests\CatalogIndexRequest;
 use App\Http\Requests\Dte\StoreDteRequest;
 use App\Http\Resources\CommonCollection;
@@ -69,17 +68,20 @@ class DteController extends Controller
 
         try {
             $result = $issuanceService->issue($companyId, $request->validated());
-        } catch (DteSigningException|DteIssuerProfileException $exception) {
+        } catch (DteIssuerProfileException $exception) {
             return new CommonResponse(
                 status: 400,
                 message: $exception->getMessage(),
             );
         }
 
-        return new CommonResponse([
-            'record' => $result['record'],
-            'mh_result' => $result['mhResult'],
-        ], 201);
+        return new CommonResponse(
+            data: [
+                'record' => $result['record'],
+                'mh_result' => $result['mhResult'],
+            ],
+            status: 201,
+        );
     }
 
     public function show(Request $request, Dte $dte): CommonResponse

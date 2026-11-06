@@ -1,8 +1,10 @@
 export type DteStatus =
     | 'BORRADOR'
     | 'FIRMADO'
+    | 'RECIBIDO'
     | 'PROCESADO'
     | 'RECHAZADO'
+    | 'DESCONOCIDO'
     | 'CONTINGENCIA'
     | 'INVALIDADO';
 
@@ -77,5 +79,5 @@ export interface DteStoreResult {
         estado?: string;
         selloRecibido?: string;
         observaciones?: string[];
-    };
+    } | null;
 }
