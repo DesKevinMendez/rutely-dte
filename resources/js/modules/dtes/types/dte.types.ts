@@ -1,8 +1,10 @@
 export type DteStatus =
     | 'BORRADOR'
     | 'FIRMADO'
+    | 'RECIBIDO'
     | 'PROCESADO'
     | 'RECHAZADO'
+    | 'DESCONOCIDO'
     | 'CONTINGENCIA'
     | 'INVALIDADO';
 

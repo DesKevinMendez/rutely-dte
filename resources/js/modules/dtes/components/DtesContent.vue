@@ -23,9 +23,11 @@ const estadoOptions = [
     { value: '', label: 'Todos los estados' },
     { value: 'BORRADOR', label: 'BORRADOR' },
     { value: 'FIRMADO', label: 'FIRMADO' },
+    { value: 'RECIBIDO', label: 'RECIBIDO' },
     { value: 'PROCESADO', label: 'PROCESADO' },
     { value: 'CONTINGENCIA', label: 'CONTINGENCIA' },
     { value: 'RECHAZADO', label: 'RECHAZADO' },
+    { value: 'DESCONOCIDO', label: 'DESCONOCIDO' },
     { value: 'INVALIDADO', label: 'INVALIDADO' },
 ];
 
@@ -113,6 +115,7 @@ const receiverDocument = (record: DteApiRecord): string => {
 
 const statusVariant = (status: string): BadgeVariant => {
     switch (status) {
+        case 'RECIBIDO':
         case 'PROCESADO':
             return 'success';
         case 'RECHAZADO':
