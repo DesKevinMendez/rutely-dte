@@ -68,14 +68,11 @@ class DteIssuanceService
             ];
         }
 
-        $dte->update([
-            'status' => 'FIRMADO',
-            'signed_json' => $signedDocument,
-        ]);
+        $dte->update(['signed_json' => $signedDocument]);
 
         $mhResult = $this->transmission->transmitDte($dte->refresh());
         $dte->update([
-            'status' => ($mhResult['estado'] ?? null) === 'PROCESADO' ? 'PROCESADO' : 'RECHAZADO',
+            'status' => $mhResult['estado'] ?? 'DESCONOCIDO',
             'received_seal' => $mhResult['selloRecibido'] ?? null,
             'observations' => json_encode($mhResult['observaciones'] ?? [], JSON_UNESCAPED_UNICODE),
             'mh_response_json' => $mhResult,
