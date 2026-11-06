@@ -37,6 +37,9 @@ class DteController extends Controller
             ->allowedFilters(
                 AllowedFilter::exact('tipoDte', 'dte_type'),
                 AllowedFilter::exact('estado', 'status'),
+                AllowedFilter::callback('fecha', function (Builder $query, mixed $value): void {
+                    $query->where('original_json->identificacion->fecEmi', (string) $value);
+                }),
                 AllowedFilter::exact('environment'),
                 AllowedFilter::exact('receiver_document'),
                 AllowedFilter::partial('generation_code'),

@@ -1,35 +1,51 @@
 <script setup lang="ts">
-import { Badge, BaseButton, Card, DataTable, FormSelect } from 'ornito';
+import { IconFilter, IconRefresh } from '@tabler/icons-vue';
+import { Badge, BaseButton, BaseButtonIcon, Card, DataTable } from 'ornito';
 import type { BadgeVariant, TableField } from 'ornito';
-import { computed, ref } from 'vue';
+import { computed, onScopeDispose, ref, watch } from 'vue';
 import { formatIdentityDocument } from '@/core/composables/formatIdentityDocument';
 import { useDtesUi } from '../composables/useDtesUi';
 import type { DteApiRecord, DteDraft } from '../types/dte.types';
 import CreateDteModal from './CreateDteModal.vue';
+import DteFiltersPanel from './DteFiltersPanel.vue';
 
 const isCreateModalOpen = ref(false);
+const isFiltersOpen = ref(false);
 const tableKey = ref(0);
-const { filterTipoDte, filterEstado, isLoading, createDte } = useDtesUi();
+const {
+    filterTipoDte,
+    filterEstado,
+    filterFecha,
+    resetFilters,
+    isLoading,
+    createDte,
+} = useDtesUi();
+const requestFilterTipoDte = ref(filterTipoDte.value);
+const requestFilterEstado = ref(filterEstado.value);
+const requestFilterFecha = ref(filterFecha.value);
+let filterDebounce: ReturnType<typeof setTimeout> | null = null;
 
-const tipoDteOptions = [
-    { value: '', label: 'Todos los tipos' },
-    { value: '01', label: 'Factura (01)' },
-    { value: '03', label: 'Comprobante de Crédito Fiscal (03)' },
-    { value: '05', label: 'Nota de Crédito (05)' },
-    { value: '14', label: 'Sujeto Excluido (14)' },
-];
+watch(
+    [filterTipoDte, filterEstado, filterFecha],
+    ([tipoDte, estado, fecha]) => {
+        if (filterDebounce !== null) {
+            clearTimeout(filterDebounce);
+        }
 
-const estadoOptions = [
-    { value: '', label: 'Todos los estados' },
-    { value: 'BORRADOR', label: 'BORRADOR' },
-    { value: 'FIRMADO', label: 'FIRMADO' },
-    { value: 'RECIBIDO', label: 'RECIBIDO' },
-    { value: 'PROCESADO', label: 'PROCESADO' },
-    { value: 'CONTINGENCIA', label: 'CONTINGENCIA' },
-    { value: 'RECHAZADO', label: 'RECHAZADO' },
-    { value: 'DESCONOCIDO', label: 'DESCONOCIDO' },
-    { value: 'INVALIDADO', label: 'INVALIDADO' },
-];
+        filterDebounce = setTimeout(() => {
+            requestFilterTipoDte.value = tipoDte;
+            requestFilterEstado.value = estado;
+            requestFilterFecha.value = fecha ?? '';
+            filterDebounce = null;
+        }, 500);
+    },
+);
+
+onScopeDispose(() => {
+    if (filterDebounce !== null) {
+        clearTimeout(filterDebounce);
+    }
+});
 
 const typeLabels: Record<string, string> = {
     '01': 'Factura (01)',
@@ -82,12 +98,16 @@ const columns: TableField<DteApiRecord>[] = [
 const tableUrl = computed(() => {
     const params = new URLSearchParams();
 
-    if (filterTipoDte.value) {
-        params.set('filter[tipoDte]', filterTipoDte.value);
+    if (requestFilterTipoDte.value) {
+        params.set('filter[tipoDte]', requestFilterTipoDte.value);
     }
 
-    if (filterEstado.value) {
-        params.set('filter[estado]', filterEstado.value);
+    if (requestFilterEstado.value) {
+        params.set('filter[estado]', requestFilterEstado.value);
+    }
+
+    if (requestFilterFecha.value) {
+        params.set('filter[fecha]', requestFilterFecha.value);
     }
 
     const query = params.toString();
@@ -166,15 +186,24 @@ const handleCreated = async (
                     comprobantes fiscales al Ministerio de Hacienda.
                 </p>
             </div>
-            <div class="flex items-center gap-2.5">
-                <BaseButton
+            <div class="flex flex-wrap items-center gap-2.5">
+                <BaseButtonIcon
                     variant="outline"
-                    size="auto"
+                    size="md"
+                    :icon="IconRefresh"
+                    aria-label="Actualizar DTEs"
                     :disabled="isLoading"
                     @click="refreshTable"
-                >
-                    Actualizar
-                </BaseButton>
+                />
+                <BaseButtonIcon
+                    variant="outline"
+                    size="md"
+                    :icon="IconFilter"
+                    aria-label="Mostrar filtros"
+                    :aria-expanded="isFiltersOpen"
+                    aria-controls="dte-filter-panel"
+                    @click="isFiltersOpen = !isFiltersOpen"
+                />
                 <BaseButton
                     variant="primary"
                     size="auto"
@@ -186,32 +215,15 @@ const handleCreated = async (
             </div>
         </div>
 
-        <Card title="Listado de Comprobantes Emitidos">
-            <template #headerButtons>
-                <div class="flex flex-wrap items-center gap-2">
-                    <div class="w-44">
-                        <FormSelect
-                            v-model="filterTipoDte"
-                            id="filter-tipo-dte"
-                            name="filterTipoDte"
-                            label=""
-                            small
-                            :options="tipoDteOptions"
-                        />
-                    </div>
-                    <div class="w-44">
-                        <FormSelect
-                            v-model="filterEstado"
-                            id="filter-estado"
-                            name="filterEstado"
-                            label=""
-                            small
-                            :options="estadoOptions"
-                        />
-                    </div>
-                </div>
-            </template>
+        <DteFiltersPanel
+            v-model:open="isFiltersOpen"
+            v-model:tipo-dte="filterTipoDte"
+            v-model:estado="filterEstado"
+            v-model:fecha="filterFecha"
+            @reset="resetFilters"
+        />
 
+        <Card title="Listado de Comprobantes Emitidos">
             <DataTable
                 :key="tableKey"
                 :columns="columns"

@@ -40,6 +40,7 @@ declare module 'vue' {
     DashboardMetrics: typeof import('./resources/js/modules/dashboard/components/DashboardMetrics.vue')['default']
     DashboardSkeleton: typeof import('./resources/js/modules/dashboard/components/DashboardSkeleton.vue')['default']
     DashboardView: typeof import('./resources/js/modules/dashboard/views/DashboardView.vue')['default']
+    DteFiltersPanel: typeof import('./resources/js/modules/dtes/components/DteFiltersPanel.vue')['default']
     DtesContent: typeof import('./resources/js/modules/dtes/components/DtesContent.vue')['default']
     DtesSkeleton: typeof import('./resources/js/modules/dtes/components/DtesSkeleton.vue')['default']
     DtesView: typeof import('./resources/js/modules/dtes/views/DtesView.vue')['default']

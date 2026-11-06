@@ -55,6 +55,40 @@ test('company member can list DTEs with Spatie filters and common collection', f
     'superadmin' => Role::SUPERADMIN,
 ]);
 
+test('company member can filter DTEs by emission date', function () {
+    $company = DteApiTestData::company();
+    $dte = DteApiTestData::dte($company, [
+        'original_json' => [
+            'identificacion' => ['fecEmi' => '2026-08-18'],
+        ],
+    ]);
+    DteApiTestData::dte($company, [
+        'generation_code' => strtoupper((string) Str::uuid()),
+        'control_number' => 'DTE-03-00010001-000000000000002',
+        'dte_type' => '03',
+        'original_json' => [
+            'identificacion' => ['fecEmi' => '2026-08-19'],
+        ],
+    ]);
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+
+    $this->getJson(route('api.v1.dtes.index', [
+        'filter' => ['fecha' => '2026-08-18'],
+    ]))
+        ->assertOk()
+        ->assertExactJson([
+            'data' => [$dte->fresh()->toArray()],
+            'pagination' => [
+                'total' => 1,
+                'per_page' => 10,
+                'current_page' => 1,
+                'last_page' => 1,
+                'from' => 1,
+                'to' => 1,
+            ],
+        ]);
+});
+
 test('DTE list is tenant isolated', function () {
     $company = DteApiTestData::company();
     $otherCompany = DteApiTestData::company([
