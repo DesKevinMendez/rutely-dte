@@ -7,6 +7,20 @@ import type {
     DteStoreResult,
 } from '../types/dte.types';
 
+const getTodayDate = (): string => {
+    const dateParts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/El_Salvador',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).formatToParts(new Date());
+    const parts = Object.fromEntries(
+        dateParts.map(({ type, value }) => [type, value]),
+    );
+
+    return `${parts.year}-${parts.month}-${parts.day}`;
+};
+
 const toReceiver = (draft: DteDraft): DteStorePayload['receptor'] => {
     const numDocumento = draft.receptorDocumento.trim() || null;
     const nombre = draft.receptorNombre.trim() || null;
@@ -37,7 +51,14 @@ const toStorePayload = (draft: DteDraft): DteStorePayload => ({
 export function useDtesUi() {
     const filterTipoDte = ref('');
     const filterEstado = ref('');
+    const filterFecha = ref(getTodayDate());
     const { post, isLoading } = useRequest();
+
+    const resetFilters = (): void => {
+        filterTipoDte.value = '';
+        filterEstado.value = '';
+        filterFecha.value = getTodayDate();
+    };
 
     const createDte = async (
         draft: DteDraft,
@@ -72,6 +93,8 @@ export function useDtesUi() {
     return {
         filterTipoDte,
         filterEstado,
+        filterFecha,
+        resetFilters,
         isLoading,
         createDte,
     };
