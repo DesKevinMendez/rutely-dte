@@ -13,6 +13,7 @@ use App\Models\EconomicActivity;
 use App\Models\EstablishmentTypes;
 use App\Models\ItemType;
 use App\Models\Municipalities;
+use App\Models\PaymentMethod;
 use App\Services\Dte\Documents\DteDocumentBuilder;
 use App\Services\Dte\MhCatalog;
 use Illuminate\Database\Query\Builder;
@@ -326,7 +327,7 @@ class StoreDteRequest extends FormRequest
             'resumen.reteRenta' => $isExcludedSubject ? ['sometimes', ...$this->amountRules(2)] : ['prohibited'],
             'resumen.condicionOperacion' => ['bail', 'sometimes', 'integer', Rule::in(MhCatalog::OPERATION_CONDITIONS)],
             'resumen.pagos' => ['bail', 'required_if:resumen.condicionOperacion,2,3', 'array', 'min:1'],
-            'resumen.pagos.*.codigo' => ['bail', 'required', 'string', Rule::in(MhCatalog::PAYMENT_METHODS)],
+            'resumen.pagos.*.codigo' => ['bail', 'required', 'string', Rule::exists(PaymentMethod::class, 'code')],
             'resumen.pagos.*.montoPago' => ['required', ...$this->amountRules(2)],
             'resumen.pagos.*.referencia' => ['sometimes', 'nullable', 'string', 'max:50'],
             'resumen.pagos.*.plazo' => ['bail', 'required_if:resumen.condicionOperacion,2', 'nullable', 'string', Rule::in(MhCatalog::PAYMENT_TERMS)],
