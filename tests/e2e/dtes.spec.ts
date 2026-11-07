@@ -29,12 +29,26 @@ async function storeRepositoryCertificate(page: Page): Promise<void> {
     expect(response.status()).toBe(200);
 }
 
+async function showDtesFromAllDates(page: Page): Promise<void> {
+    const allDatesResponse = page.waitForResponse((response) => {
+        const url = new URL(response.url());
+
+        return url.pathname === '/api/v1/dtes' && !url.searchParams.has('filter[fecha]');
+    });
+
+    await page.getByRole('button', { name: 'Mostrar filtros', exact: true }).click();
+    await page.locator('#dte-filter-panel').getByRole('button', { name: 'Clear value', exact: true }).click();
+
+    expect((await allDatesResponse).status()).toBe(200);
+}
+
 test.describe('DTEs', () => {
     test.describe.configure({ mode: 'serial' });
 
     test.beforeEach(async ({ page }) => {
         await authenticateDeveloper(page);
         await page.goto('/#/dtes');
+        await showDtesFromAllDates(page);
     });
 
     test('shows seeded DTEs from the backend', async ({ page }) => {
@@ -54,7 +68,7 @@ test.describe('DTEs', () => {
     });
 
     test('filters DTEs by status', async ({ page }) => {
-        await page.locator('#filter-estado').selectOption('PROCESADO');
+        await page.locator('#filter-estado-mh').selectOption('PROCESADO');
 
         await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
         await expect(page.getByText('DTE-01-M001P001-000000000000002', { exact: true })).toHaveCount(0);
@@ -68,7 +82,7 @@ test.describe('DTEs', () => {
                 new URL(response.url()).pathname === '/api/v1/dtes',
         );
 
-        await page.getByRole('button', { name: 'Actualizar', exact: true }).click();
+        await page.getByRole('button', { name: 'Actualizar DTEs', exact: true }).click();
 
         expect((await dtesResponse).status()).toBe(200);
         await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
