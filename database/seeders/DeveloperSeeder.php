@@ -162,6 +162,7 @@ class DeveloperSeeder extends Seeder
                             'tipoDte' => '01',
                             'codigoGeneracion' => $dte['generation_code'],
                             'numeroControl' => $dte['control_number'],
+                            'fecEmi' => now('America/El_Salvador')->toDateString(),
                         ],
                     ],
                     'signed_json' => $dte['status'] === 'RECHAZADO' ? null : 'playwright-signed-jws',

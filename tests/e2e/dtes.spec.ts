@@ -29,18 +29,23 @@ async function storeRepositoryCertificate(page: Page): Promise<void> {
     expect(response.status()).toBe(200);
 }
 
-async function showDtesFromAllDates(page: Page): Promise<void> {
-    const allDatesResponse = page.waitForResponse((response) => {
-        const url = new URL(response.url());
+test.describe('DTE list default date', () => {
+    test.use({ timezoneId: 'UTC' });
 
-        return url.pathname === '/api/v1/dtes' && !url.searchParams.has('filter[fecha]');
+    test('starts on today in El Salvador when the browser date is already tomorrow', async ({ page }) => {
+        await page.clock.install({ time: new Date('2026-11-07T04:30:00.000Z') });
+        await authenticateDeveloper(page);
+
+        const dtesRequest = page.waitForRequest(
+            (request) => new URL(request.url()).pathname === '/api/v1/dtes',
+        );
+
+        await page.goto('/#/dtes');
+
+        const { searchParams } = new URL((await dtesRequest).url());
+        expect(searchParams.get('filter[fecha]')).toBe('2026-11-06');
     });
-
-    await page.getByRole('button', { name: 'Mostrar filtros', exact: true }).click();
-    await page.locator('#dte-filter-panel').getByRole('button', { name: 'Clear value', exact: true }).click();
-
-    expect((await allDatesResponse).status()).toBe(200);
-}
+});
 
 test.describe('DTEs', () => {
     test.describe.configure({ mode: 'serial' });
@@ -48,7 +53,6 @@ test.describe('DTEs', () => {
     test.beforeEach(async ({ page }) => {
         await authenticateDeveloper(page);
         await page.goto('/#/dtes');
-        await showDtesFromAllDates(page);
     });
 
     test('shows seeded DTEs from the backend', async ({ page }) => {
@@ -68,6 +72,7 @@ test.describe('DTEs', () => {
     });
 
     test('filters DTEs by status', async ({ page }) => {
+        await page.getByRole('button', { name: 'Mostrar filtros', exact: true }).click();
         await page.locator('#filter-estado-mh').selectOption('PROCESADO');
 
         await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
