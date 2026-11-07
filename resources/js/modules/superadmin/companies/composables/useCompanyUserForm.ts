@@ -17,7 +17,10 @@ export default function useCompanyUserForm() {
     const emailRules = yup
         .string()
         .required('El correo electrónico es requerido.')
-        .max(255, 'El correo electrónico no debe contener más de 255 caracteres.')
+        .max(
+            255,
+            'El correo electrónico no debe contener más de 255 caracteres.',
+        )
         .email('Ingresa un correo electrónico válido.');
     const phoneRules = yup
         .string()

@@ -3,7 +3,8 @@ export const API_TOKEN_ABILITY_OPTIONS = [
     { value: 'list:dte', label: 'Listar DTE' },
 ] as const;
 
-export type ApiTokenAbility = (typeof API_TOKEN_ABILITY_OPTIONS)[number]['value'];
+export type ApiTokenAbility =
+    (typeof API_TOKEN_ABILITY_OPTIONS)[number]['value'];
 
 export interface ApiTokenApiRecord {
     id: number;

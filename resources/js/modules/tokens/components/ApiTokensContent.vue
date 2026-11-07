@@ -26,7 +26,8 @@ const isCreateModalOpen = ref(false);
 const tokenPendingRevocation = ref<ApiTokenApiRecord | null>(null);
 const tableKey = ref(0);
 const tokensUrl = computed(
-    () => `/api/v1/superadmin/companies/${encodeURIComponent(companyId)}/tokens`,
+    () =>
+        `/api/v1/superadmin/companies/${encodeURIComponent(companyId)}/tokens`,
 );
 const {
     generatedToken,

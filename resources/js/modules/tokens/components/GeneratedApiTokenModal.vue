@@ -50,7 +50,7 @@ const handleOpenChange = (value: boolean): void => {
                     Token de acceso
                 </p>
                 <code
-                    class="block break-all text-sm font-semibold text-gray-900 dark:text-white"
+                    class="block text-sm font-semibold break-all text-gray-900 dark:text-white"
                     >{{ token }}</code
                 >
             </div>

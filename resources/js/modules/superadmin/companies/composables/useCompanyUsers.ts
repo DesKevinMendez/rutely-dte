@@ -73,12 +73,15 @@ export default function useCompanyUsers(companyId: ComputedRef<string>) {
         formError.value = null;
 
         try {
-            const response = await post<CompanyUserResponse, CompanyUserPayload>(
-                usersUrl.value,
-                payload,
-            );
+            const response = await post<
+                CompanyUserResponse,
+                CompanyUserPayload
+            >(usersUrl.value, payload);
 
-            if (response.statusCode.value !== 201 || !response.data.value?.data) {
+            if (
+                response.statusCode.value !== 201 ||
+                !response.data.value?.data
+            ) {
                 formError.value =
                     response.error.value ?? 'No se pudo crear el usuario.';
 
