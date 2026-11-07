@@ -19,7 +19,7 @@ class ContingencyService
     ) {}
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array{event: ContingencyEvent, document: array<string, mixed>, mhResult: array<string, mixed>}
      */
     public function create(string $companyId, array $payload): array
@@ -75,8 +75,8 @@ class ContingencyService
             'environment' => $company->environment,
             'contingency_type' => (string) $payload['tipoContingencia'],
             'reason' => $reason,
-            'start_date_at' => Carbon::createFromFormat('Y-m-d H:i:s', $payload['fInicio'].' '.$payload['hInicio']),
-            'end_date_at' => Carbon::createFromFormat('Y-m-d H:i:s', $payload['fFin'].' '.$payload['hFin']),
+            'start_date_at' => Carbon::createFromFormat('Y-m-d H:i:s', $payload['fInicio'].' '.$payload['hInicio'], 'America/El_Salvador')->utc(),
+            'end_date_at' => Carbon::createFromFormat('Y-m-d H:i:s', $payload['fFin'].' '.$payload['hFin'], 'America/El_Salvador')->utc(),
             'original_json' => $document,
             'status' => 'BORRADOR',
         ]);
