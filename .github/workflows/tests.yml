@@ -86,8 +86,7 @@ jobs:
       - name: Run Frontend Checks
         run: |
           pnpm lint:check
-          pnpm exec prettier --write resources/js/core/types/api.types.ts resources/js/modules/dashboard resources/js/modules/dtes resources/js/modules/queue resources/js/modules/contingency resources/js/modules/certificates resources/js/modules/mh-credentials
-          git diff --no-color -- resources/js
+          pnpm format:check
           pnpm types:check
 
       - name: Run Playwright E2E Tests
