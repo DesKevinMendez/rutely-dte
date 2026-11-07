@@ -6,6 +6,7 @@ use App\Models\DteInvalidation;
 use App\Role;
 use App\Services\Dte\ContingencyService;
 use App\Services\Dte\DteInvalidationService;
+use App\Services\Mh\MhTransmissionService;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\DteTypeSeeder;
 use Illuminate\Support\Str;
@@ -282,6 +283,42 @@ test('contingency events accept every seeded DTE type', function (string $dteTyp
     'DTE type 17' => '17',
     'DTE type 18' => '18',
 ]);
+
+test('contingency events store the local period in UTC and send it unchanged to Hacienda', function () {
+    $company = companyReadyToIssue();
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+    $this->mock(MhTransmissionService::class)
+        ->shouldReceive('transmitContingency')
+        ->once()
+        ->andReturn(['estado' => 'RECIBIDO', 'selloRecibido' => 'CONTINGENCY-SEAL', 'observaciones' => []]);
+    $payload = array_replace(validContingencyPayload(), [
+        'fInicio' => '2026-11-06',
+        'hInicio' => '22:30:00',
+        'fFin' => '2026-11-06',
+        'hFin' => '23:15:00',
+    ]);
+
+    $this->postJson(route('api.v1.contingency.events.store'), $payload)
+        ->assertOk()
+        ->assertJson(['data' => [
+            'event' => [
+                'start_date_at' => '2026-11-07T04:30:00.000000Z',
+                'end_date_at' => '2026-11-07T05:15:00.000000Z',
+            ],
+            'contingency_document' => ['motivo' => [
+                'fInicio' => '2026-11-06',
+                'hInicio' => '22:30:00',
+                'fFin' => '2026-11-06',
+                'hFin' => '23:15:00',
+            ]],
+        ]]);
+
+    $this->assertDatabaseHas(ContingencyEvent::class, [
+        'company_id' => $company->id,
+        'start_date_at' => '2026-11-07 04:30:00',
+        'end_date_at' => '2026-11-07 05:15:00',
+    ]);
+});
 
 test('company member can read contingency status and admin can update it', function () {
     $company = DteApiTestData::company();
