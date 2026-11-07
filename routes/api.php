@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\Data\PaymentMethodController;
 use App\Http\Controllers\auth\LoginController;
 use App\Http\Controllers\auth\RegisterController;
 use App\Http\Controllers\CompanyController;
@@ -38,6 +39,8 @@ Route::group(['prefix' => 'v1'], function () {
             ->name('api.v1.dtes.index');
         Route::get('dtes/{dte}', [DteController::class, 'show'])
             ->name('api.v1.dtes.show');
+        Route::get('data/payment-methods', PaymentMethodController::class)
+            ->name('api.v1.data.payment-methods.index');
     });
 
     Route::post('dtes', [DteController::class, 'store'])

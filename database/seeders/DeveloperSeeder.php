@@ -23,6 +23,7 @@ class DeveloperSeeder extends Seeder
             DocumentTypeSeeder::class,
             DteTypeSeeder::class,
             ItemTypeSeeder::class,
+            PaymentMethodSeeder::class,
         ]);
 
         $departamentId = DB::table('departaments')

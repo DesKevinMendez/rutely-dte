@@ -6,6 +6,7 @@ use App\Role;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\DteTypeSeeder;
 use Database\Seeders\ItemTypeSeeder;
+use Database\Seeders\PaymentMethodSeeder;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
 use Tests\Support\MhSchema;
@@ -14,6 +15,7 @@ beforeEach(function () {
     $this->seed(DocumentTypeSeeder::class);
     $this->seed(DteTypeSeeder::class);
     $this->seed(ItemTypeSeeder::class);
+    $this->seed(PaymentMethodSeeder::class);
 });
 
 function taxCreditReceiver(array $overrides): array

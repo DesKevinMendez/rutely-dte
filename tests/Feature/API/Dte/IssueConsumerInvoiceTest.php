@@ -1,12 +1,14 @@
 <?php
 
 use App\Models\Dte;
+use App\Models\PaymentMethod;
 use App\Models\Receivers;
 use App\Role;
 use App\Services\Mh\MhTransmissionService;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\DteTypeSeeder;
 use Database\Seeders\ItemTypeSeeder;
+use Database\Seeders\PaymentMethodSeeder;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
@@ -16,6 +18,7 @@ beforeEach(function () {
     $this->seed(DocumentTypeSeeder::class);
     $this->seed(DteTypeSeeder::class);
     $this->seed(ItemTypeSeeder::class);
+    $this->seed(PaymentMethodSeeder::class);
 });
 
 function consumerInvoicePayload(array $overrides = []): array
@@ -439,6 +442,19 @@ test('a company API token issues the consumer invoice for its own company', func
         ->assertCreated();
 
     expect(Dte::query()->findOrFail($response->json('data.record.id'))->company_id)->toBe($company->id);
+});
+
+test('a payment code is validated against the payment methods table', function () {
+    Sanctum::actingAs(DteApiTestData::user(DteApiTestData::company(), Role::USER));
+    PaymentMethod::query()->where('code', '02')->delete();
+
+    $this->postJson(route('api.v1.dtes.store'), consumerInvoicePayload([
+        'resumen' => ['pagos' => [['codigo' => '02', 'montoPago' => 10]]],
+    ]))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'resumen.pagos.0.codigo' => 'El valor seleccionado para código de forma de pago no es válido.',
+        ]);
 });
 
 test('consumer invoice validation returns 422 with the official limits', function (array $payload, string $field, string $message) {
