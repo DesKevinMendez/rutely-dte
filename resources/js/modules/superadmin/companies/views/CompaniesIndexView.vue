@@ -1,12 +1,6 @@
 <script setup lang="ts">
 import { IconEye, IconPlus } from '@tabler/icons-vue';
-import {
-    BaseButton,
-    Card,
-    DataTable,
-    IconButton,
-    ViewHeader,
-} from 'ornito';
+import { BaseButton, Card, DataTable, IconButton, ViewHeader } from 'ornito';
 import type { TableField } from 'ornito';
 import { useRouter } from 'vue-router';
 import type { Company } from '@/modules/superadmin/companies/types/company.types';

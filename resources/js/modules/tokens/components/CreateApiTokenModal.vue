@@ -35,7 +35,11 @@ const handleOpenChange = (value: boolean): void => {
 };
 
 const submit = (): void => {
-    if (isSubmitting || !normalizedName.value || !selectedAbilities.value.length) {
+    if (
+        isSubmitting ||
+        !normalizedName.value ||
+        !selectedAbilities.value.length
+    ) {
         return;
     }
 
@@ -84,7 +88,9 @@ const updateAbilitySelection = (
                     :label="ability.label"
                     :model-value="selectedAbilities.includes(ability.value)"
                     :disabled="isSubmitting"
-                    @update:model-value="updateAbilitySelection(ability.value, $event)"
+                    @update:model-value="
+                        updateAbilitySelection(ability.value, $event)
+                    "
                 />
                 <p
                     v-if="!selectedAbilities.length"
@@ -111,7 +117,11 @@ const updateAbilitySelection = (
                     type="submit"
                     variant="primary"
                     size="auto"
-                    :disabled="isSubmitting || !normalizedName || !selectedAbilities.length"
+                    :disabled="
+                        isSubmitting ||
+                        !normalizedName ||
+                        !selectedAbilities.length
+                    "
                 >
                     {{ isSubmitting ? 'Creando…' : 'Crear token' }}
                 </BaseButton>
