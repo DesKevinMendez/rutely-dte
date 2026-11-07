@@ -385,6 +385,19 @@ test('the consecutive restarts with each fiscal year in El Salvador', function (
     expect($controlNumber())->toBe('DTE-01-M001P001-000000000000001');
 });
 
+test('the issue date and time stay in El Salvador when the UTC date is already tomorrow', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+
+    $this->travelTo(Carbon::parse('2026-11-06 22:30:00', 'America/El_Salvador'));
+
+    $this->postJson(route('api.v1.dtes.store'), DteApiTestData::validDtePayload())
+        ->assertCreated()
+        ->assertJson(['data' => ['record' => ['original_json' => ['identificacion' => [
+            'fecEmi' => '2026-11-06',
+            'horEmi' => '22:30:00',
+        ]]]]]);
+});
+
 test('control numbers follow the official structure', function () {
     $company = companyReadyToIssue();
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
