@@ -8,6 +8,7 @@ use App\Http\Controllers\API\Data\EconomicActivityListController;
 use App\Http\Controllers\API\Data\EstablishmentTypeListController;
 use App\Http\Controllers\API\Data\ItemTypeListController;
 use App\Http\Controllers\API\Data\MunicipalityListController;
+use App\Http\Controllers\API\Data\PaymentMethodController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('api.v1.')->group(function () {
@@ -20,5 +21,6 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('document-types', DocumentTypeListController::class)->name('document-types.index');
         Route::get('dte-types', DteTypeListController::class)->name('dte-types.index');
         Route::get('item-types', ItemTypeListController::class)->name('item-types.index');
+        Route::get('payment-methods', PaymentMethodController::class)->name('payment-methods.index');
     });
 });

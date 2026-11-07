@@ -1,11 +1,8 @@
 <?php
 
 use App\Models\PaymentMethod;
-use App\Role;
 use Database\Seeders\PaymentMethodSeeder;
 use Illuminate\Support\Facades\DB;
-use Laravel\Sanctum\Sanctum;
-use Tests\Support\DteApiTestData;
 
 beforeEach(function () {
     $this->seed(PaymentMethodSeeder::class);
@@ -30,17 +27,10 @@ function expectedPaymentMethods(array $codes): array
     ));
 }
 
-test('payment methods require authentication', function () {
-    $this->getJson(route('api.v1.data.payment-methods.index'))
-        ->assertUnauthorized();
-});
-
-test('a company token with the list dte ability gets the official catalog ordered by code', function () {
-    $token = DteApiTestData::company()->createToken('External ERP', ['list:dte'])->plainTextToken;
+test('payment methods are public and return the official catalog ordered by code', function () {
     $codes = array_column(PaymentMethodSeeder::METHODS, 'code');
 
-    $response = $this->withToken($token)
-        ->getJson(route('api.v1.data.payment-methods.index', ['per_page' => 100]));
+    $response = $this->getJson(route('api.v1.data.payment-methods.index', ['per_page' => 100]));
 
     $response->assertOk()
         ->assertExactJson([
@@ -58,16 +48,7 @@ test('a company token with the list dte ability gets the official catalog ordere
     expect(array_column($response->json('data'), 'code'))->toBe($codes);
 });
 
-test('a company token without the list dte ability cannot list payment methods', function () {
-    $token = DteApiTestData::company()->createToken('External ERP', ['create:dte'])->plainTextToken;
-
-    $this->withToken($token)
-        ->getJson(route('api.v1.data.payment-methods.index'))
-        ->assertForbidden();
-});
-
-test('company users can list payment methods with the default page size', function (Role $role) {
-    Sanctum::actingAs(DteApiTestData::user(DteApiTestData::company(), $role));
+test('payment methods use the default page size', function () {
     $codes = array_column(PaymentMethodSeeder::METHODS, 'code');
 
     $this->getJson(route('api.v1.data.payment-methods.index'))
@@ -83,15 +64,9 @@ test('company users can list payment methods with the default page size', functi
                 'to' => 10,
             ],
         ]);
-})->with([
-    'admin' => Role::ADMIN,
-    'user' => Role::USER,
-    'superadmin' => Role::SUPERADMIN,
-]);
+});
 
 test('payment methods can be filtered', function (Closure $filter, array $codes) {
-    Sanctum::actingAs(DteApiTestData::user(DteApiTestData::company()));
-
     $this->getJson(route('api.v1.data.payment-methods.index', ['filter' => $filter()]))
         ->assertOk()
         ->assertExactJson([
@@ -112,15 +87,11 @@ test('payment methods can be filtered', function (Closure $filter, array $codes)
 ]);
 
 test('payment methods reject unknown filters', function () {
-    Sanctum::actingAs(DteApiTestData::user(DteApiTestData::company()));
-
     $this->getJson(route('api.v1.data.payment-methods.index', ['filter' => ['unknown' => 'value']]))
         ->assertBadRequest();
 });
 
 test('payment methods validate per page', function (mixed $perPage, string $message) {
-    Sanctum::actingAs(DteApiTestData::user(DteApiTestData::company()));
-
     $this->getJson(route('api.v1.data.payment-methods.index', ['per_page' => $perPage]))
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['per_page' => $message]);
