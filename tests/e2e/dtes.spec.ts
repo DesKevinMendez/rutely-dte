@@ -91,6 +91,52 @@ test.describe('DTEs', () => {
         ).toBeVisible();
     });
 
+    test('shows the client and every payment method in the DTE detail', async ({
+        page,
+    }) => {
+        await page.route(/\/api\/v1\/dtes\/[^/?]+$/, async (route) => {
+            const response = await route.fetch();
+            const body = (await response.json()) as {
+                data: {
+                    original_json: Record<string, unknown>;
+                };
+            };
+
+            body.data.original_json = {
+                ...body.data.original_json,
+                receptor: { nombre: 'CLIENTE DE LA ORDEN' },
+                resumen: {
+                    pagos: [
+                        { codigo: '02', montoPago: 10 },
+                        { codigo: '05', montoPago: 1.3 },
+                    ],
+                },
+            };
+
+            await route.fulfill({ response, json: body });
+        });
+
+        await page
+            .getByText('DTE-01-M001P001-000000000000001', { exact: true })
+            .click();
+
+        await expect(page.getByText('Cliente', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('CLIENTE DE LA ORDEN', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByText('Métodos de pago', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByText('Tarjeta Débito (02) · $10.00', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByText('Transferencia-Depósito Bancario (05) · $1.30', {
+                exact: true,
+            }),
+        ).toBeVisible();
+    });
+
     test('filters DTEs by status', async ({ page }) => {
         await page
             .getByRole('button', { name: 'Mostrar filtros', exact: true })

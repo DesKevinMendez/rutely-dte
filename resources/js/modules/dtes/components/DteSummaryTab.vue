@@ -6,7 +6,10 @@ import type { DteApiRecord } from '../types/dte.types';
 
 const props = defineProps<{
     dte: DteApiRecord;
+    paymentMethodLabels: Record<string, string>;
 }>();
+
+const payments = computed(() => props.dte.original_json?.resumen?.pagos ?? []);
 
 const mhResponse = computed(() =>
     props.dte.mh_transmission
@@ -76,12 +79,33 @@ const formatTimestamp = (value: string): string =>
                 <InfoItem label="Monto total"
                     >${{ (dte.total_amount / 100).toFixed(2) }}</InfoItem
                 >
-                <InfoItem label="Receptor">{{
-                    dte.original_json?.receptor?.nombre ?? 'Cliente General'
+                <InfoItem label="Cliente">{{
+                    dte.original_json?.receptor?.nombre?.trim() ||
+                    'Cliente General'
                 }}</InfoItem>
-                <InfoItem label="Documento del receptor">{{
+                <InfoItem label="Documento del cliente">{{
                     dte.receiver_document ?? 'No disponible'
                 }}</InfoItem>
+                <InfoItem
+                    :label="
+                        payments.length === 1
+                            ? 'Método de pago'
+                            : 'Métodos de pago'
+                    "
+                >
+                    <div v-if="payments.length" class="space-y-1">
+                        <div v-for="(payment, index) in payments" :key="index">
+                            {{
+                                paymentMethodLabels[payment.codigo] ??
+                                'Código ' + payment.codigo
+                            }}
+                            ({{ payment.codigo }}) · ${{
+                                payment.montoPago.toFixed(2)
+                            }}
+                        </div>
+                    </div>
+                    <template v-else>No disponible</template>
+                </InfoItem>
                 <InfoItem label="NIT del emisor">{{ dte.issuer_nit }}</InfoItem>
                 <InfoItem label="Ambiente">{{
                     dte.environment === '00'

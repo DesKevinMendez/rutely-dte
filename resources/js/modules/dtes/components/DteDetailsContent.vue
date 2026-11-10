@@ -19,14 +19,20 @@ const tabs = [
 ];
 
 const activeTab = ref(0);
-const { dte, error, isLoading, loadDte } = useDteDetailUi();
+const { dte, error, isLoading, loadDte, paymentMethodLabels } =
+    useDteDetailUi();
 
 await loadDte(props.dteId);
 </script>
 
 <template>
     <Tabs v-if="dte" v-model="activeTab" :tabs="tabs" label="Secciones del DTE">
-        <template #tab-0><DteSummaryTab :dte="dte" /></template>
+        <template #tab-0>
+            <DteSummaryTab
+                :dte="dte"
+                :payment-method-labels="paymentMethodLabels"
+            />
+        </template>
         <template #tab-1><DteItemsTab :dte="dte" /></template>
         <template #tab-2><DteDocumentTab :dte="dte" /></template>
         <template #tab-3><DteMhResponseTab :dte="dte" /></template>

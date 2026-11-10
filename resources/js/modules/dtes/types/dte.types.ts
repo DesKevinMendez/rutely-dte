@@ -57,6 +57,12 @@ export interface DteApiRecord {
             tipoDocumento?: string | null;
             numDocumento?: string | null;
         } | null;
+        resumen?: {
+            pagos?: Array<{
+                codigo: string;
+                montoPago: number;
+            }> | null;
+        } | null;
         cuerpoDocumento?: DteDocumentItem[] | null;
         [key: string]: unknown;
     } | null;
