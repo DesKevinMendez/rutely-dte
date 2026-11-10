@@ -55,11 +55,42 @@ test('superadmin opens the DTE correlative section and updates the next number',
         }),
     ).toBeVisible();
     const input = page.getByLabel('Próximo correlativo DTE');
+    const saveButton = page.getByRole('button', {
+        name: 'Guardar correlativo',
+    });
+    const updateSwitch = page
+        .getByRole('group', { name: 'Actualizar correlativo' })
+        .getByRole('button');
     await expect(input).toHaveValue('125');
     await expect(input).toBeVisible();
+    await expect(input).toBeDisabled();
+    await expect(saveButton).toBeDisabled();
+    await updateSwitch.click();
     await expect(input).toBeEditable();
+    await expect(saveButton).toBeEnabled();
     await input.fill('90');
-    await page.getByRole('button', { name: 'Guardar correlativo' }).click();
+    await updateSwitch.click();
+    await expect(input).toBeDisabled();
+    await expect(saveButton).toBeDisabled();
+    await updateSwitch.click();
+    await saveButton.click();
+
+    const confirmation = page.getByRole('dialog');
+    await expect(confirmation).toContainText('el correlativo 90');
+    expect(savedValue).toBeNull();
+    await confirmation.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(confirmation).not.toBeVisible();
+    expect(savedValue).toBeNull();
+
+    await saveButton.click();
+    await confirmation
+        .getByRole('textbox', { name: 'Confirmación' })
+        .fill('Confirmar');
+    await confirmation
+        .getByRole('button', { name: 'Confirmar', exact: true })
+        .click();
     await expect(page.getByText('Correlativo actualizado.')).toBeVisible();
+    await expect(input).toBeDisabled();
+    await expect(saveButton).toBeDisabled();
     expect(savedValue).toBe(90);
 });
