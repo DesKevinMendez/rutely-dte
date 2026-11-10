@@ -6,7 +6,9 @@ import { authenticateDeveloper } from './support/auth';
 
 const testCertificatePath = 'certificates/playwright-mh-test-certificate.crt';
 
-async function authorizationHeaders(page: Page): Promise<{ Authorization: string }> {
+async function authorizationHeaders(
+    page: Page,
+): Promise<{ Authorization: string }> {
     const token = await page.evaluate(() => localStorage.getItem('auth_token'));
     expect(token).toBeTruthy();
 
@@ -32,8 +34,12 @@ async function storeRepositoryCertificate(page: Page): Promise<void> {
 test.describe('DTE list default date', () => {
     test.use({ timezoneId: 'UTC' });
 
-    test('starts on today in El Salvador when the browser date is already tomorrow', async ({ page }) => {
-        await page.clock.install({ time: new Date('2026-11-07T04:30:00.000Z') });
+    test('starts on today in El Salvador when the browser date is already tomorrow', async ({
+        page,
+    }) => {
+        await page.clock.install({
+            time: new Date('2026-11-07T04:30:00.000Z'),
+        });
         await authenticateDeveloper(page);
 
         const dtesRequest = page.waitForRequest(
@@ -57,27 +63,95 @@ test.describe('DTEs', () => {
 
     test('shows seeded DTEs from the backend', async ({ page }) => {
         await expect(
-            page.getByRole('heading', { name: 'Documentos Tributarios Electrónicos (DTEs)' }),
+            page.getByRole('heading', {
+                name: 'Documentos Tributarios Electrónicos (DTEs)',
+            }),
         ).toBeVisible();
 
-        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
-        await expect(page.getByText('DTE-01-M001P001-000000000000002', { exact: true })).toBeVisible();
-        await expect(page.getByText('DTE-01-M001P001-000000000000003', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('DTE-01-M001P001-000000000000001', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByText('DTE-01-M001P001-000000000000002', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByText('DTE-01-M001P001-000000000000003', { exact: true }),
+        ).toBeVisible();
 
         const table = page.getByRole('table');
 
-        await expect(table.getByText('PROCESADO', { exact: true })).toBeVisible();
-        await expect(table.getByText('RECHAZADO', { exact: true })).toBeVisible();
-        await expect(table.getByText('INVALIDADO', { exact: true })).toBeVisible();
+        await expect(
+            table.getByText('PROCESADO', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            table.getByText('RECHAZADO', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            table.getByText('INVALIDADO', { exact: true }),
+        ).toBeVisible();
+    });
+
+    test('shows the client and every payment method in the DTE detail', async ({
+        page,
+    }) => {
+        await page.route(/\/api\/v1\/dtes\/[^/?]+$/, async (route) => {
+            const response = await route.fetch();
+            const body = (await response.json()) as {
+                data: {
+                    original_json: Record<string, unknown>;
+                };
+            };
+
+            body.data.original_json = {
+                ...body.data.original_json,
+                receptor: { nombre: 'CLIENTE DE LA ORDEN' },
+                resumen: {
+                    pagos: [
+                        { codigo: '02', montoPago: 10 },
+                        { codigo: '05', montoPago: 1.3 },
+                    ],
+                },
+            };
+
+            await route.fulfill({ response, json: body });
+        });
+
+        await page
+            .getByText('DTE-01-M001P001-000000000000001', { exact: true })
+            .click();
+
+        await expect(page.getByText('Cliente', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('CLIENTE DE LA ORDEN', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByText('Métodos de pago', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByText('Tarjeta Débito (02) · $10.00', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByText('Transferencia-Depósito Bancario (05) · $1.30', {
+                exact: true,
+            }),
+        ).toBeVisible();
     });
 
     test('filters DTEs by status', async ({ page }) => {
-        await page.getByRole('button', { name: 'Mostrar filtros', exact: true }).click();
+        await page
+            .getByRole('button', { name: 'Mostrar filtros', exact: true })
+            .click();
         await page.locator('#filter-estado-mh').selectOption('PROCESADO');
 
-        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
-        await expect(page.getByText('DTE-01-M001P001-000000000000002', { exact: true })).toHaveCount(0);
-        await expect(page.getByText('DTE-01-M001P001-000000000000003', { exact: true })).toHaveCount(0);
+        await expect(
+            page.getByText('DTE-01-M001P001-000000000000001', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByText('DTE-01-M001P001-000000000000002', { exact: true }),
+        ).toHaveCount(0);
+        await expect(
+            page.getByText('DTE-01-M001P001-000000000000003', { exact: true }),
+        ).toHaveCount(0);
     });
 
     test('refreshes the DTE list from the API', async ({ page }) => {
@@ -87,28 +161,44 @@ test.describe('DTEs', () => {
                 new URL(response.url()).pathname === '/api/v1/dtes',
         );
 
-        await page.getByRole('button', { name: 'Actualizar DTEs', exact: true }).click();
+        await page
+            .getByRole('button', { name: 'Actualizar DTEs', exact: true })
+            .click();
 
         expect((await dtesResponse).status()).toBe(200);
-        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('DTE-01-M001P001-000000000000001', { exact: true }),
+        ).toBeVisible();
     });
 
-    test('creates a Factura 01 from the UI against the Laravel backend', async ({ page }) => {
+    test('shows an API-issued Factura 01 after refreshing the list', async ({
+        page,
+    }) => {
         await storeRepositoryCertificate(page);
-        await expect(page.getByText('DTE-01-M001P001-000000000000001', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('DTE-01-M001P001-000000000000001', { exact: true }),
+        ).toBeVisible();
 
-        await page.getByRole('button', { name: 'Emitir Nuevo DTE', exact: true }).click();
-        await expect(page.locator('#tipo-dte')).toBeVisible();
-        await expect(page.locator('#tipo-dte')).toHaveValue('01');
-
-        await page.locator('#receptor-nombre').fill('CLIENTE PLAYWRIGHT FACTURA');
-        await page.locator('#receptor-documento').fill('0614-280390-112-1');
-        await page.locator('#receptor-correo').fill('factura.playwright@example.test');
-        await page.locator('#item-desc-0').fill('Servicio E2E Playwright');
-        await page.locator('#item-qty-0').fill('2');
-        await page.locator('#item-price-0').fill('25.00');
-
-        await expect(page.getByText('Total: $50.00 USD', { exact: true })).toBeVisible();
+        const dteResponse = await page.request.post('/api/v1/dtes', {
+            headers: await authorizationHeaders(page),
+            data: {
+                tipoDte: '01',
+                receptor: {
+                    tipoDocumento: '36',
+                    numDocumento: '0614-280390-112-1',
+                    nombre: 'CLIENTE PLAYWRIGHT FACTURA',
+                    correo: 'factura.playwright@example.test',
+                },
+                items: [
+                    {
+                        descripcion: 'Servicio E2E Playwright',
+                        cantidad: 2,
+                        precioUni: 25,
+                    },
+                ],
+            },
+        });
+        expect(dteResponse.status()).toBe(201);
 
         const dteGetRequests: string[] = [];
         page.on('request', (request) => {
@@ -119,16 +209,9 @@ test.describe('DTEs', () => {
             }
         });
 
-        const dteResponsePromise = page.waitForResponse(
-            (response) =>
-                response.request().method() === 'POST' &&
-                new URL(response.url()).pathname === '/api/v1/dtes',
-        );
-
-        await page.getByRole('button', { name: 'Emitir DTE', exact: true }).click();
-
-        const dteResponse = await dteResponsePromise;
-        expect(dteResponse.status()).toBe(201);
+        await page
+            .getByRole('button', { name: 'Actualizar DTEs', exact: true })
+            .click();
 
         const body = (await dteResponse.json()) as {
             data: {
@@ -151,16 +234,25 @@ test.describe('DTEs', () => {
         expect(record.dte_type).toBe('01');
         expect(record.receiver_document).toBe('06142803901121');
         expect(record.total_amount).toBe(5000);
-        expect(record.original_json.identificacion.fecEmi).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-        expect(record.original_json.identificacion.horEmi).toMatch(/^\d{2}:\d{2}:\d{2}$/);
+        expect(record.original_json.identificacion.fecEmi).toMatch(
+            /^\d{4}-\d{2}-\d{2}$/,
+        );
+        expect(record.original_json.identificacion.horEmi).toMatch(
+            /^\d{2}:\d{2}:\d{2}$/,
+        );
 
-        await expect(page.getByText(record.control_number, { exact: true })).toBeVisible();
+        await expect(
+            page.getByText(record.control_number, { exact: true }),
+        ).toBeVisible();
         await expect(
             page.getByText('CLIENTE PLAYWRIGHT FACTURA', { exact: true }),
         ).toBeVisible();
-        await expect(page.getByText('Doc: 0614-280390-112-1', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('Doc: 0614-280390-112-1', { exact: true }),
+        ).toBeVisible();
 
-        const [year, month, day] = record.original_json.identificacion.fecEmi.split('-');
+        const [year, month, day] =
+            record.original_json.identificacion.fecEmi.split('-');
         await expect(
             page.getByText(
                 `${day}/${month}/${year} ${record.original_json.identificacion.horEmi}`,
@@ -176,42 +268,47 @@ test.describe('DTEs', () => {
         expect(refreshUrl.searchParams.get('per_page')).toBe('10');
     });
 
-    test('warns that a Factura from $25,000 must identify the receiver', async ({ page }) => {
-        const notice = page.getByText('En operaciones de $25,000.00 o más', { exact: false });
-
-        await page.getByRole('button', { name: 'Emitir Nuevo DTE', exact: true }).click();
-        await page.locator('#item-qty-0').fill('1');
-        await page.locator('#item-price-0').fill('24999.99');
-        await expect(notice).toHaveCount(0);
-
-        await page.locator('#item-price-0').fill('25000.00');
-        await expect(notice).toBeVisible();
-
-        await page.locator('#tipo-dte').selectOption('14');
-        await expect(notice).toHaveCount(0);
+    test('does not offer manual DTE issuance from the list', async ({
+        page,
+    }) => {
+        await expect(
+            page.getByRole('button', { name: 'Emitir Nuevo DTE', exact: true }),
+        ).toHaveCount(0);
+        await expect(
+            page.getByText('Emitir Documento Tributario Electrónico (DTE)'),
+        ).toHaveCount(0);
+        await expect(
+            page.getByRole('button', { name: 'Mostrar filtros', exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole('button', { name: 'Actualizar DTEs', exact: true }),
+        ).toBeVisible();
     });
 
-    test('persists a cryptographically valid RS512 signature for the issued Factura 01', async ({ page }) => {
+    test('persists a cryptographically valid RS512 signature for the issued Factura 01', async ({
+        page,
+    }) => {
         await storeRepositoryCertificate(page);
 
-        await page.getByRole('button', { name: 'Emitir Nuevo DTE', exact: true }).click();
-        await expect(page.locator('#tipo-dte')).toBeVisible();
-        await page.locator('#receptor-nombre').fill('CLIENTE FIRMA PLAYWRIGHT');
-        await page.locator('#receptor-documento').fill('0614-150592-101-9');
-        await page.locator('#receptor-correo').fill('firma.playwright@example.test');
-        await page.locator('#item-desc-0').fill('Servicio firmado E2E');
-        await page.locator('#item-qty-0').fill('1');
-        await page.locator('#item-price-0').fill('12.34');
-
-        const dteResponsePromise = page.waitForResponse(
-            (response) =>
-                response.request().method() === 'POST' &&
-                new URL(response.url()).pathname === '/api/v1/dtes',
-        );
-
-        await page.getByRole('button', { name: 'Emitir DTE', exact: true }).click();
-
-        const dteResponse = await dteResponsePromise;
+        const dteResponse = await page.request.post('/api/v1/dtes', {
+            headers: await authorizationHeaders(page),
+            data: {
+                tipoDte: '01',
+                receptor: {
+                    tipoDocumento: '36',
+                    numDocumento: '0614-150592-101-9',
+                    nombre: 'CLIENTE FIRMA PLAYWRIGHT',
+                    correo: 'firma.playwright@example.test',
+                },
+                items: [
+                    {
+                        descripcion: 'Servicio firmado E2E',
+                        cantidad: 1,
+                        precioUni: 12.34,
+                    },
+                ],
+            },
+        });
         expect(dteResponse.status()).toBe(201);
 
         const body = (await dteResponse.json()) as {
@@ -254,11 +351,17 @@ test.describe('DTEs', () => {
 
         expect(header.alg).toBe('RS512');
         expect(payload.identificacion.tipoDte).toBe('01');
-        expect(payload.identificacion.numeroControl).toBe(record.control_number);
-        expect(payload.identificacion.codigoGeneracion).toBe(record.generation_code);
+        expect(payload.identificacion.numeroControl).toBe(
+            record.control_number,
+        );
+        expect(payload.identificacion.codigoGeneracion).toBe(
+            record.generation_code,
+        );
         expect(payload.emisor.nit).toBe('06142812901015');
         expect(payload.receptor.nombre).toBe('CLIENTE FIRMA PLAYWRIGHT');
-        expect(payload.cuerpoDocumento[0]?.descripcion).toBe('Servicio firmado E2E');
+        expect(payload.cuerpoDocumento[0]?.descripcion).toBe(
+            'Servicio firmado E2E',
+        );
 
         const certificateXml = await readFile(testCertificatePath, 'utf8');
         const publicKeyMatch = certificateXml.match(
@@ -266,7 +369,9 @@ test.describe('DTEs', () => {
         );
 
         if (!publicKeyMatch) {
-            throw new Error('El certificado de pruebas no contiene la llave pública RSA.');
+            throw new Error(
+                'El certificado de pruebas no contiene la llave pública RSA.',
+            );
         }
 
         const publicKey = createPublicKey({
@@ -283,9 +388,12 @@ test.describe('DTEs', () => {
 
         expect(signatureIsValid).toBe(true);
 
-        const persistedResponse = await page.request.get(`/api/v1/dtes/${record.id}`, {
-            headers: await authorizationHeaders(page),
-        });
+        const persistedResponse = await page.request.get(
+            `/api/v1/dtes/${record.id}`,
+            {
+                headers: await authorizationHeaders(page),
+            },
+        );
         expect(persistedResponse.status()).toBe(200);
 
         const persistedBody = (await persistedResponse.json()) as {

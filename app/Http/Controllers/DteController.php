@@ -8,6 +8,7 @@ use App\Http\Requests\Dte\StoreDteRequest;
 use App\Http\Resources\CommonCollection;
 use App\Models\Company;
 use App\Models\Dte;
+use App\Models\MhTransmission;
 use App\Models\User;
 use App\Response\CommonResponse;
 use App\Services\Dte\DteIssuanceService;
@@ -97,6 +98,23 @@ class DteController extends Controller
             }
         } else {
             Gate::authorize('view', $dte);
+        }
+
+        $transmission = MhTransmission::query()
+            ->where('company_id', $dte->company_id)
+            ->where('transmittable_type', $dte->getMorphClass())
+            ->where('transmittable_id', $dte->getKey())
+            ->where('operation', 'dte')
+            ->orderByDesc('attempt')
+            ->first(['attempt', 'http_status', 'status', 'response_json']);
+
+        if ($transmission !== null) {
+            $dte->setAttribute('mh_transmission', [
+                'attempt' => $transmission->attempt,
+                'http_status' => $transmission->http_status,
+                'status' => $transmission->status,
+                'response_json' => $transmission->response_json,
+            ]);
         }
 
         return new CommonResponse($dte);

@@ -9,6 +9,33 @@ test.describe('Login', () => {
         await page.goto('/#/login');
     });
 
+    test('shows the POS-style centered login with the shared logo', async ({
+        page,
+    }) => {
+        await expect(
+            page.locator('link[rel="icon"][href="/favicon.ico"]'),
+        ).toHaveCount(1);
+        await expect(
+            page.locator('link[rel="icon"][href="/logo.png"]'),
+        ).toHaveAttribute('type', 'image/png');
+        expect((await page.request.get('/favicon.ico')).ok()).toBe(true);
+
+        await expect(page.locator('main')).toBeVisible();
+        await expect(
+            page.getByRole('img', { name: 'Logo de Rutely DTE' }),
+        ).toHaveAttribute('src', '/logo.png');
+        await expect(
+            page.getByText('Rutely DTE', { exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole('heading', { name: 'Iniciar sesión' }),
+        ).toBeVisible();
+        await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+        await expect(
+            page.getByText('Facturación Electrónica sin fricción'),
+        ).toHaveCount(0);
+    });
+
     test('does not contact the server when credentials are empty', async ({
         page,
     }) => {

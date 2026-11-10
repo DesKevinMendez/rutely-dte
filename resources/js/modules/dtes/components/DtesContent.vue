@@ -1,25 +1,19 @@
 <script setup lang="ts">
 import { IconFilter, IconRefresh } from '@tabler/icons-vue';
-import { Badge, BaseButton, BaseButtonIcon, Card, DataTable } from 'ornito';
+import { Badge, BaseButtonIcon, Card, DataTable } from 'ornito';
 import type { BadgeVariant, TableField } from 'ornito';
 import { computed, onScopeDispose, ref, watch } from 'vue';
 import { formatIdentityDocument } from '@/core/composables/formatIdentityDocument';
 import { useDtesUi } from '../composables/useDtesUi';
-import type { DteApiRecord, DteDraft } from '../types/dte.types';
-import CreateDteModal from './CreateDteModal.vue';
+import type { DteApiRecord } from '../types/dte.types';
+import DteDetailsModal from './DteDetailsModal.vue';
 import DteFiltersPanel from './DteFiltersPanel.vue';
 
-const isCreateModalOpen = ref(false);
 const isFiltersOpen = ref(false);
+const selectedDteId = ref<string | null>(null);
 const tableKey = ref(0);
-const {
-    filterTipoDte,
-    filterEstado,
-    filterFecha,
-    resetFilters,
-    isLoading,
-    createDte,
-} = useDtesUi();
+const { filterTipoDte, filterEstado, filterFecha, resetFilters, isLoading } =
+    useDtesUi();
 const requestFilterTipoDte = ref(filterTipoDte.value);
 const requestFilterEstado = ref(filterEstado.value);
 const requestFilterFecha = ref(filterFecha.value);
@@ -116,7 +110,7 @@ const tableUrl = computed(() => {
 });
 
 const receiverName = (record: DteApiRecord): string =>
-    record.original_json?.receptor?.nombre?.trim() || 'Cliente General';
+    record.original_json?.receptor?.nombre?.trim() || '-';
 
 const receiverDocument = (record: DteApiRecord): string => {
     const receiver = record.original_json?.receptor;
@@ -150,23 +144,6 @@ const statusVariant = (status: string): BadgeVariant => {
 
 const refreshTable = (): void => {
     tableKey.value += 1;
-};
-
-const handleCreated = async (
-    draft: DteDraft,
-    setServerErrors: (
-        errors: Record<string, string>,
-        message: string | null,
-    ) => void,
-): Promise<void> => {
-    const result = await createDte(draft);
-
-    if (result.success) {
-        isCreateModalOpen.value = false;
-        refreshTable();
-    } else {
-        setServerErrors(result.validationErrors, result.serverError);
-    }
 };
 </script>
 
@@ -204,14 +181,6 @@ const handleCreated = async (
                     aria-controls="dte-filter-panel"
                     @click="isFiltersOpen = !isFiltersOpen"
                 />
-                <BaseButton
-                    variant="primary"
-                    size="auto"
-                    :disabled="isLoading"
-                    @click="isCreateModalOpen = true"
-                >
-                    Emitir Nuevo DTE
-                </BaseButton>
             </div>
         </div>
 
@@ -230,6 +199,7 @@ const handleCreated = async (
                 :url="tableUrl"
                 search-by="query"
                 search-placeholder="Buscar DTE..."
+                @row-selected="(row: DteApiRecord) => (selectedDteId = row.id)"
             >
                 <template #receiver="{ row }">
                     <p>{{ receiverName(row) }}</p>
@@ -245,10 +215,10 @@ const handleCreated = async (
             </DataTable>
         </Card>
 
-        <CreateDteModal
-            v-model:is-open="isCreateModalOpen"
-            :is-submitting="isLoading"
-            @created="handleCreated"
+        <DteDetailsModal
+            :open="selectedDteId !== null"
+            :dte-id="selectedDteId"
+            @close="selectedDteId = null"
         />
     </div>
 </template>
