@@ -35,7 +35,6 @@ declare module 'vue' {
     ContingencyStatusCards: typeof import('./resources/js/modules/contingency/components/ContingencyStatusCards.vue')['default']
     ContingencyView: typeof import('./resources/js/modules/contingency/views/ContingencyView.vue')['default']
     CreateApiTokenModal: typeof import('./resources/js/modules/tokens/components/CreateApiTokenModal.vue')['default']
-    CreateDteModal: typeof import('./resources/js/modules/dtes/components/CreateDteModal.vue')['default']
     DashboardContent: typeof import('./resources/js/modules/dashboard/components/DashboardContent.vue')['default']
     DashboardMetrics: typeof import('./resources/js/modules/dashboard/components/DashboardMetrics.vue')['default']
     DashboardSkeleton: typeof import('./resources/js/modules/dashboard/components/DashboardSkeleton.vue')['default']
