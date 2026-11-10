@@ -110,7 +110,7 @@ const tableUrl = computed(() => {
 });
 
 const receiverName = (record: DteApiRecord): string =>
-    record.original_json?.receptor?.nombre?.trim() || 'Cliente General';
+    record.original_json?.receptor?.nombre?.trim() || '-';
 
 const receiverDocument = (record: DteApiRecord): string => {
     const receiver = record.original_json?.receptor;
