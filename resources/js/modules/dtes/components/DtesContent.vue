@@ -7,10 +7,12 @@ import { formatIdentityDocument } from '@/core/composables/formatIdentityDocumen
 import { useDtesUi } from '../composables/useDtesUi';
 import type { DteApiRecord, DteDraft } from '../types/dte.types';
 import CreateDteModal from './CreateDteModal.vue';
+import DteDetailsModal from './DteDetailsModal.vue';
 import DteFiltersPanel from './DteFiltersPanel.vue';
 
 const isCreateModalOpen = ref(false);
 const isFiltersOpen = ref(false);
+const selectedDteId = ref<string | null>(null);
 const tableKey = ref(0);
 const {
     filterTipoDte,
@@ -230,6 +232,7 @@ const handleCreated = async (
                 :url="tableUrl"
                 search-by="query"
                 search-placeholder="Buscar DTE..."
+                @row-selected="(row: DteApiRecord) => (selectedDteId = row.id)"
             >
                 <template #receiver="{ row }">
                     <p>{{ receiverName(row) }}</p>
@@ -249,6 +252,12 @@ const handleCreated = async (
             v-model:is-open="isCreateModalOpen"
             :is-submitting="isLoading"
             @created="handleCreated"
+        />
+
+        <DteDetailsModal
+            :open="selectedDteId !== null"
+            :dte-id="selectedDteId"
+            @close="selectedDteId = null"
         />
     </div>
 </template>
