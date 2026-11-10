@@ -1,0 +1,176 @@
+name: Prod Deploy App
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prod-deploy-app
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dropplet-prod-digital-ocean
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate deployment configuration
+        env:
+          APP_DEBUG: ${{ vars.APP_DEBUG }}
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_FAKER_LOCALE: ${{ vars.APP_FAKER_LOCALE }}
+          APP_FALLBACK_LOCALE: ${{ vars.APP_FALLBACK_LOCALE }}
+          APP_KEY: ${{ secrets.APP_KEY }}
+          APP_LOCALE: ${{ vars.APP_LOCALE }}
+          APP_NAME: ${{ vars.APP_NAME }}
+          APP_URL: ${{ vars.APP_URL }}
+          BCRYPT_ROUNDS: ${{ secrets.BCRYPT_ROUNDS }}
+          CACHE_STORE: ${{ vars.CACHE_STORE }}
+          DB_CONNECTION: ${{ secrets.DB_CONNECTION }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
+          DROPLET_USERNAME: ${{ secrets.DROPLET_USERNAME }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VITE_APP_NAME: ${{ vars.VITE_APP_NAME }}
+        run: |
+          for name in APP_DEBUG APP_ENV APP_FAKER_LOCALE APP_FALLBACK_LOCALE APP_KEY APP_LOCALE APP_NAME APP_URL BCRYPT_ROUNDS CACHE_STORE DB_CONNECTION DB_DATABASE DB_HOST DB_PASSWORD DB_PORT DB_USERNAME DROPLET_HOST DROPLET_USERNAME SSH_PRIVATE_KEY VITE_APP_NAME; do
+            test -n "${!name}" || { echo "Missing $name deployment configuration" >&2; exit 1; }
+          done
+          test "$APP_ENV" = production || { echo "APP_ENV must be production" >&2; exit 1; }
+          test "$APP_DEBUG" = false || { echo "APP_DEBUG must be false" >&2; exit 1; }
+          test "$APP_URL" = https://dte.rutely.biz || { echo "APP_URL must be https://dte.rutely.biz" >&2; exit 1; }
+          test "$DB_CONNECTION" = pgsql || { echo "DB_CONNECTION must be pgsql" >&2; exit 1; }
+          test "$CACHE_STORE" = database || { echo "CACHE_STORE must be database" >&2; exit 1; }
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build app image on GitHub Actions
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          tags: rutely-dte-prod-app:${{ github.sha }}
+          cache-from: type=gha,scope=rutely-dte-prod-app
+          cache-to: type=gha,scope=rutely-dte-prod-app,mode=max
+
+      - name: Package app image
+        run: |
+          set -euo pipefail
+          docker save "rutely-dte-prod-app:${GITHUB_SHA}" | gzip -1 > rutely-dte-prod-app.tar.gz
+
+      - name: Prepare production directory
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: mkdir -p /opt/rutely-dte-prod
+
+      - name: Copy image and Compose files to droplet
+        uses: appleboy/scp-action@ff85246acaad7bdce478db94a363cd2bf7c90345 # v1.0.0
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: 'docker-compose.prod.yml,docker/nginx/prod.conf,rutely-dte-prod-app.tar.gz'
+          target: /opt/rutely-dte-prod
+          overwrite: true
+          command_timeout: 30m
+
+      - name: Load image and deploy
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
+          envs: APP_NAME,APP_ENV,APP_DEBUG,APP_KEY,APP_URL,APP_LOCALE,APP_FALLBACK_LOCALE,APP_FAKER_LOCALE,APP_MAINTENANCE_DRIVER,VITE_APP_NAME,APP_IMAGE_TAG,BCRYPT_ROUNDS,DB_CONNECTION,DB_HOST,DB_PORT,DB_DATABASE,DB_USERNAME,DB_PASSWORD,SESSION_DRIVER,SESSION_LIFETIME,SESSION_DOMAIN,SESSION_SECURE_COOKIE,BROADCAST_CONNECTION,FILESYSTEM_DISK,QUEUE_CONNECTION,CACHE_STORE
+          script: |
+            set -e
+            cd /opt/rutely-dte-prod
+            export COMPOSE_PROJECT_NAME=rutely-dte-prod
+            test -r /etc/ssl/cloudflare/rutely.biz.pem
+            test -r /etc/ssl/cloudflare/rutely.biz.key
+
+            umask 077
+            cat > .env << EOF
+            APP_NAME="$APP_NAME"
+            APP_ENV=$APP_ENV
+            APP_KEY=$APP_KEY
+            APP_DEBUG=$APP_DEBUG
+            APP_URL=$APP_URL
+
+            APP_LOCALE=$APP_LOCALE
+            APP_FALLBACK_LOCALE=$APP_FALLBACK_LOCALE
+            APP_FAKER_LOCALE=$APP_FAKER_LOCALE
+            APP_MAINTENANCE_DRIVER=$APP_MAINTENANCE_DRIVER
+            VITE_APP_NAME="$VITE_APP_NAME"
+            APP_IMAGE_TAG=$APP_IMAGE_TAG
+            BCRYPT_ROUNDS=$BCRYPT_ROUNDS
+
+            DB_CONNECTION=$DB_CONNECTION
+            DB_HOST=$DB_HOST
+            DB_PORT=$DB_PORT
+            DB_DATABASE=$DB_DATABASE
+            DB_USERNAME=$DB_USERNAME
+
+            SESSION_DRIVER=$SESSION_DRIVER
+            SESSION_LIFETIME=$SESSION_LIFETIME
+            SESSION_DOMAIN=$SESSION_DOMAIN
+            SESSION_SECURE_COOKIE=$SESSION_SECURE_COOKIE
+            BROADCAST_CONNECTION=$BROADCAST_CONNECTION
+            FILESYSTEM_DISK=$FILESYSTEM_DISK
+            QUEUE_CONNECTION=$QUEUE_CONNECTION
+            CACHE_STORE=$CACHE_STORE
+            EOF
+            chmod 600 .env
+
+            docker load --input rutely-dte-prod-app.tar.gz
+            rm -f rutely-dte-prod-app.tar.gz
+            docker compose -f docker-compose.prod.yml config -q
+            docker compose -f docker-compose.prod.yml down --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d --wait db
+            docker compose -f docker-compose.prod.yml run --rm app php artisan migrate --force
+            docker compose -f docker-compose.prod.yml up -d --wait
+            docker compose -f docker-compose.prod.yml exec -T app php artisan optimize
+            docker compose -f docker-compose.prod.yml ps
+        env:
+          APP_NAME: ${{ vars.APP_NAME }}
+          APP_ENV: ${{ vars.APP_ENV }}
+          APP_DEBUG: ${{ vars.APP_DEBUG }}
+          APP_KEY: ${{ secrets.APP_KEY }}
+          APP_URL: ${{ vars.APP_URL }}
+          APP_LOCALE: ${{ vars.APP_LOCALE }}
+          APP_FALLBACK_LOCALE: ${{ vars.APP_FALLBACK_LOCALE }}
+          APP_FAKER_LOCALE: ${{ vars.APP_FAKER_LOCALE }}
+          APP_MAINTENANCE_DRIVER: file
+          VITE_APP_NAME: ${{ vars.VITE_APP_NAME }}
+          APP_IMAGE_TAG: ${{ github.sha }}
+          BCRYPT_ROUNDS: ${{ secrets.BCRYPT_ROUNDS }}
+          DB_CONNECTION: ${{ secrets.DB_CONNECTION }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SESSION_DRIVER: database
+          SESSION_LIFETIME: '120'
+          SESSION_DOMAIN: dte.rutely.biz
+          SESSION_SECURE_COOKIE: 'true'
+          BROADCAST_CONNECTION: log
+          FILESYSTEM_DISK: local
+          QUEUE_CONNECTION: database
+          CACHE_STORE: ${{ vars.CACHE_STORE }}
