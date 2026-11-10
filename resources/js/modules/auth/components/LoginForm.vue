@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { BaseButton, Card, FormInput } from 'ornito';
+import { IconLock, IconMail } from '@tabler/icons-vue';
+import { Alert, BaseButton, Card, FormInput } from 'ornito';
 import { Form } from 'vee-validate';
 import useLogin from '../composables/useLogin';
 
@@ -9,25 +10,17 @@ const { email, password, rules, isLoading, error, login } = useLogin();
 <template>
     <Card class="w-full max-w-md">
         <div class="mb-8 text-center">
-            <div
-                class="mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
-            >
-                <img
-                    src="/logo.png"
-                    alt="Rutely"
-                    class="h-9 w-9 object-contain"
-                />
-            </div>
-            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
-                Iniciar Sesión
-            </h2>
-            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Ingresá tus credenciales autorizadas de administrador o
-                superadmin
+            <h1 class="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+                Iniciar sesión
+            </h1>
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+                Accedé a tu cuenta
             </p>
         </div>
 
         <Form class="space-y-6" @submit="login">
+            <Alert v-if="error" type="danger">{{ error }}</Alert>
+
             <FormInput
                 v-model="email"
                 id="email"
@@ -36,6 +29,7 @@ const { email, password, rules, isLoading, error, login } = useLogin();
                 label="Correo Electrónico"
                 placeholder="admin@rutely.biz"
                 autocomplete="email"
+                :left-icon="IconMail"
                 :rules="rules.email"
             />
             <FormInput
@@ -46,6 +40,7 @@ const { email, password, rules, isLoading, error, login } = useLogin();
                 label="Contraseña"
                 placeholder="••••••••"
                 autocomplete="current-password"
+                :left-icon="IconLock"
                 :rules="rules.password"
             />
 
@@ -56,13 +51,6 @@ const { email, password, rules, isLoading, error, login } = useLogin();
                 >
                     ¿Olvidaste tu contraseña?
                 </RouterLink>
-            </div>
-
-            <div
-                v-if="error"
-                class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/60 dark:text-red-400"
-            >
-                {{ error }}
             </div>
 
             <BaseButton

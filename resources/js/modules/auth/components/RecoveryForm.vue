@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BaseButton, Card, FormInput } from 'ornito';
+import { Alert, BaseButton, Card, FormInput } from 'ornito';
 import { Form } from 'vee-validate';
 import useRecovery from '../composables/useRecovery';
 
@@ -9,18 +9,9 @@ const { email, emailRule, successMessage, submit } = useRecovery();
 <template>
     <Card class="w-full max-w-md">
         <div class="mb-8 text-center">
-            <div
-                class="mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
-            >
-                <img
-                    src="/logo.png"
-                    alt="Rutely"
-                    class="h-9 w-9 object-contain"
-                />
-            </div>
-            <h2 class="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
                 Recuperar Contraseña
-            </h2>
+            </h1>
             <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 Ingresá tu correo electrónico para recibir las instrucciones de
                 recuperación
@@ -39,12 +30,9 @@ const { email, emailRule, successMessage, submit } = useRecovery();
                 :rules="emailRule"
             />
 
-            <div
-                v-if="successMessage"
-                class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-            >
+            <Alert v-if="successMessage" type="success">
                 {{ successMessage }}
-            </div>
+            </Alert>
 
             <BaseButton
                 type="submit"
