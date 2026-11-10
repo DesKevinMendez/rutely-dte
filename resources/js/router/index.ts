@@ -139,6 +139,13 @@ const router = createRouter({
                                 import('@/modules/superadmin/companies/views/CompanyEditView.vue'),
                         },
                         {
+                            path: 'dte-correlative',
+                            name: 'superadmin-company-dte-correlative',
+                            meta: { title: 'Correlativo DTE' },
+                            component: () =>
+                                import('@/modules/superadmin/companies/views/CompanyDteCorrelativeView.vue'),
+                        },
+                        {
                             path: 'users',
                             name: 'superadmin-company-users',
                             meta: { title: 'Usuarios' },

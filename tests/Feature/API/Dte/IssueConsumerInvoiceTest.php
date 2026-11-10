@@ -3,6 +3,7 @@
 use App\Models\Dte;
 use App\Models\PaymentMethod;
 use App\Models\Receivers;
+use App\Models\User;
 use App\Role;
 use App\Services\Mh\MhTransmissionService;
 use Database\Seeders\DocumentTypeSeeder;
@@ -354,6 +355,18 @@ test('document types and points of sale share the consecutive of their establish
     $company->update(['mh_pos_code' => 'P002']);
 
     expect($controlNumber(DteApiTestData::validExcludedSubjectPayload()))->toBe('DTE-14-M001P002-000000000000003');
+});
+
+test('issuing a document uses the correlative configured by a superadmin', function () {
+    $company = companyReadyToIssue();
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create(['company_id' => null]));
+    $this->patchJson(route('api.v1.superadmin.companies.dte-correlative.update', $company), ['next_value' => 200])->assertOk();
+    $this->patchJson(route('api.v1.superadmin.companies.dte-correlative.update', $company), ['next_value' => 125])->assertOk();
+
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+    $this->postJson(route('api.v1.dtes.store'), DteApiTestData::validDtePayload())
+        ->assertCreated()
+        ->assertJson(['data' => ['record' => ['control_number' => 'DTE-01-M001P001-000000000000125']]]);
 });
 
 test('each establishment keeps its own consecutive', function () {

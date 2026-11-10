@@ -102,6 +102,7 @@ return [
         'role' => 'rol',
         'status' => 'estado',
         'company_id' => 'empresa',
+        'next_value' => 'próximo correlativo',
         'environment' => 'ambiente',
         'per_page' => 'elementos por página',
         'abilities' => 'permisos',

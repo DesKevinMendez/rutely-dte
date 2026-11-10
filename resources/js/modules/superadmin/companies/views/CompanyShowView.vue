@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { IconBuilding, IconKey, IconUser, IconUsers } from '@tabler/icons-vue';
+import {
+    IconBuilding,
+    IconFileInvoice,
+    IconKey,
+    IconUser,
+    IconUsers,
+} from '@tabler/icons-vue';
 import { Breadcrumb, Card, SidebarNav, ViewHeader } from 'ornito';
 import type { BreadcrumbItem } from 'ornito';
 import { computed, watch } from 'vue';
@@ -11,14 +17,18 @@ const { company, isLoading, error, loadCompany } = useCompanyShow();
 
 const companyName = computed(() => company.value?.name ?? 'Empresa');
 const pageTitle = computed(() =>
-    route.name === 'superadmin-company-profile-edit'
-        ? 'Editar perfil de la empresa'
-        : 'Perfil de la empresa',
+    route.name === 'superadmin-company-dte-correlative'
+        ? 'Correlativo DTE'
+        : route.name === 'superadmin-company-profile-edit'
+          ? 'Editar perfil de la empresa'
+          : 'Perfil de la empresa',
 );
 const pageSubtitle = computed(() =>
-    route.name === 'superadmin-company-profile-edit'
-        ? 'Actualiza la información fiscal y de contacto de la empresa.'
-        : 'Consulta la información fiscal y de contacto de la empresa.',
+    route.name === 'superadmin-company-dte-correlative'
+        ? 'Consulta y configura el próximo número de los documentos electrónicos.'
+        : route.name === 'superadmin-company-profile-edit'
+          ? 'Actualiza la información fiscal y de contacto de la empresa.'
+          : 'Consulta la información fiscal y de contacto de la empresa.',
 );
 const breadcrumbItems = computed<BreadcrumbItem[]>(() => [
     { label: 'Empresas', to: '/superadmin/companies', icon: IconBuilding },
@@ -29,6 +39,11 @@ const sidebarItems = computed(() => [
         name: 'Perfil',
         icon: IconUser,
         to: `/superadmin/companies/${route.params.id}/profile`,
+    },
+    {
+        name: 'Correlativo DTE',
+        icon: IconFileInvoice,
+        to: `/superadmin/companies/${route.params.id}/dte-correlative`,
     },
     {
         name: 'Usuarios',
