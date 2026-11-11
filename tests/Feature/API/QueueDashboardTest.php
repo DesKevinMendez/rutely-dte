@@ -1,21 +1,25 @@
 <?php
 
 use App\Environment;
+use App\Models\Company;
+use App\Models\ContingencyEvent;
+use App\Models\DteInvalidation;
 use App\Models\MhCredentials;
 use App\Models\MhTransmission;
 use App\Role;
 use App\Services\Mh\MhTransmissionService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
 
-function transmissionForDte($dte, array $overrides = []): MhTransmission
+function transmissionFor(Model $transmittable, array $overrides = []): MhTransmission
 {
     return MhTransmission::query()->create(array_merge([
-        'company_id' => $dte->company_id,
-        'transmittable_type' => $dte->getMorphClass(),
-        'transmittable_id' => $dte->id,
+        'company_id' => $transmittable->company_id,
+        'transmittable_type' => $transmittable->getMorphClass(),
+        'transmittable_id' => $transmittable->id,
         'operation' => 'dte',
         'attempt' => 1,
         'request_json' => ['idEnvio' => 1],
@@ -28,16 +32,47 @@ function transmissionForDte($dte, array $overrides = []): MhTransmission
     ], $overrides));
 }
 
+function createSandboxCredentials(Company $company): MhCredentials
+{
+    return MhCredentials::query()->create([
+        'company_id' => $company->id,
+        'environment' => Environment::SANDBOX->value,
+        'nit' => $company->nit,
+        'password' => 'Hacienda-Prueba-01',
+        'active' => true,
+    ]);
+}
+
+function fakeMhResponse(string $endpoint, array $body, int $status = 200): void
+{
+    Http::fake([
+        'apitest.dtes.mh.gob.sv/seguridad/auth' => Http::response(['status' => 'OK', 'body' => ['token' => 'Bearer mh-token']]),
+        "apitest.dtes.mh.gob.sv/fesv/{$endpoint}" => Http::response($body, $status),
+    ]);
+}
+
+function emptyQueuePagination(): array
+{
+    return [
+        'total' => 0,
+        'per_page' => 50,
+        'current_page' => 1,
+        'last_page' => 1,
+        'from' => null,
+        'to' => null,
+    ];
+}
+
 test('company member can list pending queue with common collection and Spatie filters', function (Role $role) {
     $company = DteApiTestData::company();
     $user = DteApiTestData::user($company, $role);
     $dte = DteApiTestData::dte($company);
-    $failed = transmissionForDte($dte);
+    $failed = transmissionFor($dte);
     $pendingDte = DteApiTestData::dte($company, [
         'generation_code' => strtoupper((string) Str::uuid()),
         'control_number' => 'DTE-01-00010001-000000000000002',
     ]);
-    transmissionForDte($pendingDte, ['status' => 'pending', 'error' => null]);
+    transmissionFor($pendingDte, ['status' => 'pending', 'error' => null]);
     Sanctum::actingAs($user);
 
     $this->getJson(route('api.v1.queue.index', ['filter' => ['operation' => 'dte', 'status' => 'failed']]))
@@ -62,8 +97,8 @@ test('company member can list pending queue with common collection and Spatie fi
 test('queue lists each transmission once with its latest attempt', function () {
     $company = DteApiTestData::company();
     $retriedDte = DteApiTestData::dte($company);
-    transmissionForDte($retriedDte);
-    $latestAttempt = transmissionForDte($retriedDte, [
+    transmissionFor($retriedDte);
+    $latestAttempt = transmissionFor($retriedDte, [
         'attempt' => 2,
         'request_json' => ['idEnvio' => 2],
         'http_status' => 400,
@@ -73,8 +108,8 @@ test('queue lists each transmission once with its latest attempt', function () {
         'generation_code' => strtoupper((string) Str::uuid()),
         'control_number' => 'DTE-01-00010001-000000000000002',
     ]);
-    transmissionForDte($recoveredDte);
-    transmissionForDte($recoveredDte, [
+    transmissionFor($recoveredDte);
+    transmissionFor($recoveredDte, [
         'attempt' => 2,
         'request_json' => ['idEnvio' => 2],
         'status' => 'success',
@@ -101,26 +136,33 @@ test('queue lists each transmission once with its latest attempt', function () {
 
 test('retrying a rejected transmission keeps one queue row and raises its attempt', function () {
     $company = DteApiTestData::company();
-    MhCredentials::query()->create([
-        'company_id' => $company->id,
-        'environment' => Environment::SANDBOX->value,
-        'nit' => $company->nit,
-        'password' => 'Hacienda-Prueba-01',
-        'active' => true,
+    createSandboxCredentials($company);
+    $dte = DteApiTestData::dte($company, [
+        'status' => 'RECHAZADO',
+        'received_seal' => null,
+        'mh_response_json' => ['estado' => 'RECHAZADO', 'codigoMsg' => '400'],
     ]);
-    $dte = DteApiTestData::dte($company);
-    transmissionForDte($dte, ['http_status' => 400, 'error' => 'Error en transmisión MH [HTTP 400]']);
-    Http::fake([
-        'apitest.dtes.mh.gob.sv/seguridad/auth' => Http::response(['status' => 'OK', 'body' => ['token' => 'Bearer mh-token']]),
-        'apitest.dtes.mh.gob.sv/fesv/recepciondte' => Http::response(['estado' => 'RECHAZADO'], 400),
-    ]);
+    transmissionFor($dte, ['http_status' => 400, 'error' => 'Error en transmisión MH [HTTP 400]']);
+    fakeMhResponse('recepciondte', [
+        'estado' => 'RECHAZADO',
+        'codigoGeneracion' => $dte->generation_code,
+        'selloRecibido' => null,
+        'codigoMsg' => '004',
+        'descripcionMsg' => '[identificacion.numeroControl] YA EXISTE UN REGISTRO CON ESE VALOR',
+        'observaciones' => [],
+    ], 400);
     Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
 
     $this->postJson(route('api.v1.queue.retries.store'))->assertOk();
 
     $latestAttempt = MhTransmission::query()->where('attempt', 2)->sole();
 
-    expect($latestAttempt->status)->toBe('failed');
+    expect($latestAttempt->status)->toBe('failed')
+        ->and($dte->fresh()->only(['status', 'received_seal', 'mh_response_json']))->toEqual([
+            'status' => 'RECHAZADO',
+            'received_seal' => null,
+            'mh_response_json' => ['estado' => 'RECHAZADO', 'codigoMsg' => '400'],
+        ]);
 
     $this->getJson(route('api.v1.queue.index'))
         ->assertOk()
@@ -137,6 +179,139 @@ test('retrying a rejected transmission keeps one queue row and raises its attemp
         ]);
 });
 
+test('a successful retry updates the DTE with the Hacienda response and leaves the queue', function () {
+    $company = DteApiTestData::company();
+    createSandboxCredentials($company);
+    $dte = DteApiTestData::dte($company, [
+        'status' => 'RECHAZADO',
+        'received_seal' => null,
+        'observations' => json_encode(['Error en transmisión MH [HTTP 503]']),
+        'mh_response_json' => ['estado' => 'RECHAZADO', 'codigoMsg' => '503'],
+    ]);
+    $failed = transmissionFor($dte, ['http_status' => 503, 'error' => 'Error en transmisión MH [HTTP 503]']);
+    $mhResponse = [
+        'version' => 2,
+        'ambiente' => '00',
+        'versionApp' => 2,
+        'estado' => 'PROCESADO',
+        'codigoGeneracion' => $dte->generation_code,
+        'selloRecibido' => '202617FEDDCF2155456A9406A11D6F313944MUVI',
+        'fhProcesamiento' => '11/11/2026 09:15:00',
+        'clasificaMsg' => '10',
+        'codigoMsg' => '001',
+        'descripcionMsg' => 'RECIBIDO',
+        'observaciones' => [],
+    ];
+    fakeMhResponse('recepciondte', $mhResponse);
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->postJson(route('api.v1.queue.retries.store'))
+        ->assertOk()
+        ->assertExactJson([
+            'data' => [
+                'count' => 1,
+                'results' => [[
+                    'transmission_id' => $failed->id,
+                    'result' => $mhResponse,
+                ]],
+            ],
+        ]);
+
+    expect($dte->fresh()->only(['status', 'received_seal', 'observations', 'mh_response_json']))->toEqual([
+        'status' => 'PROCESADO',
+        'received_seal' => '202617FEDDCF2155456A9406A11D6F313944MUVI',
+        'observations' => '[]',
+        'mh_response_json' => $mhResponse,
+    ]);
+
+    $this->getJson(route('api.v1.queue.index'))
+        ->assertOk()
+        ->assertExactJson(['data' => [], 'pagination' => emptyQueuePagination()]);
+});
+
+test('a successful invalidation retry marks the DTE as invalidated', function () {
+    $company = DteApiTestData::company();
+    createSandboxCredentials($company);
+    $dte = DteApiTestData::dte($company, ['status' => 'RECHAZADO']);
+    $invalidation = DteInvalidation::query()->create([
+        'company_id' => $company->id,
+        'dte_id' => $dte->id,
+        'generation_code' => strtoupper((string) Str::uuid()),
+        'invalidation_type' => '2',
+        'reason' => 'Error en la información del documento',
+        'name_person_in_charge' => 'Responsable',
+        'doc_type_person_in_charge' => '13',
+        'doc_number_person_in_charge' => '012345678',
+        'name_request' => 'Solicitante',
+        'doc_type_request' => '13',
+        'doc_number_request' => '012345678',
+        'original_json' => ['identificacion' => ['version' => 3]],
+        'signed_json' => 'signed-invalidation',
+        'status' => 'RECHAZADO',
+        'observations' => 'Error en transmisión MH [HTTP 503]',
+        'environment' => Environment::SANDBOX->value,
+    ]);
+    transmissionFor($invalidation, ['operation' => 'invalidation', 'http_status' => 503]);
+    $mhResponse = [
+        'version' => 2,
+        'ambiente' => '00',
+        'estado' => 'PROCESADO',
+        'codigoGeneracion' => $invalidation->generation_code,
+        'selloRecibido' => 'SELLO-ANULACION',
+        'codigoMsg' => '001',
+        'descripcionMsg' => 'RECIBIDO',
+        'observaciones' => [],
+    ];
+    fakeMhResponse('anulardte', $mhResponse);
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->postJson(route('api.v1.queue.retries.store'))->assertOk();
+
+    expect($invalidation->fresh()->only(['status', 'received_seal', 'observations']))->toBe([
+        'status' => 'PROCESADO',
+        'received_seal' => 'SELLO-ANULACION',
+        'observations' => 'RECIBIDO',
+    ])
+        ->and($dte->fresh()->only(['status', 'observations', 'mh_response_json']))->toEqual([
+            'status' => 'INVALIDADO',
+            'observations' => 'RECIBIDO',
+            'mh_response_json' => $mhResponse,
+        ]);
+});
+
+test('a successful contingency retry marks the event as received', function () {
+    $company = DteApiTestData::company();
+    createSandboxCredentials($company);
+    $event = ContingencyEvent::query()->create([
+        'company_id' => $company->id,
+        'generation_code' => strtoupper((string) Str::uuid()),
+        'environment' => Environment::SANDBOX->value,
+        'contingency_type' => '1',
+        'reason' => 'No disponibilidad de sistema MH',
+        'start_date_at' => '2026-11-11 14:00:00',
+        'end_date_at' => '2026-11-11 14:30:00',
+        'original_json' => ['identificacion' => ['version' => 4]],
+        'signed_json' => 'signed-contingency',
+        'status' => 'RECHAZADO',
+    ]);
+    transmissionFor($event, ['operation' => 'contingency', 'http_status' => 503]);
+    fakeMhResponse('contingencia', [
+        'estado' => 'RECIBIDO',
+        'codigoGeneracion' => $event->generation_code,
+        'selloRecibido' => 'SELLO-CONTINGENCIA',
+        'observaciones' => ['Evento registrado'],
+    ]);
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->postJson(route('api.v1.queue.retries.store'))->assertOk();
+
+    expect($event->fresh()->only(['status', 'received_seal', 'observations']))->toBe([
+        'status' => 'RECIBIDO',
+        'received_seal' => 'SELLO-CONTINGENCIA',
+        'observations' => 'Evento registrado',
+    ]);
+});
+
 test('queue list is tenant isolated', function () {
     $company = DteApiTestData::company();
     $otherCompany = DteApiTestData::company([
@@ -149,8 +324,8 @@ test('queue list is tenant isolated', function () {
         'generation_code' => strtoupper((string) Str::uuid()),
         'control_number' => 'DTE-01-00010001-000000000000002',
     ]);
-    $own = transmissionForDte($ownDte);
-    transmissionForDte($otherDte);
+    $own = transmissionFor($ownDte);
+    transmissionFor($otherDte);
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
 
     $this->getJson(route('api.v1.queue.index'))
@@ -171,7 +346,7 @@ test('queue list is tenant isolated', function () {
 test('admin can retry failed queue entries with common response', function (Role $role) {
     $company = DteApiTestData::company();
     $dte = DteApiTestData::dte($company);
-    $failed = transmissionForDte($dte);
+    $failed = transmissionFor($dte);
     $result = ['estado' => 'PROCESADO', 'selloRecibido' => 'RETRY-SEAL'];
 
     $this->mock(MhTransmissionService::class)
@@ -200,14 +375,14 @@ test('admin can retry failed queue entries with common response', function (Role
 test('queue retry resends only the latest failed attempt of each transmission', function () {
     $company = DteApiTestData::company();
     $retriedDte = DteApiTestData::dte($company);
-    transmissionForDte($retriedDte);
-    $latestAttempt = transmissionForDte($retriedDte, ['attempt' => 2, 'request_json' => ['idEnvio' => 2]]);
+    transmissionFor($retriedDte);
+    $latestAttempt = transmissionFor($retriedDte, ['attempt' => 2, 'request_json' => ['idEnvio' => 2]]);
     $recoveredDte = DteApiTestData::dte($company, [
         'generation_code' => strtoupper((string) Str::uuid()),
         'control_number' => 'DTE-01-00010001-000000000000002',
     ]);
-    transmissionForDte($recoveredDte);
-    transmissionForDte($recoveredDte, [
+    transmissionFor($recoveredDte);
+    transmissionFor($recoveredDte, [
         'attempt' => 2,
         'request_json' => ['idEnvio' => 2],
         'status' => 'success',
@@ -263,7 +438,7 @@ test('company member can read tenant dashboard with exact metrics', function (Ro
     $company = DteApiTestData::company();
     $user = DteApiTestData::user($company, $role);
     $dte = DteApiTestData::dte($company, ['status' => 'PROCESADO', 'total_amount' => 1130]);
-    transmissionForDte($dte, ['status' => 'failed']);
+    transmissionFor($dte, ['status' => 'failed']);
 
     $otherCompany = DteApiTestData::company([
         'name' => 'Other Company',
@@ -275,7 +450,7 @@ test('company member can read tenant dashboard with exact metrics', function (Ro
         'control_number' => 'DTE-01-00010001-000000000000002',
         'total_amount' => 999999,
     ]);
-    transmissionForDte($otherDte, ['status' => 'failed']);
+    transmissionFor($otherDte, ['status' => 'failed']);
     Sanctum::actingAs($user);
 
     $this->getJson(route('api.v1.dashboard.show'))
@@ -302,8 +477,8 @@ test('company member can read tenant dashboard with exact metrics', function (Ro
 test('dashboard counts a retried transmission once', function () {
     $company = DteApiTestData::company();
     $dte = DteApiTestData::dte($company, ['status' => 'RECHAZADO']);
-    transmissionForDte($dte);
-    transmissionForDte($dte, ['attempt' => 2, 'request_json' => ['idEnvio' => 2]]);
+    transmissionFor($dte);
+    transmissionFor($dte, ['attempt' => 2, 'request_json' => ['idEnvio' => 2]]);
     Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
 
     $this->getJson(route('api.v1.dashboard.show'))
