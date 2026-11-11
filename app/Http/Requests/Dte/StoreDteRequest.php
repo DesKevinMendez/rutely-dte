@@ -125,9 +125,13 @@ class StoreDteRequest extends FormRequest
                 }
 
                 $builder = DteDocumentBuilder::for($this->documentType());
+                $totalPurchases = 0.0;
 
                 foreach ($this->input('items') as $index => $item) {
-                    if ($builder->lineAmount($item) < 0) {
+                    $lineAmount = $builder->lineAmount($item);
+                    $totalPurchases += $lineAmount;
+
+                    if ($lineAmount < 0) {
                         $validator->errors()->add(
                             "items.{$index}.montoDescu",
                             'El monto de descuento del ítem no puede ser mayor que el valor de la línea.',
@@ -161,6 +165,14 @@ class StoreDteRequest extends FormRequest
                     $this->validatePerceivedIva($validator, $builder);
                 }
 
+                $isExcludedSubject = $this->documentType() === IssuableDteType::EXCLUDED_SUBJECT;
+
+                if ($isExcludedSubject && (float) $this->input('resumen.descu', 0) > round($totalPurchases, 2)) {
+                    $validator->errors()->add('resumen.descu', 'El descuento global no puede ser mayor que el total de compras.');
+
+                    return;
+                }
+
                 $amountDue = $builder->totalToPay($this->only(['items', 'resumen']));
 
                 if ($amountDue < 0) {
@@ -178,8 +190,9 @@ class StoreDteRequest extends FormRequest
                 }
 
                 $payments = $this->input('resumen.pagos');
+                $isExcludedSubjectOnCredit = $isExcludedSubject && $condition === MhCatalog::CREDIT_CONDITION;
 
-                if (is_array($payments)) {
+                if (is_array($payments) && ! $isExcludedSubjectOnCredit) {
                     $paid = array_sum(array_column($payments, 'montoPago'));
 
                     if (round(abs($paid - $amountDue), 2) > self::MH_TOLERANCE) {
@@ -353,17 +366,27 @@ class StoreDteRequest extends FormRequest
     {
         $type = $this->documentType();
         $isExcludedSubject = $type === IssuableDteType::EXCLUDED_SUBJECT;
+        $isExcludedSubjectOnCredit = $isExcludedSubject
+            && (int) $this->input('resumen.condicionOperacion', MhCatalog::CASH_CONDITION) === MhCatalog::CREDIT_CONDITION;
+        $paymentReferenceRules = ['sometimes', 'nullable', 'string', 'max:50'];
+
+        if ($isExcludedSubject) {
+            $paymentReferenceRules[] = $isExcludedSubjectOnCredit
+                ? 'prohibited'
+                : 'prohibited_if:resumen.pagos.*.codigo,'.MhCatalog::CASH_PAYMENT_METHOD;
+        }
 
         return [
             'resumen' => ['sometimes', 'array'],
+            ...($isExcludedSubject ? ['resumen.descu' => ['sometimes', ...$this->amountRules(2)]] : []),
             'resumen.ivaRete' => $isExcludedSubject ? ['prohibited'] : ['sometimes', ...$this->amountRules(2)],
             'resumen.ivaPerci' => $type === IssuableDteType::TAX_CREDIT ? ['sometimes', ...$this->amountRules(2)] : ['prohibited'],
             'resumen.reteRenta' => $isExcludedSubject ? ['sometimes', ...$this->amountRules(2)] : ['prohibited'],
             'resumen.condicionOperacion' => ['bail', 'sometimes', 'integer', Rule::in(MhCatalog::OPERATION_CONDITIONS)],
             'resumen.pagos' => ['bail', 'required_if:resumen.condicionOperacion,2,3', 'array', 'min:1'],
-            'resumen.pagos.*.codigo' => ['bail', 'required', 'string', Rule::exists(PaymentMethod::class, 'code')],
-            'resumen.pagos.*.montoPago' => ['required', ...$this->amountRules(2)],
-            'resumen.pagos.*.referencia' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'resumen.pagos.*.codigo' => $isExcludedSubjectOnCredit ? ['bail', 'prohibited', 'nullable', 'string'] : ['bail', 'required', 'string', Rule::exists(PaymentMethod::class, 'code')],
+            'resumen.pagos.*.montoPago' => ['required', ...$this->amountRules(2), ...($isExcludedSubjectOnCredit ? ['max:0'] : [])],
+            'resumen.pagos.*.referencia' => $paymentReferenceRules,
             'resumen.pagos.*.plazo' => ['bail', 'required_if:resumen.condicionOperacion,2', 'nullable', 'string', Rule::in(MhCatalog::PAYMENT_TERMS)],
             'resumen.pagos.*.periodo' => ['bail', 'required_if:resumen.condicionOperacion,2', 'nullable', 'numeric', 'gt:0'],
             'resumen.observaciones' => ['sometimes', 'nullable', 'string', 'max:3000'],

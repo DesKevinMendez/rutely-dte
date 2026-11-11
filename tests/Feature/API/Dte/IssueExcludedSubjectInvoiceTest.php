@@ -7,6 +7,8 @@ use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\DteTypeSeeder;
 use Database\Seeders\ItemTypeSeeder;
 use Database\Seeders\PaymentMethodSeeder;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
 use Tests\Support\MhSchema;
@@ -91,6 +93,69 @@ test('excluded subject invoice does not withhold income tax unless the client se
         ->and($document['resumen']['totalPagar'])->toEqual(25);
 });
 
+test('excluded subject invoice applies the global discount before withholding income tax', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+    $payload = DteApiTestData::validExcludedSubjectPayload();
+    $payload['items'] = [['descripcion' => 'Compra', 'cantidad' => 2, 'precioUni' => 50, 'montoDescu' => 4.50]];
+    $payload['resumen'] = ['descu' => 5.25, 'reteRenta' => 9.03];
+
+    $response = $this->postJson(route('api.v1.dtes.store'), $payload)->assertCreated();
+
+    $dte = Dte::query()->findOrFail($response->json('data.record.id'));
+    $document = signedDocument($dte->signed_json);
+
+    expect(MhSchema::errors($document, MhSchema::EXCLUDED_SUBJECT))->toBe([])
+        ->and($dte->total_amount)->toBe(8122)
+        ->and($document['cuerpoDocumento'][0]['compra'])->toEqual(95.50)
+        ->and($document['resumen']['totalCompra'])->toEqual(95.50)
+        ->and($document['resumen']['descu'])->toEqual(5.25)
+        ->and($document['resumen']['totalDescu'])->toEqual(9.75)
+        ->and($document['resumen']['subTotal'])->toEqual(90.25)
+        ->and($document['resumen']['totalPagar'])->toEqual(81.22)
+        ->and($document['resumen']['pagos'][0]['montoPago'])->toEqual(81.22);
+});
+
+test('transmits a credit purchase with zero payment and the agreed term', function () {
+    $company = companyWithSigningCertificate();
+    createSandboxCredentials($company);
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+    Http::preventStrayRequests();
+    fakeMhResponse('recepciondte', DteApiTestData::mhResult());
+
+    $payload = DteApiTestData::validExcludedSubjectPayload();
+    $payload['resumen'] = [
+        'condicionOperacion' => 2,
+        'pagos' => [['montoPago' => 0, 'plazo' => '02', 'periodo' => '6']],
+    ];
+
+    $response = $this->postJson(route('api.v1.dtes.store'), $payload)->assertCreated();
+
+    $dte = Dte::query()->findOrFail($response->json('data.record.id'));
+    $document = signedDocument($dte->signed_json);
+
+    expect(MhSchema::errors($document, MhSchema::EXCLUDED_SUBJECT))->toBe([])
+        ->and($dte->status)->toBe('PROCESADO')
+        ->and($dte->total_amount)->toBe(1000)
+        ->and($document['resumen']['condicionOperacion'])->toBe(2)
+        ->and($document['resumen']['pagos'])->toBe([[
+            'codigo' => null,
+            'montoPago' => 0.0,
+            'referencia' => null,
+            'plazo' => '02',
+            'periodo' => 6.0,
+        ]]);
+
+    Http::assertSent(fn (Request $request): bool => $request->url() === 'https://apitest.dtes.mh.gob.sv/fesv/recepciondte'
+        && $request->data() === [
+            'idEnvio' => 1,
+            'ambiente' => '00',
+            'version' => 2,
+            'tipoDte' => '14',
+            'documento' => $dte->signed_json,
+            'codigoGeneracion' => $dte->generation_code,
+        ]);
+});
+
 test('an excluded subject invoice sends the DUI without its hyphen', function () {
     Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
 
@@ -131,7 +196,15 @@ test('excluded subject validation returns 422 with the official limits', functio
     'email needs a top level domain' => [excludedSubjectReceiver(['correo' => 'usuario@dominio']), 'receptor.correo', 'El campo correo del receptor debe ser una dirección de correo electrónico válida.'],
     'email minimum' => [excludedSubjectReceiver(['correo' => 'a@b.c']), 'receptor.correo', 'El campo correo del receptor debe contener al menos 6 caracteres.'],
     'other taxes per item not available' => [[...DteApiTestData::validExcludedSubjectPayload(), 'items' => [['descripcion' => 'Línea', 'cantidad' => 1, 'precioUni' => 1, 'tipoItem' => 4]]], 'items.0.tipoItem', 'El tipo de ítem 4 (otros tributos por ítem) todavía no se puede emitir.'],
-    'nothing to pay on credit' => [[...DteApiTestData::validExcludedSubjectPayload(), 'items' => [['descripcion' => 'Línea', 'cantidad' => 1, 'precioUni' => 0]], 'resumen' => ['condicionOperacion' => 2, 'pagos' => [['codigo' => '01', 'montoPago' => 0, 'plazo' => '01', 'periodo' => 1]]]], 'resumen.condicionOperacion', 'La condición de la operación debe ser 1 (Contado) cuando el total a pagar es $0.00.'],
+    'nothing to pay on credit' => [[...DteApiTestData::validExcludedSubjectPayload(), 'items' => [['descripcion' => 'Línea', 'cantidad' => 1, 'precioUni' => 0]], 'resumen' => ['condicionOperacion' => 2, 'pagos' => [['montoPago' => 0, 'plazo' => '01', 'periodo' => 1]]]], 'resumen.condicionOperacion', 'La condición de la operación debe ser 1 (Contado) cuando el total a pagar es $0.00.'],
+    'payment code prohibited on credit' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['condicionOperacion' => 2, 'pagos' => [['codigo' => '01', 'montoPago' => 0, 'plazo' => '02', 'periodo' => 6]]]], 'resumen.pagos.0.codigo', 'El campo código de forma de pago está prohibido.'],
+    'payment amount zero on credit' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['condicionOperacion' => 2, 'pagos' => [['montoPago' => 10, 'plazo' => '02', 'periodo' => 6]]]], 'resumen.pagos.0.montoPago', 'El campo monto de la forma de pago no debe ser mayor que 0.'],
+    'payment reference prohibited on credit' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['condicionOperacion' => 2, 'pagos' => [['montoPago' => 0, 'referencia' => '123', 'plazo' => '02', 'periodo' => 6]]]], 'resumen.pagos.0.referencia', 'El campo referencia de la forma de pago está prohibido.'],
+    'cash payment reference prohibited' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['pagos' => [['codigo' => '01', 'montoPago' => 10, 'referencia' => '123']]]], 'resumen.pagos.0.referencia', 'El campo referencia de la forma de pago está prohibido cuando código de forma de pago es 01.'],
+    'global discount nonnegative' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['descu' => -1]], 'resumen.descu', 'El campo descuento global debe ser mayor o igual que 0.'],
+    'global discount decimals' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['descu' => 1.234]], 'resumen.descu', 'El campo descuento global debe tener 0-2 decimales.'],
+    'global discount above purchases' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['descu' => 10.01]], 'resumen.descu', 'El descuento global no puede ser mayor que el total de compras.'],
+    'income tax above subtotal after global discount' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['descu' => 2, 'reteRenta' => 8.01]], 'resumen', 'Las retenciones no pueden ser mayores que el total de la operación.'],
     'withheld IVA prohibited' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['ivaRete' => 1]], 'resumen.ivaRete', 'El campo IVA retenido está prohibido.'],
     'perceived IVA prohibited' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['ivaPerci' => 1]], 'resumen.ivaPerci', 'El campo IVA percibido está prohibido.'],
     'income tax numeric' => [[...DteApiTestData::validExcludedSubjectPayload(), 'resumen' => ['reteRenta' => 'x']], 'resumen.reteRenta', 'El campo retención de renta debe ser un número.'],

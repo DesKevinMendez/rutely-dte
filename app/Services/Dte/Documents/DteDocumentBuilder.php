@@ -304,11 +304,11 @@ abstract class DteDocumentBuilder
         }
 
         return collect($payments)->values()->map(fn (array $payment): array => [
-            'codigo' => $payment['codigo'],
+            'codigo' => $payment['codigo'] ?? null,
             'montoPago' => (float) $payment['montoPago'],
             'referencia' => $payment['referencia'] ?? null,
             'plazo' => $payment['plazo'] ?? null,
-            'periodo' => $payment['periodo'] ?? null,
+            'periodo' => isset($payment['periodo']) ? (float) $payment['periodo'] : null,
         ])->all();
     }
 }
