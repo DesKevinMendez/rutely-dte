@@ -1,5 +1,6 @@
 <?php
 
+use App\Environment;
 use App\Models\Company;
 use App\Models\Dte;
 use App\Models\DteCorrelative;
@@ -242,9 +243,10 @@ test('retrying a DTE requires authentication', function () {
  *
  * @param  array<string, mixed>  $rejectionOverrides
  */
-function duplicateControlNumberDte(Company $company, array $rejectionOverrides = []): Dte
+function duplicateControlNumberDte(Company $company, array $rejectionOverrides = [], string $controlNumber = 'DTE-01-M001P001-000000000000006'): Dte
 {
     $dte = DteApiTestData::dte($company, [
+        'control_number' => $controlNumber,
         'status' => 'RECHAZADO',
         'received_seal' => null,
         'mh_response_json' => ['estado' => 'RECHAZADO', 'codigoMsg' => '400'],
@@ -266,6 +268,22 @@ function duplicateControlNumberDte(Company $company, array $rejectionOverrides =
     return $dte;
 }
 
+/**
+ * A DTE that Hacienda accepted (sealed) in the company's establishment, unless overridden.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function acceptedDte(Company $company, string $controlNumber, array $overrides = [], string $issuedOn = '2026-08-18'): Dte
+{
+    $dte = DteApiTestData::dte($company, ['control_number' => $controlNumber, ...$overrides]);
+    $document = $dte->original_json;
+    data_set($document, 'identificacion.numeroControl', $controlNumber);
+    data_set($document, 'identificacion.fecEmi', $issuedOn);
+    $dte->update(['original_json' => $document]);
+
+    return $dte;
+}
+
 function lastCorrelativeIs(Company $company, int $lastValue): void
 {
     DteCorrelative::query()->create([
@@ -275,10 +293,11 @@ function lastCorrelativeIs(Company $company, int $lastValue): void
     ]);
 }
 
-test('a DTE rejected for a repeated control number is signed again with the next one and the same generation code', function () {
+test('a DTE rejected for a repeated control number is signed again after the last number Hacienda accepted, with the same generation code', function () {
     $company = companyWithSigningCertificate();
     createSandboxCredentials($company);
-    lastCorrelativeIs($company, 22);
+    lastCorrelativeIs($company, 5);
+    acceptedDte($company, 'DTE-01-M001P001-000000000000022');
     $dte = duplicateControlNumberDte($company);
     $generationCode = $dte->generation_code;
     fakeMhResponse('recepciondte', processedMhResponse($dte));
@@ -314,7 +333,7 @@ test('a DTE rejected for a repeated control number is signed again with the next
 test('a repeated control number corrected after 24 hours keeps the same generation code', function () {
     $company = companyWithSigningCertificate();
     createSandboxCredentials($company);
-    lastCorrelativeIs($company, 22);
+    acceptedDte($company, 'DTE-01-M001P001-000000000000022');
     $dte = duplicateControlNumberDte($company, ['responded_at' => now()->subHours(25)]);
     $generationCode = $dte->generation_code;
     fakeMhResponse('recepciondte', processedMhResponse($dte));
@@ -333,6 +352,70 @@ test('a repeated control number corrected after 24 hours keeps the same generati
         ]);
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/fesv/recepciondte')
         && $request['codigoGeneracion'] === $generationCode);
+});
+
+test('only numbers Hacienda accepted in the same establishment, environment and fiscal year are continued', function () {
+    $company = companyWithSigningCertificate();
+    createSandboxCredentials($company);
+    lastCorrelativeIs($company, 5);
+    acceptedDte($company, 'DTE-01-M001P001-000000000000035');
+    acceptedDte($company, 'DTE-03-M001P002-000000000000045', ['dte_type' => '03', 'status' => 'INVALIDADO']);
+    acceptedDte($company, 'DTE-01-M001P001-000000000000090', ['status' => 'RECHAZADO', 'received_seal' => null]);
+    acceptedDte($company, 'DTE-01-M002P001-000000000000080');
+    acceptedDte($company, 'DTE-01-M001P001-000000000000070', ['environment' => Environment::PRODUCTION->value]);
+    acceptedDte($company, 'DTE-01-M001P001-000000000000060', issuedOn: '2025-12-31');
+    acceptedDte(otherCompany(), 'DTE-01-M001P001-000000000000050');
+    $dte = duplicateControlNumberDte($company);
+    fakeMhResponse('recepciondte', processedMhResponse($dte));
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->postJson(route('api.v1.dtes.retries.store', $dte))->assertOk();
+
+    expect($dte->refresh()->control_number)->toBe('DTE-01-M001P001-000000000000046')
+        ->and(signedDocument($dte->signed_json)['identificacion']['numeroControl'])
+        ->toBe('DTE-01-M001P001-000000000000046');
+    $this->assertDatabaseHas(DteCorrelative::class, [
+        'company_id' => $company->id,
+        'key' => DteCorrelative::keyFor($company, 2026),
+        'last_value' => '46',
+    ]);
+});
+
+test('without numbers accepted by Hacienda the correction continues after the rejected number', function () {
+    $company = companyWithSigningCertificate();
+    createSandboxCredentials($company);
+    lastCorrelativeIs($company, 3);
+    $dte = duplicateControlNumberDte($company, controlNumber: 'DTE-01-M001P001-000000000000500');
+    fakeMhResponse('recepciondte', processedMhResponse($dte));
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->postJson(route('api.v1.dtes.retries.store', $dte))->assertOk();
+
+    expect($dte->refresh()->control_number)->toBe('DTE-01-M001P001-000000000000501');
+    $this->assertDatabaseHas(DteCorrelative::class, [
+        'company_id' => $company->id,
+        'key' => DteCorrelative::keyFor($company, 2026),
+        'last_value' => '501',
+    ]);
+});
+
+test('correcting a repeated control number never moves the establishment correlative back', function () {
+    $company = companyWithSigningCertificate();
+    createSandboxCredentials($company);
+    lastCorrelativeIs($company, 100);
+    acceptedDte($company, 'DTE-01-M001P001-000000000000035');
+    $dte = duplicateControlNumberDte($company);
+    fakeMhResponse('recepciondte', processedMhResponse($dte));
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->postJson(route('api.v1.dtes.retries.store', $dte))->assertOk();
+
+    expect($dte->refresh()->control_number)->toBe('DTE-01-M001P001-000000000000036');
+    $this->assertDatabaseHas(DteCorrelative::class, [
+        'company_id' => $company->id,
+        'key' => DteCorrelative::keyFor($company, 2026),
+        'last_value' => '100',
+    ]);
 });
 
 test('a DTE rejected for any other reason is sent again unchanged', function () {
