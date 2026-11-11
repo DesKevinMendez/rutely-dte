@@ -63,6 +63,7 @@ const {
                 :can-retry="canRetryDte"
                 :retrying="isLoading"
                 :retry-outcome="retryOutcome"
+                :refreshed-at="lastUpdated"
                 @retry="retryDte"
             />
         </Card>

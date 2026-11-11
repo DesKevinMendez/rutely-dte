@@ -81,6 +81,21 @@ async function mockQueue(page: Page, rows: () => unknown[]): Promise<void> {
     });
 }
 
+const failedDte = (controlNumber: string) => ({
+    id: failedDteId,
+    generation_code: '95FEFD24-A3D1-40E5-A097-D9C9B356FB8E',
+    control_number: controlNumber,
+    total_amount: 1125,
+    status: 'RECHAZADO',
+    original_json: { identificacion: { fecEmi: '2026-11-11', horEmi: '09:37:50' } },
+});
+
+async function mockDte(page: Page, controlNumber: () => string): Promise<void> {
+    await page.route(`**/api/v1/dtes/${failedDteId}`, async (route) => {
+        await route.fulfill({ json: { data: failedDte(controlNumber()) } });
+    });
+}
+
 async function openTransmissionDetails(page: Page, dteId: string): Promise<void> {
     await page.goto('/#/queue');
     await page.getByRole('row').filter({ hasText: dteId }).click();
@@ -150,12 +165,28 @@ test.describe('Queue', () => {
         await expect(page.getByRole('row').filter({ hasText: failedDteId })).toHaveCount(0);
     });
 
+    test('shows the DTE of a failed transmission in its Hacienda details', async ({ page }) => {
+        await mockQueue(page, () => [transmission()]);
+        await mockDte(page, () => 'DTE-01-M002P002-000000000000035');
+
+        await openTransmissionDetails(page, failedDteId);
+
+        const details = page.getByRole('dialog');
+        await expect(details.getByText('95FEFD24-A3D1-40E5-A097-D9C9B356FB8E')).toBeVisible();
+        await expect(details.getByText('DTE-01-M002P002-000000000000035')).toBeVisible();
+        await expect(details.getByText('2026-11-11 09:37:50')).toBeVisible();
+        await expect(details.getByText('$11.25')).toBeVisible();
+    });
+
     test('keeps the DTE open with its new attempt when Hacienda rejects it again', async ({
         page,
     }) => {
         let rows: unknown[] = [transmission()];
+        let controlNumber = 'DTE-01-M002P002-000000000000035';
         await mockQueue(page, () => rows);
+        await mockDte(page, () => controlNumber);
         await page.route(`**/api/v1/dtes/${failedDteId}/retries`, async (route) => {
+            controlNumber = 'DTE-01-M002P002-000000000000036';
             rows = [
                 transmission({
                     id: '01a1c77f-d83a-73c9-8bf2-1b2c3d4e5f61',
@@ -174,11 +205,13 @@ test.describe('Queue', () => {
         });
 
         await openTransmissionDetails(page, failedDteId);
+        await expect(page.getByText('DTE-01-M002P002-000000000000035')).toBeVisible();
         await page.getByRole('button', { name: 'Reintentar este DTE' }).click();
 
         await expect(
             page.getByText('Hacienda volvió a rechazar el DTE. Revisa el último error.'),
         ).toBeVisible();
+        await expect(page.getByText('DTE-01-M002P002-000000000000036')).toBeVisible();
         await expect(
             page.getByText('Error en transmisión MH [HTTP 400]: segundo intento').last(),
         ).toBeVisible();

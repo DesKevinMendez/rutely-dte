@@ -11,12 +11,14 @@ import {
 import type { BadgeVariant, TableField } from 'ornito';
 import { computed, ref, watch } from 'vue';
 import type { QueueDteRetryOutcome, QueueJob } from '../types/queue.types';
+import QueueDteSummary from './QueueDteSummary.vue';
 
-const { jobs, canRetry, retrying, retryOutcome } = defineProps<{
+const { jobs, canRetry, retrying, retryOutcome, refreshedAt } = defineProps<{
     jobs: QueueJob[];
     canRetry: boolean;
     retrying: boolean;
     retryOutcome: QueueDteRetryOutcome | null;
+    refreshedAt: Date;
 }>();
 
 const emit = defineEmits<{
@@ -130,6 +132,11 @@ const columns: TableField<QueueJob>[] = [
             >
                 {{ selectedRetryOutcome.message }}
             </Alert>
+            <QueueDteSummary
+                v-if="isDetailsOpen && selectedJob?.operation === 'dte'"
+                :dte-id="selectedJob.dteId"
+                :refreshed-at="refreshedAt"
+            />
             <InfoItem label="Intento">
                 {{ selectedJob?.attempts }}
             </InfoItem>

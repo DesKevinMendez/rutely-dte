@@ -68,6 +68,7 @@ declare module 'vue' {
     OnboardingView: typeof import('./resources/js/guess/modules/onboarding/views/OnboardingView.vue')['default']
     ProfileHeaderCard: typeof import('./resources/js/modules/profile/components/ProfileHeaderCard.vue')['default']
     QueueContent: typeof import('./resources/js/modules/queue/components/QueueContent.vue')['default']
+    QueueDteSummary: typeof import('./resources/js/modules/queue/components/QueueDteSummary.vue')['default']
     QueueSkeleton: typeof import('./resources/js/modules/queue/components/QueueSkeleton.vue')['default']
     QueueTable: typeof import('./resources/js/modules/queue/components/QueueTable.vue')['default']
     QueueView: typeof import('./resources/js/modules/queue/views/QueueView.vue')['default']
