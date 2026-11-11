@@ -311,27 +311,28 @@ test('a DTE rejected for a repeated control number is signed again with the next
     ]);
 });
 
-test('a repeated control number corrected after 24 hours also gets a new generation code', function () {
+test('a repeated control number corrected after 24 hours keeps the same generation code', function () {
     $company = companyWithSigningCertificate();
     createSandboxCredentials($company);
     lastCorrelativeIs($company, 22);
     $dte = duplicateControlNumberDte($company, ['responded_at' => now()->subHours(25)]);
-    $previousGenerationCode = $dte->generation_code;
+    $generationCode = $dte->generation_code;
     fakeMhResponse('recepciondte', processedMhResponse($dte));
     Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
 
     $this->postJson(route('api.v1.dtes.retries.store', $dte))->assertOk();
 
     $dte->refresh();
-    expect($dte->generation_code)->not->toBe($previousGenerationCode)
-        ->toMatch('/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/')
-        ->and($dte->control_number)->toBe('DTE-01-M001P001-000000000000023')
+    expect($dte->only(['control_number', 'generation_code']))->toBe([
+        'control_number' => 'DTE-01-M001P001-000000000000023',
+        'generation_code' => $generationCode,
+    ])
         ->and(signedDocument($dte->signed_json)['identificacion'])->toMatchArray([
             'numeroControl' => 'DTE-01-M001P001-000000000000023',
-            'codigoGeneracion' => $dte->generation_code,
+            'codigoGeneracion' => $generationCode,
         ]);
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/fesv/recepciondte')
-        && $request['codigoGeneracion'] === $dte->generation_code);
+        && $request['codigoGeneracion'] === $generationCode);
 });
 
 test('a DTE rejected for any other reason is sent again unchanged', function () {
