@@ -23,6 +23,8 @@ test('superadmin opens the DTE correlative section and updates the next number',
                     id: companyId,
                     name: 'Empresa de pruebas',
                     nit: '06142812901015',
+                    mh_establishment_code: 'S005',
+                    mh_pos_code: 'P007',
                 },
             },
         }),
@@ -64,11 +66,19 @@ test('superadmin opens the DTE correlative section and updates the next number',
     await expect(input).toHaveValue('125');
     await expect(input).toBeVisible();
     await expect(input).toBeDisabled();
+    await expect(
+        page.getByText('DTE-01-S005P007-000000000000125'),
+    ).toBeVisible();
     await expect(saveButton).toBeDisabled();
     await updateSwitch.click();
     await expect(input).toBeEditable();
     await expect(saveButton).toBeEnabled();
+    await input.clear();
+    await expect(page.getByText('Para una factura (01)')).toHaveCount(0);
     await input.fill('90');
+    await expect(
+        page.getByText('DTE-01-S005P007-000000000000090'),
+    ).toBeVisible();
     await updateSwitch.click();
     await expect(input).toBeDisabled();
     await expect(saveButton).toBeDisabled();
