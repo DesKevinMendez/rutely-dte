@@ -17,6 +17,7 @@ use App\Models\PaymentMethod;
 use App\Services\Dte\Documents\DteDocumentBuilder;
 use App\Services\Dte\Documents\TaxCreditBuilder;
 use App\Services\Dte\MhCatalog;
+use App\Services\Dte\TaxIdentifier;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -62,14 +63,12 @@ class StoreDteRequest extends FormRequest
             return;
         }
 
-        foreach (['nit', 'nrc'] as $field) {
-            if (is_string($receiver[$field] ?? null)) {
-                $receiver[$field] = str_replace('-', '', $receiver[$field]);
-            }
+        if (is_string($receiver['nit'] ?? null)) {
+            $receiver['nit'] = str_replace('-', '', $receiver['nit']);
         }
 
         if (is_string($receiver['nrc'] ?? null)) {
-            $receiver['nrc'] = (string) preg_replace('/^0+(?=\d)/', '', $receiver['nrc']);
+            $receiver['nrc'] = TaxIdentifier::nrc($receiver['nrc']);
         }
 
         $hasDigitsOnlyDocument = in_array($receiver['tipoDocumento'] ?? null, [MhCatalog::DUI_DOCUMENT_TYPE, MhCatalog::NIT_DOCUMENT_TYPE], true);
