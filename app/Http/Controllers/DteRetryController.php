@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\Dte;
 use App\Models\MhTransmission;
+use App\Models\User;
 use App\Response\CommonResponse;
 use App\Services\Dte\TransmissionRetryService;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -20,6 +21,7 @@ class DteRetryController extends Controller
      */
     public function __invoke(Request $request, Dte $dte, TransmissionRetryService $retryService): CommonResponse
     {
+        /** @var User|Company|null $principal */
         $principal = $request->user();
 
         if ($principal instanceof Company) {
