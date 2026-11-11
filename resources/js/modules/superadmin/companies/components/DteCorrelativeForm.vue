@@ -8,10 +8,14 @@ import {
     yup,
 } from 'ornito';
 import { Form } from 'vee-validate';
-import { ref, toRef, watch } from 'vue';
+import { computed, ref, toRef, watch } from 'vue';
 import useDteCorrelative from '@/modules/superadmin/companies/composables/useDteCorrelative';
 
-const props = defineProps<{ companyId: string }>();
+const props = defineProps<{
+    companyId: string;
+    establishmentCode: string;
+    posCode: string;
+}>();
 const canUpdate = ref(false);
 const isConfirmationOpen = ref(false);
 const correlativeRules = yup
@@ -30,6 +34,24 @@ const {
     isSaving,
     saveCorrelative,
 } = useDteCorrelative(toRef(() => props.companyId));
+
+const correlativeHelp = computed(() => {
+    const { establishmentCode, posCode } = props;
+    const scope = `El correlativo aplica a todos los tipos de DTE del establecimiento durante ${fiscalYear.value}.`;
+
+    if (
+        !establishmentCode ||
+        !posCode ||
+        !correlativeRules.isValidSync(nextValue.value)
+    ) {
+        return scope;
+    }
+
+    const correlative = String(Number(nextValue.value)).padStart(15, '0');
+    const controlNumber = `DTE-01-${establishmentCode}${posCode}-${correlative}`;
+
+    return `Para una factura (01), el número de control sería ${controlNumber}. ${scope}`;
+});
 
 watch(
     () => props.companyId,
@@ -89,7 +111,7 @@ const confirmUpdate = async (): Promise<void> => {
                 :max="999999999999999"
                 :rules="correlativeRules"
                 :disabled="!canUpdate || isSaving"
-                :help="`Aplica a todos los tipos de DTE del establecimiento durante ${fiscalYear}.`"
+                :help="correlativeHelp"
             />
             <Alert v-if="saved" type="success">Correlativo actualizado.</Alert>
             <BaseButton

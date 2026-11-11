@@ -14,15 +14,17 @@ const { company } = useCompanyShow();
     >
         <p class="text-sm text-gray-600 dark:text-gray-400">
             El correlativo es el número consecutivo que aparece al final del
-            número de control de cada DTE. Por ejemplo, si el próximo
-            correlativo es 125, el número de control terminará en
-            000000000000125.
+            número de control de cada DTE.
         </p>
         <p class="mt-3 text-sm text-gray-600 dark:text-gray-400">
             La secuencia se comparte entre los tipos de DTE del establecimiento,
             aumenta con cada documento y comienza de nuevo cada año. Al guardar
             un valor, ese será el número del próximo DTE que se emita.
         </p>
-        <DteCorrelativeForm :company-id="company.id" />
+        <DteCorrelativeForm
+            :company-id="company.id"
+            :establishment-code="company.mh_establishment_code"
+            :pos-code="company.mh_pos_code"
+        />
     </Card>
 </template>
