@@ -1,8 +1,11 @@
 import { computed, ref } from 'vue';
 import { useRequest } from '@/core/composables/useRequest';
+import { useAuth } from '@/core/stores/auth';
 import type { ApiResponse, PaginatedApiResponse } from '@/core/types/api.types';
 import type {
     QueueApiTransmission,
+    QueueDteRetryOutcome,
+    QueueDteRetryResult,
     QueueJob,
     QueueRetryResult,
 } from '../types/queue.types';
@@ -23,6 +26,8 @@ export async function useQueueUi() {
     const lastUpdated = ref(new Date());
     const error = ref<string | null>(null);
     const { get, post, isLoading } = useRequest();
+    const auth = useAuth();
+    const retryOutcome = ref<QueueDteRetryOutcome | null>(null);
 
     const failedCount = computed(
         () => jobs.value.filter((job) => job.status === 'FAILED').length,
@@ -44,6 +49,43 @@ export async function useQueueUi() {
         error.value = response.error.value ?? 'No se pudo cargar la cola.';
 
         return false;
+    };
+
+    const canRetryDte = computed(
+        () => auth.user?.roles.some((role) => role.name === 'admin') ?? false,
+    );
+
+    const retryDte = async (job: QueueJob): Promise<boolean> => {
+        retryOutcome.value = null;
+
+        const response = await post<ApiResponse<QueueDteRetryResult>>(
+            `/api/v1/dtes/${job.dteId}/retries`,
+        );
+
+        if (!response.data.value) {
+            retryOutcome.value = {
+                dteId: job.dteId,
+                isAccepted: false,
+                message:
+                    response.error.value ?? 'No se pudo reintentar el DTE.',
+            };
+
+            return false;
+        }
+
+        const { estado } = response.data.value.data.mh_result;
+        const isAccepted = estado === 'PROCESADO' || estado === 'RECIBIDO';
+
+        retryOutcome.value = {
+            dteId: job.dteId,
+            isAccepted,
+            message: isAccepted
+                ? 'Hacienda aceptó el DTE. Ya salió de la cola.'
+                : 'Hacienda volvió a rechazar el DTE. Revisa el último error.',
+        };
+        await loadQueue();
+
+        return isAccepted;
     };
 
     const retryFailed = async (): Promise<boolean> => {
@@ -75,5 +117,8 @@ export async function useQueueUi() {
         error,
         refreshQueue: loadQueue,
         retryFailed,
+        canRetryDte,
+        retryDte,
+        retryOutcome,
     };
 }

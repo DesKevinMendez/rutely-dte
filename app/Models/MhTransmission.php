@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 #[Fillable([
     'company_id',
@@ -42,5 +45,24 @@ class MhTransmission extends Model
     public function transmittable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    /**
+     * Keep only the most recent attempt of each transmitted resource and operation,
+     * so a retried transmission is listed once with its current attempt number.
+     *
+     * @param  Builder<$this>  $query
+     */
+    #[Scope]
+    protected function latestAttempts(Builder $query): void
+    {
+        $query->whereNotExists(function (QueryBuilder $newerAttempts): void {
+            $newerAttempts->selectRaw('1')
+                ->from($this->getTable().' as newer_attempts')
+                ->whereColumn('newer_attempts.transmittable_type', $this->qualifyColumn('transmittable_type'))
+                ->whereColumn('newer_attempts.transmittable_id', $this->qualifyColumn('transmittable_id'))
+                ->whereColumn('newer_attempts.operation', $this->qualifyColumn('operation'))
+                ->whereColumn('newer_attempts.attempt', '>', $this->qualifyColumn('attempt'));
+        });
     }
 }

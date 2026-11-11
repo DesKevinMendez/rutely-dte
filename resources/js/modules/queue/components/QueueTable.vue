@@ -1,19 +1,71 @@
 <script setup lang="ts">
-import { Badge, BottomModal, DataTable, InfoItem } from 'ornito';
+import { IconRefresh } from '@tabler/icons-vue';
+import {
+    Alert,
+    Badge,
+    BaseButton,
+    BottomModal,
+    DataTable,
+    InfoItem,
+} from 'ornito';
 import type { BadgeVariant, TableField } from 'ornito';
-import { ref } from 'vue';
-import type { QueueJob } from '../types/queue.types';
+import { computed, ref, watch } from 'vue';
+import type { QueueDteRetryOutcome, QueueJob } from '../types/queue.types';
+import QueueDteSummary from './QueueDteSummary.vue';
 
-const { jobs } = defineProps<{
+const { jobs, canRetry, retrying, retryOutcome, refreshedAt } = defineProps<{
     jobs: QueueJob[];
+    canRetry: boolean;
+    retrying: boolean;
+    retryOutcome: QueueDteRetryOutcome | null;
+    refreshedAt: Date;
+}>();
+
+const emit = defineEmits<{
+    retry: [job: QueueJob];
 }>();
 
 const isDetailsOpen = ref(false);
 const selectedJob = ref<QueueJob | null>(null);
 
+const isSelectedResource = (job: QueueJob): boolean =>
+    job.dteId === selectedJob.value?.dteId &&
+    job.operation === selectedJob.value?.operation;
+
+const isSelectedInQueue = computed(() => jobs.some(isSelectedResource));
+
+const isRetryable = computed(
+    () =>
+        canRetry &&
+        isSelectedInQueue.value &&
+        selectedJob.value?.operation === 'dte' &&
+        selectedJob.value.status === 'FAILED',
+);
+
+const selectedRetryOutcome = computed(() =>
+    selectedJob.value?.operation === 'dte' &&
+    retryOutcome?.dteId === selectedJob.value.dteId
+        ? retryOutcome
+        : null,
+);
+
+watch(
+    () => jobs,
+    (currentJobs) => {
+        selectedJob.value =
+            currentJobs.find(isSelectedResource) ?? selectedJob.value;
+    },
+);
+
 const showDetails = (job: QueueJob): void => {
     selectedJob.value = job;
     isDetailsOpen.value = true;
+};
+
+const retrySelected = (): void => {
+    if (selectedJob.value) {
+        emit('retry', selectedJob.value);
+    }
 };
 
 const statusVariant = (status: string): BadgeVariant => {
@@ -73,13 +125,43 @@ const columns: TableField<QueueJob>[] = [
         title="Información de Hacienda"
         subtitle="Último error de la transmisión seleccionada."
     >
-        <InfoItem label="Último error">
-            <p class="break-words whitespace-pre-wrap">
-                {{
-                    selectedJob?.lastError ||
-                    'Hacienda no reportó errores en esta transmisión.'
-                }}
-            </p>
-        </InfoItem>
+        <div class="space-y-4">
+            <Alert
+                v-if="selectedRetryOutcome"
+                :type="selectedRetryOutcome.isAccepted ? 'success' : 'danger'"
+            >
+                {{ selectedRetryOutcome.message }}
+            </Alert>
+            <QueueDteSummary
+                v-if="isDetailsOpen && selectedJob?.operation === 'dte'"
+                :dte-id="selectedJob.dteId"
+                :refreshed-at="refreshedAt"
+            />
+            <InfoItem label="Intento">
+                {{ selectedJob?.attempts }}
+            </InfoItem>
+            <InfoItem label="Último error">
+                <p class="break-words whitespace-pre-wrap">
+                    {{
+                        selectedJob?.lastError ||
+                        'Hacienda no reportó errores en esta transmisión.'
+                    }}
+                </p>
+            </InfoItem>
+        </div>
+
+        <template v-if="isRetryable" #footer>
+            <div class="flex justify-end">
+                <BaseButton
+                    size="auto"
+                    :icon="IconRefresh"
+                    :loading="retrying"
+                    :disabled="retrying"
+                    @click="retrySelected"
+                >
+                    Reintentar este DTE
+                </BaseButton>
+            </div>
+        </template>
     </BottomModal>
 </template>

@@ -11,6 +11,9 @@ const {
     error,
     refreshQueue,
     retryFailed,
+    canRetryDte,
+    retryDte,
+    retryOutcome,
 } = await useQueueUi();
 </script>
 
@@ -55,7 +58,14 @@ const {
         </Alert>
 
         <Card title="Transmisiones Pendientes y Fallidas">
-            <QueueTable :jobs="jobs" />
+            <QueueTable
+                :jobs="jobs"
+                :can-retry="canRetryDte"
+                :retrying="isLoading"
+                :retry-outcome="retryOutcome"
+                :refreshed-at="lastUpdated"
+                @retry="retryDte"
+            />
         </Card>
 
         <p class="text-right text-xs text-gray-400 dark:text-gray-500">

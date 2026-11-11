@@ -8,6 +8,7 @@ return [
     'decimal' => 'El campo :attribute debe tener :decimal decimales.',
     'distinct' => 'El campo :attribute tiene un valor duplicado.',
     'dte_export_max_rows' => 'El archivo supera el límite de filas de Excel. Aplica filtros e inténtalo de nuevo.',
+    'dte_retry_without_failed_transmission' => 'Este DTE no tiene una transmisión fallida para reintentar.',
     'email' => 'El campo :attribute debe ser una dirección de correo electrónico válida.',
     'enum' => 'El valor seleccionado para :attribute no es válido.',
     'exists' => 'El valor seleccionado para :attribute no es válido.',
