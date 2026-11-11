@@ -151,6 +151,7 @@ return [
         'receptor.direccion.distrito' => 'distrito del receptor',
         'receptor.direccion.complemento' => 'complemento de dirección del receptor',
         'receptor.correo' => 'correo del receptor',
+        'resumen.descu' => 'descuento global',
         'resumen.ivaRete' => 'IVA retenido',
         'resumen.ivaPerci' => 'IVA percibido',
         'resumen.reteRenta' => 'retención de renta',

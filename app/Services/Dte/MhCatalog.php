@@ -44,6 +44,9 @@ class MhCatalog
     /** CAT-016: Contado. */
     public const CASH_CONDITION = 1;
 
+    /** CAT-016: A crédito. */
+    public const CREDIT_CONDITION = 2;
+
     /** CAT-017: Billetes y monedas. */
     public const CASH_PAYMENT_METHOD = '01';
 
