@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\DteIssuerProfileException;
-use App\Http\Requests\CatalogIndexRequest;
+use App\Http\Requests\Dte\IndexDteRequest;
 use App\Http\Requests\Dte\StoreDteRequest;
 use App\Http\Resources\CommonCollection;
 use App\Models\Company;
@@ -12,21 +12,19 @@ use App\Models\MhTransmission;
 use App\Models\User;
 use App\Response\CommonResponse;
 use App\Services\Dte\DteIssuanceService;
+use App\Services\Dte\DteListQuery;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\QueryBuilder;
 
 class DteController extends Controller
 {
-    public function index(CatalogIndexRequest $request): CommonCollection
+    public function index(IndexDteRequest $request, DteListQuery $listQuery): CommonCollection
     {
+        /** @var User|Company|null $principal */
         $principal = $request->user();
 
         if ($principal instanceof User) {
-            Gate::authorize('viewAny', Dte::class);
             $companyId = $principal->company_id;
         } elseif ($principal instanceof Company) {
             $companyId = $principal->getKey();
@@ -34,28 +32,7 @@ class DteController extends Controller
             throw new AuthorizationException;
         }
 
-        $dtes = QueryBuilder::for(Dte::query()->where('company_id', $companyId))
-            ->allowedFilters(
-                AllowedFilter::exact('tipoDte', 'dte_type'),
-                AllowedFilter::exact('estado', 'status'),
-                AllowedFilter::callback('fecha', function (Builder $query, mixed $value): void {
-                    $query->where('original_json->identificacion->fecEmi', (string) $value);
-                }),
-                AllowedFilter::exact('environment'),
-                AllowedFilter::exact('receiver_document'),
-                AllowedFilter::partial('generation_code'),
-                AllowedFilter::partial('control_number'),
-                AllowedFilter::callback('query', function (Builder $query, mixed $value): void {
-                    $search = (string) $value;
-                    $query->where(function (Builder $query) use ($search): void {
-                        $query->where('generation_code', 'like', "%{$search}%")
-                            ->orWhere('control_number', 'like', "%{$search}%")
-                            ->orWhere('receiver_document', 'like', "%{$search}%");
-                    });
-                }),
-            )
-            ->allowedSorts('created_at', 'total_amount', 'status', 'dte_type')
-            ->defaultSort('-created_at')
+        $dtes = $listQuery->forCompany($companyId, $request)
             ->paginate($request->integer('per_page', 10));
 
         return CommonCollection::make($dtes);

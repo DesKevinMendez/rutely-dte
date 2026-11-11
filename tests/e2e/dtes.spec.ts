@@ -49,7 +49,7 @@ test.describe('DTE list default date', () => {
         await page.goto('/#/dtes');
 
         const { searchParams } = new URL((await dtesRequest).url());
-        expect(searchParams.get('filter[fecha]')).toBe('2026-11-06');
+        expect(searchParams.get('filter[date]')).toBe('2026-11-06');
     });
 });
 
@@ -89,6 +89,110 @@ test.describe('DTEs', () => {
         await expect(
             table.getByText('INVALIDADO', { exact: true }),
         ).toBeVisible();
+    });
+
+    test('downloads the DTE workbook using the list filters', async ({
+        page,
+    }, testInfo) => {
+        await page.getByRole('button', { name: 'Mostrar filtros' }).click();
+        const panel = page.locator('#dte-filter-panel');
+        const type = panel.getByLabel('Tipo de DTE');
+        const status = panel.getByLabel('Estado de MH');
+        await type.selectOption('01');
+        await status.selectOption('PROCESADO');
+
+        const button = page.getByRole('button', { name: 'Descargar reporte' });
+        const filteredRequest = page.waitForRequest(
+            (request) =>
+                new URL(request.url()).pathname === '/api/v1/dtes/export',
+        );
+        const filteredDownload = page.waitForEvent('download');
+        await button.click();
+        const { searchParams } = new URL((await filteredRequest).url());
+        expect(Object.fromEntries(searchParams)).toEqual({
+            'filter[tipoDte]': '01',
+            'filter[estado]': 'PROCESADO',
+            'filter[date]': expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+        });
+        expect((await filteredDownload).suggestedFilename()).toBe(
+            'Reporte-DTE-' + searchParams.get('filter[date]') + '.xlsx',
+        );
+
+        await type.selectOption({ label: 'Todos los tipos' });
+        await status.selectOption({ label: 'Todos los estados' });
+        await panel.getByRole('button', { name: 'Clear value' }).click();
+
+        const unfilteredRequest = page.waitForRequest(
+            (request) =>
+                new URL(request.url()).pathname === '/api/v1/dtes/export',
+        );
+        const unfilteredDownload = page.waitForEvent('download');
+        await button.click();
+        expect(new URL((await unfilteredRequest).url()).search).toBe('');
+
+        const downloaded = await unfilteredDownload;
+        expect(downloaded.suggestedFilename()).toBe('Reporte-DTE.xlsx');
+        const workbook = testInfo.outputPath('Reporte-DTE.xlsx');
+        await downloaded.saveAs(workbook);
+        expect((await readFile(workbook)).subarray(0, 4)).toEqual(
+            Buffer.from([80, 75, 3, 4]),
+        );
+    });
+
+    test('applies an emission range to the DTE list and workbook', async ({
+        page,
+    }, testInfo) => {
+        await page.getByRole('button', { name: 'Mostrar filtros' }).click();
+        const panel = page.locator('#dte-filter-panel');
+        const today = await panel
+            .locator('input#filter-emission-date')
+            .inputValue();
+        const [month, day, year] = today.split('/');
+        const to = [year, month, day].join('-');
+        const from = '2020-01-01';
+        await panel.getByLabel('Período de emisión').selectOption('range');
+
+        const downloadButton = page.getByRole('button', {
+            name: 'Descargar reporte',
+        });
+        const start = panel.locator('input#filter-date-from');
+        const end = panel.locator('input#filter-date-to');
+        await expect(downloadButton).toBeDisabled();
+        await start.fill('01/01/2020');
+        await start.press('Tab');
+        await expect(downloadButton).toBeDisabled();
+
+        const filteredList = page.waitForResponse((response) => {
+            const url = new URL(response.url());
+
+            return (
+                url.pathname === '/api/v1/dtes' &&
+                url.searchParams.get('filter[from]') === from &&
+                url.searchParams.get('filter[to]') === to
+            );
+        });
+        await end.fill(today);
+        await end.press('Tab');
+        expect((await filteredList).ok()).toBe(true);
+        await expect(downloadButton).toBeEnabled();
+
+        const filteredExport = page.waitForRequest(
+            (request) =>
+                new URL(request.url()).pathname === '/api/v1/dtes/export',
+        );
+        const workbook = page.waitForEvent('download');
+        await downloadButton.click();
+        const { searchParams } = new URL((await filteredExport).url());
+        expect(Object.fromEntries(searchParams)).toEqual({
+            'filter[from]': from,
+            'filter[to]': to,
+        });
+
+        const download = await workbook;
+        expect(download.suggestedFilename()).toBe(
+            'Reporte-DTE-' + from + '_' + to + '.xlsx',
+        );
+        await download.saveAs(testInfo.outputPath('Reporte-DTE-rango.xlsx'));
     });
 
     test('shows the client and every payment method in the DTE detail', async ({

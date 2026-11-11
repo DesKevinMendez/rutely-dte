@@ -1,9 +1,17 @@
 <script setup lang="ts">
-import { IconFilter, IconRefresh } from '@tabler/icons-vue';
-import { Badge, BaseButtonIcon, Card, DataTable } from 'ornito';
+import { IconDownload, IconFilter, IconRefresh } from '@tabler/icons-vue';
+import {
+    Alert,
+    Badge,
+    BaseButton,
+    BaseButtonIcon,
+    Card,
+    DataTable,
+} from 'ornito';
 import type { BadgeVariant, TableField } from 'ornito';
-import { computed, onScopeDispose, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { formatIdentityDocument } from '@/core/composables/formatIdentityDocument';
+import { useDteReportUi } from '../composables/useDteReportUi';
 import { useDtesUi } from '../composables/useDtesUi';
 import type { DteApiRecord } from '../types/dte.types';
 import DteDetailsModal from './DteDetailsModal.vue';
@@ -12,34 +20,18 @@ import DteFiltersPanel from './DteFiltersPanel.vue';
 const isFiltersOpen = ref(false);
 const selectedDteId = ref<string | null>(null);
 const tableKey = ref(0);
-const { filterTipoDte, filterEstado, filterFecha, resetFilters, isLoading } =
-    useDtesUi();
-const requestFilterTipoDte = ref(filterTipoDte.value);
-const requestFilterEstado = ref(filterEstado.value);
-const requestFilterFecha = ref(filterFecha.value);
-let filterDebounce: ReturnType<typeof setTimeout> | null = null;
-
-watch(
-    [filterTipoDte, filterEstado, filterFecha],
-    ([tipoDte, estado, fecha]) => {
-        if (filterDebounce !== null) {
-            clearTimeout(filterDebounce);
-        }
-
-        filterDebounce = setTimeout(() => {
-            requestFilterTipoDte.value = tipoDte;
-            requestFilterEstado.value = estado;
-            requestFilterFecha.value = fecha ?? '';
-            filterDebounce = null;
-        }, 500);
-    },
-);
-
-onScopeDispose(() => {
-    if (filterDebounce !== null) {
-        clearTimeout(filterDebounce);
-    }
-});
+const {
+    filterTipoDte,
+    filterEstado,
+    filterDate,
+    dateMode,
+    dateFrom,
+    dateTo,
+    dateRangeMessage,
+    resetFilters,
+    isLoading,
+} = useDtesUi();
+const { downloadError, isDownloading, downloadReport } = useDteReportUi();
 
 const typeLabels: Record<string, string> = {
     '01': 'Factura (01)',
@@ -89,25 +81,46 @@ const columns: TableField<DteApiRecord>[] = [
     },
 ];
 
-const tableUrl = computed(() => {
+const filters = computed(() => {
+    if (dateRangeMessage.value !== null) {
+        return null;
+    }
+
     const params = new URLSearchParams();
 
-    if (requestFilterTipoDte.value) {
-        params.set('filter[tipoDte]', requestFilterTipoDte.value);
+    if (filterTipoDte.value) {
+        params.set('filter[tipoDte]', filterTipoDte.value);
     }
 
-    if (requestFilterEstado.value) {
-        params.set('filter[estado]', requestFilterEstado.value);
+    if (filterEstado.value) {
+        params.set('filter[estado]', filterEstado.value);
     }
 
-    if (requestFilterFecha.value) {
-        params.set('filter[fecha]', requestFilterFecha.value);
+    if (dateMode.value === 'range') {
+        params.set('filter[from]', dateFrom.value);
+        params.set('filter[to]', dateTo.value);
+    } else if (filterDate.value) {
+        params.set('filter[date]', filterDate.value);
     }
 
-    const query = params.toString();
-
-    return query ? `/api/v1/dtes?${query}` : '/api/v1/dtes';
+    return params.toString();
 });
+
+const tableFilters = ref(filters.value ?? '');
+watch(filters, (query, _previous, onCleanup) => {
+    if (query === null) {
+        return;
+    }
+
+    const timer = setTimeout(() => {
+        tableFilters.value = query;
+    }, 500);
+    onCleanup(() => clearTimeout(timer));
+});
+
+const tableUrl = computed(() =>
+    tableFilters.value ? `/api/v1/dtes?${tableFilters.value}` : '/api/v1/dtes',
+);
 
 const receiverName = (record: DteApiRecord): string =>
     record.original_json?.receptor?.nombre?.trim() || '-';
@@ -150,7 +163,7 @@ const refreshTable = (): void => {
 <template>
     <div class="space-y-6">
         <div
-            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+            class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
         >
             <div>
                 <h1
@@ -163,7 +176,17 @@ const refreshTable = (): void => {
                     comprobantes fiscales al Ministerio de Hacienda.
                 </p>
             </div>
-            <div class="flex flex-wrap items-center gap-2.5">
+            <div class="flex flex-wrap items-center gap-2.5 lg:shrink-0">
+                <BaseButton
+                    variant="outline"
+                    size="auto"
+                    :icon="IconDownload"
+                    :loading="isDownloading"
+                    :disabled="filters === null"
+                    @click="filters !== null && downloadReport(filters)"
+                >
+                    Descargar reporte
+                </BaseButton>
                 <BaseButtonIcon
                     variant="outline"
                     size="md"
@@ -188,9 +211,17 @@ const refreshTable = (): void => {
             v-model:open="isFiltersOpen"
             v-model:tipo-dte="filterTipoDte"
             v-model:estado="filterEstado"
-            v-model:fecha="filterFecha"
+            v-model:date="filterDate"
+            v-model:date-mode="dateMode"
+            v-model:date-from="dateFrom"
+            v-model:date-to="dateTo"
+            :date-range-message="dateRangeMessage"
             @reset="resetFilters"
         />
+
+        <Alert v-if="downloadError" role="alert" type="danger">
+            {{ downloadError }}
+        </Alert>
 
         <Card title="Listado de Comprobantes Emitidos">
             <DataTable
