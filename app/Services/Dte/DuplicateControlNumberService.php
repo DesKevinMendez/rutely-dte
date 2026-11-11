@@ -24,14 +24,15 @@ class DuplicateControlNumberService
     /**
      * Normativa MH, rule 10: a rejected document is corrected and transmitted again with the
      * codigoGeneracion it originally had, unless the rejection was about that code. The fix
-     * here is a free numeroControl, so the document is signed again with the same code.
+     * here is a free numeroControl, so the document is signed again with the same code. The
+     * number continues after the last one Hacienda accepted, not after the company's correlative.
      */
     public function correct(Dte $dte): void
     {
         $company = Company::query()->findOrFail($dte->company_id);
         /** @var array<string, mixed> $document */
         $document = $dte->original_json;
-        $controlNumber = $this->controlNumbers->next($company, $dte->dte_type, $this->fiscalYear($document));
+        $controlNumber = $this->controlNumbers->nextAfterLastAccepted($company, $dte, $this->fiscalYear($document));
 
         data_set($document, 'identificacion.numeroControl', $controlNumber);
 
