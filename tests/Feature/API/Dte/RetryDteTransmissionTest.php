@@ -2,8 +2,10 @@
 
 use App\Models\Company;
 use App\Models\Dte;
+use App\Models\DteCorrelative;
 use App\Models\MhTransmission;
 use App\Role;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
@@ -233,4 +235,151 @@ test('retrying a DTE requires authentication', function () {
     $dte = rejectedDte(DteApiTestData::company());
 
     $this->postJson(route('api.v1.dtes.retries.store', $dte))->assertUnauthorized();
+});
+
+/**
+ * A DTE that Hacienda rejected because its control number was already registered.
+ *
+ * @param  array<string, mixed>  $rejectionOverrides
+ */
+function duplicateControlNumberDte(Company $company, array $rejectionOverrides = []): Dte
+{
+    $dte = DteApiTestData::dte($company, [
+        'status' => 'RECHAZADO',
+        'received_seal' => null,
+        'mh_response_json' => ['estado' => 'RECHAZADO', 'codigoMsg' => '400'],
+    ]);
+    transmissionFor($dte, [
+        'request_json' => ['idEnvio' => 1, 'codigoGeneracion' => $dte->generation_code],
+        'http_status' => 400,
+        'response_json' => [
+            'estado' => 'RECHAZADO',
+            'codigoGeneracion' => $dte->generation_code,
+            'clasificaMsg' => '11',
+            'codigoMsg' => '004',
+            'descripcionMsg' => '[identificacion.numeroControl] YA EXISTE UN REGISTRO CON ESE VALOR',
+            'observaciones' => [],
+        ],
+        ...$rejectionOverrides,
+    ]);
+
+    return $dte;
+}
+
+function lastCorrelativeIs(Company $company, int $lastValue): void
+{
+    DteCorrelative::query()->create([
+        'company_id' => $company->id,
+        'key' => DteCorrelative::keyFor($company, 2026),
+        'last_value' => (string) $lastValue,
+    ]);
+}
+
+test('a DTE rejected for a repeated control number is signed again with the next one and the same generation code', function () {
+    $company = companyWithSigningCertificate();
+    createSandboxCredentials($company);
+    lastCorrelativeIs($company, 22);
+    $dte = duplicateControlNumberDte($company);
+    $generationCode = $dte->generation_code;
+    fakeMhResponse('recepciondte', processedMhResponse($dte));
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->postJson(route('api.v1.dtes.retries.store', $dte))->assertOk();
+
+    $dte->refresh();
+    $signedDocument = signedDocument($dte->signed_json);
+    expect($dte->only(['status', 'control_number', 'generation_code']))->toBe([
+        'status' => 'PROCESADO',
+        'control_number' => 'DTE-01-M001P001-000000000000023',
+        'generation_code' => $generationCode,
+    ])
+        ->and($dte->original_json['identificacion'])->toMatchArray([
+            'numeroControl' => 'DTE-01-M001P001-000000000000023',
+            'codigoGeneracion' => $generationCode,
+        ])
+        ->and($signedDocument['identificacion'])->toMatchArray([
+            'numeroControl' => 'DTE-01-M001P001-000000000000023',
+            'codigoGeneracion' => $generationCode,
+        ]);
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/fesv/recepciondte')
+        && $request['codigoGeneracion'] === $generationCode
+        && $request['documento'] === $dte->signed_json);
+    $this->assertDatabaseHas(DteCorrelative::class, [
+        'company_id' => $company->id,
+        'key' => DteCorrelative::keyFor($company, 2026),
+        'last_value' => '23',
+    ]);
+});
+
+test('a repeated control number corrected after 24 hours also gets a new generation code', function () {
+    $company = companyWithSigningCertificate();
+    createSandboxCredentials($company);
+    lastCorrelativeIs($company, 22);
+    $dte = duplicateControlNumberDte($company, ['responded_at' => now()->subHours(25)]);
+    $previousGenerationCode = $dte->generation_code;
+    fakeMhResponse('recepciondte', processedMhResponse($dte));
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->postJson(route('api.v1.dtes.retries.store', $dte))->assertOk();
+
+    $dte->refresh();
+    expect($dte->generation_code)->not->toBe($previousGenerationCode)
+        ->toMatch('/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/')
+        ->and($dte->control_number)->toBe('DTE-01-M001P001-000000000000023')
+        ->and(signedDocument($dte->signed_json)['identificacion'])->toMatchArray([
+            'numeroControl' => 'DTE-01-M001P001-000000000000023',
+            'codigoGeneracion' => $dte->generation_code,
+        ]);
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/fesv/recepciondte')
+        && $request['codigoGeneracion'] === $dte->generation_code);
+});
+
+test('a DTE rejected for any other reason is sent again unchanged', function () {
+    $company = companyWithSigningCertificate();
+    createSandboxCredentials($company);
+    lastCorrelativeIs($company, 22);
+    $dte = duplicateControlNumberDte($company, [
+        'response_json' => [
+            'estado' => 'RECHAZADO',
+            'codigoMsg' => '004',
+            'descripcionMsg' => '[identificacion.codigoGeneracion] YA EXISTE UN REGISTRO CON ESE VALOR',
+            'observaciones' => [],
+        ],
+    ]);
+    fakeMhResponse('recepciondte', processedMhResponse($dte));
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->postJson(route('api.v1.dtes.retries.store', $dte))->assertOk();
+
+    expect($dte->fresh()->only(['control_number', 'generation_code', 'signed_json']))->toBe(
+        $dte->only(['control_number', 'generation_code', 'signed_json']),
+    );
+    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/fesv/recepciondte')
+        && $request['documento'] === 'signed-jws');
+    $this->assertDatabaseHas(DteCorrelative::class, ['company_id' => $company->id, 'last_value' => '22']);
+});
+
+test('a repeated control number that cannot be signed again is not sent', function () {
+    $company = DteApiTestData::company();
+    $dte = duplicateControlNumberDte($company);
+    Http::fake();
+    Sanctum::actingAs(DteApiTestData::user($company, Role::ADMIN));
+
+    $this->postJson(route('api.v1.dtes.retries.store', $dte))
+        ->assertOk()
+        ->assertExactJson([
+            'data' => [
+                'record' => $dte->fresh()->toArray(),
+                'mh_result' => [
+                    'estado' => 'RECHAZADO',
+                    'codigoMsg' => '500',
+                    'descripcionMsg' => 'No hay material de firma configurado para la empresa y el ambiente seleccionados.',
+                    'observaciones' => ['No hay material de firma configurado para la empresa y el ambiente seleccionados.'],
+                ],
+            ],
+        ]);
+
+    Http::assertNothingSent();
+    expect($dte->fresh()->only(['control_number', 'signed_json']))->toBe($dte->only(['control_number', 'signed_json']))
+        ->and(MhTransmission::query()->count())->toBe(1);
 });

@@ -2,6 +2,7 @@
 
 namespace App\Services\Dte;
 
+use App\Exceptions\DteSigningException;
 use App\Models\ContingencyEvent;
 use App\Models\Dte;
 use App\Models\DteInvalidation;
@@ -10,23 +11,40 @@ use App\Services\Mh\MhTransmissionService;
 
 class TransmissionRetryService
 {
-    public function __construct(private readonly MhTransmissionService $transmission) {}
+    public function __construct(
+        private readonly MhTransmissionService $transmission,
+        private readonly DuplicateControlNumberService $duplicateControlNumber,
+    ) {}
 
     /**
      * Resend a failed transmission and, when Hacienda accepts it, update the
-     * transmitted record the same way its original issuance would have.
+     * transmitted record the same way its original issuance would have. A DTE that
+     * Hacienda rejected for a repeated control number is corrected before it goes again.
      *
      * @return array<string, mixed>
      */
     public function retry(MhTransmission $transmission): array
     {
+        $transmitted = $transmission->transmittable;
+
+        if ($transmitted instanceof Dte && $this->duplicateControlNumber->wasRejectedFor($transmission)) {
+            try {
+                $this->duplicateControlNumber->correct($transmitted);
+            } catch (DteSigningException $exception) {
+                return [
+                    'estado' => 'RECHAZADO',
+                    'codigoMsg' => '500',
+                    'descripcionMsg' => $exception->getMessage(),
+                    'observaciones' => [$exception->getMessage()],
+                ];
+            }
+        }
+
         $mhResult = $this->transmission->retry($transmission);
 
         if (! in_array($mhResult['estado'] ?? null, ['PROCESADO', 'RECIBIDO'], true)) {
             return $mhResult;
         }
-
-        $transmitted = $transmission->transmittable;
 
         match (true) {
             $transmitted instanceof Dte => $this->acceptDte($transmitted, $mhResult),
