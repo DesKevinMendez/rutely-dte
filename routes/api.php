@@ -9,6 +9,7 @@ use App\Http\Controllers\ContingencyStatusController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DteController;
 use App\Http\Controllers\DteInvalidationController;
+use App\Http\Controllers\DteRetryController;
 use App\Http\Controllers\MhCertificatesController;
 use App\Http\Controllers\MhCredentialsController;
 use App\Http\Controllers\QueueController;
@@ -39,6 +40,8 @@ Route::group(['prefix' => 'v1'], function () {
             ->name('api.v1.dtes.index');
         Route::get('dtes/{dte}', [DteController::class, 'show'])
             ->name('api.v1.dtes.show');
+        Route::post('dtes/{dte}/retries', DteRetryController::class)
+            ->name('api.v1.dtes.retries.store');
     });
 
     Route::post('dtes', [DteController::class, 'store'])

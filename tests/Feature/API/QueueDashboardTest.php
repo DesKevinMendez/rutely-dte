@@ -1,55 +1,14 @@
 <?php
 
 use App\Environment;
-use App\Models\Company;
 use App\Models\ContingencyEvent;
 use App\Models\DteInvalidation;
-use App\Models\MhCredentials;
 use App\Models\MhTransmission;
 use App\Role;
 use App\Services\Mh\MhTransmissionService;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
-
-function transmissionFor(Model $transmittable, array $overrides = []): MhTransmission
-{
-    return MhTransmission::query()->create(array_merge([
-        'company_id' => $transmittable->company_id,
-        'transmittable_type' => $transmittable->getMorphClass(),
-        'transmittable_id' => $transmittable->id,
-        'operation' => 'dte',
-        'attempt' => 1,
-        'request_json' => ['idEnvio' => 1],
-        'response_json' => null,
-        'http_status' => null,
-        'status' => 'failed',
-        'error' => 'MH unavailable',
-        'sent_at' => now(),
-        'responded_at' => now(),
-    ], $overrides));
-}
-
-function createSandboxCredentials(Company $company): MhCredentials
-{
-    return MhCredentials::query()->create([
-        'company_id' => $company->id,
-        'environment' => Environment::SANDBOX->value,
-        'nit' => $company->nit,
-        'password' => 'Hacienda-Prueba-01',
-        'active' => true,
-    ]);
-}
-
-function fakeMhResponse(string $endpoint, array $body, int $status = 200): void
-{
-    Http::fake([
-        'apitest.dtes.mh.gob.sv/seguridad/auth' => Http::response(['status' => 'OK', 'body' => ['token' => 'Bearer mh-token']]),
-        "apitest.dtes.mh.gob.sv/fesv/{$endpoint}" => Http::response($body, $status),
-    ]);
-}
 
 function emptyQueuePagination(): array
 {
