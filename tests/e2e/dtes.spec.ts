@@ -241,6 +241,42 @@ test.describe('DTEs', () => {
         ).toBeVisible();
     });
 
+    test('wraps saved observations inside the DTE record card', async ({
+        page,
+    }) => {
+        const observations = JSON.stringify([
+            `Error en transmisión MH [HTTP 400]: ${JSON.stringify({
+                descripcionMsg: 'X'.repeat(600),
+            })}`,
+        ]);
+        await page.route(/\/api\/v1\/dtes\/[^/?]+$/, async (route) => {
+            const response = await route.fetch();
+            const body = (await response.json()) as {
+                data: { observations: string };
+            };
+            body.data.observations = observations;
+
+            await route.fulfill({ response, json: body });
+        });
+
+        await page
+            .getByText('DTE-01-M001P001-000000000000001', { exact: true })
+            .click();
+
+        const value = page.getByText(observations, { exact: true });
+        await expect(value).toBeVisible();
+
+        for (const width of [1280, 390]) {
+            await page.setViewportSize({ width, height: 800 });
+            const overflow = await value.evaluate((element) => {
+                const grid = element.closest('.grid')!;
+
+                return grid.scrollWidth - grid.clientWidth;
+            });
+            expect(overflow, `Horizontal overflow at ${width}px`).toBe(0);
+        }
+    });
+
     test('filters DTEs by status', async ({ page }) => {
         await page
             .getByRole('button', { name: 'Mostrar filtros', exact: true })
