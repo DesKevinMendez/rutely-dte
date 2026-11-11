@@ -6,6 +6,7 @@ interface RequestOptions<B = unknown> {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
     body?: B;
     headers?: Record<string, string>;
+    responseType?: 'blob';
 }
 
 const getBaseUrl = (): string => {
@@ -36,7 +37,12 @@ export function useRequest() {
         error: Ref<string | null>;
         validationErrors: Ref<Record<string, string>>;
     }> => {
-        const { method = 'GET', body, headers: customHeaders = {} } = options;
+        const {
+            method = 'GET',
+            body,
+            headers: customHeaders = {},
+            responseType,
+        } = options;
         const isFormData =
             typeof FormData !== 'undefined' && body instanceof FormData;
         const fullUrl = url.startsWith('http') ? url : `${getBaseUrl()}${url}`;
@@ -87,6 +93,8 @@ export function useRequest() {
 
             if (contentType && contentType.includes('application/json')) {
                 result = await response.json();
+            } else if (response.ok && responseType === 'blob') {
+                result = await response.blob();
             } else {
                 result = await response.text();
             }
