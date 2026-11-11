@@ -15,6 +15,7 @@ use App\Models\ItemType;
 use App\Models\Municipalities;
 use App\Models\PaymentMethod;
 use App\Services\Dte\Documents\DteDocumentBuilder;
+use App\Services\Dte\Documents\TaxCreditBuilder;
 use App\Services\Dte\MhCatalog;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
@@ -28,7 +29,8 @@ class StoreDteRequest extends FormRequest
 {
     private const MAX_AMOUNT = 100000000000;
 
-    private const PAYMENT_TOLERANCE = 0.01;
+    /** Normativa 2.0, regla 7.3: Hacienda accepts ±$0.01 against its own calculation. */
+    private const MH_TOLERANCE = 0.01;
 
     /** Normativa 2.0, Anexo IV: consumer data required above the legal amount. */
     private const IDENTIFICATION_FIELDS = [
@@ -49,7 +51,8 @@ class StoreDteRequest extends FormRequest
     }
 
     /**
-     * NIT, NRC and DUI are written with hyphens in El Salvador, but Hacienda receives only their digits.
+     * NIT, NRC and DUI are written with hyphens in El Salvador, but Hacienda receives only their digits,
+     * and the NRC without leading zeros (Normativa 2.0, Anexo IV #41).
      */
     protected function prepareForValidation(): void
     {
@@ -63,6 +66,10 @@ class StoreDteRequest extends FormRequest
             if (is_string($receiver[$field] ?? null)) {
                 $receiver[$field] = str_replace('-', '', $receiver[$field]);
             }
+        }
+
+        if (is_string($receiver['nrc'] ?? null)) {
+            $receiver['nrc'] = (string) preg_replace('/^0+(?=\d)/', '', $receiver['nrc']);
         }
 
         $hasDigitsOnlyDocument = in_array($receiver['tipoDocumento'] ?? null, [MhCatalog::DUI_DOCUMENT_TYPE, MhCatalog::NIT_DOCUMENT_TYPE], true);
@@ -149,6 +156,10 @@ class StoreDteRequest extends FormRequest
                     }
                 }
 
+                if ($builder instanceof TaxCreditBuilder) {
+                    $this->validatePerceivedIva($validator, $builder);
+                }
+
                 $amountDue = $builder->totalToPay($this->only(['items', 'resumen']));
 
                 if ($amountDue < 0) {
@@ -170,12 +181,28 @@ class StoreDteRequest extends FormRequest
                 if (is_array($payments)) {
                     $paid = array_sum(array_column($payments, 'montoPago'));
 
-                    if (round(abs($paid - $amountDue), 2) > self::PAYMENT_TOLERANCE) {
+                    if (round(abs($paid - $amountDue), 2) > self::MH_TOLERANCE) {
                         $validator->errors()->add('resumen.pagos', 'La suma de las formas de pago debe coincidir con el total a pagar.');
                     }
                 }
             },
         ];
+    }
+
+    /**
+     * Normativa 2.0, Anexo IV #141: when it applies, the perceived IVA is 1% of the taxed sales.
+     */
+    private function validatePerceivedIva(Validator $validator, TaxCreditBuilder $builder): void
+    {
+        $perceivedIva = (float) $this->input('resumen.ivaPerci', 0);
+        $expectedIva = $builder->perceivedIva($this->only(['items', 'resumen']));
+
+        if ($perceivedIva > 0 && round(abs($perceivedIva - $expectedIva), 2) > self::MH_TOLERANCE) {
+            $validator->errors()->add(
+                'resumen.ivaPerci',
+                'El IVA percibido debe ser el 1% de las ventas gravadas: $'.number_format($expectedIva, 2).'.',
+            );
+        }
     }
 
     /** @param  array<string, mixed>  $item */
@@ -224,7 +251,11 @@ class StoreDteRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Normativa 2.0, Anexo IV #57: only FE, CRE, FEXE, FSEE and CDE may leave the receiver email empty.
+     *
+     * @return array<string, mixed>
+     */
     private function taxCreditReceiverRules(): array
     {
         return [
@@ -239,7 +270,7 @@ class StoreDteRequest extends FormRequest
             'receptor.nombreComercial' => ['sometimes', 'nullable', 'string', 'max:150'],
             'receptor.direccion' => ['required', 'array'],
             ...$this->receiverAddressRules(),
-            ...$this->receiverContactRules(1),
+            ...$this->receiverContactRules(1, isEmailRequired: true),
         ];
     }
 
@@ -306,11 +337,13 @@ class StoreDteRequest extends FormRequest
     }
 
     /** @return array<string, mixed> */
-    private function receiverContactRules(int $minimumEmailLength): array
+    private function receiverContactRules(int $minimumEmailLength, bool $isEmailRequired = false): array
     {
+        $emailPresence = $isEmailRequired ? ['required'] : ['sometimes', 'nullable'];
+
         return [
             'receptor.telefono' => ['sometimes', 'nullable', 'string', 'min:8', 'max:30'],
-            'receptor.correo' => ['sometimes', 'nullable', 'email:filter', "min:{$minimumEmailLength}", 'max:100'],
+            'receptor.correo' => [...$emailPresence, 'email:filter', "min:{$minimumEmailLength}", 'max:100'],
         ];
     }
 
