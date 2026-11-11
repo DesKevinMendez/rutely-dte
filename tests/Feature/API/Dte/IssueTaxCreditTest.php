@@ -102,6 +102,20 @@ test('tax credit adds perceived IVA and subtracts withheld IVA from the total', 
         ->and($dte->total_amount)->toBe(11250);
 });
 
+test('tax credit accepts a perceived IVA one cent away from 1% of the taxed sales', function () {
+    Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
+    $payload = DteApiTestData::validTaxCreditPayload();
+    $payload['items'] = [['descripcion' => 'Servicio', 'cantidad' => 1, 'precioUni' => 100]];
+    $payload['resumen'] = ['ivaPerci' => 1.01];
+
+    $response = $this->postJson(route('api.v1.dtes.store'), $payload)->assertCreated();
+
+    $summary = Dte::query()->findOrFail($response->json('data.record.id'))->original_json['resumen'];
+
+    expect($summary['ivaPerci'])->toEqual(1.01)
+        ->and($summary['totalPagar'])->toEqual(114.01);
+});
+
 test('a tax credit line without value does not declare IVA', function () {
     Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
     $payload = DteApiTestData::validTaxCreditPayload();
@@ -116,12 +130,12 @@ test('a tax credit line without value does not declare IVA', function () {
         ->and($document['resumen']['tributos'])->toBeNull();
 });
 
-test('a tax credit sends the receiver NIT and NRC without hyphens', function () {
+test('a tax credit sends the receiver NIT and NRC without hyphens or leading zeros', function () {
     Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
 
     $response = $this->postJson(route('api.v1.dtes.store'), taxCreditReceiver([
         'nit' => '0614-150592-101-5',
-        'nrc' => '987654-3',
+        'nrc' => '00987654-3',
     ]))->assertCreated();
 
     $dte = Dte::query()->findOrFail($response->json('data.record.id'));
@@ -150,6 +164,7 @@ test('tax credit validation returns 422 with the official limits', function (arr
     'NRC required' => [taxCreditWithoutReceiverField('nrc'), 'receptor.nrc', 'El campo receptor.nrc es obligatorio.'],
     'NRC digits only' => [taxCreditReceiver(['nrc' => '98765A']), 'receptor.nrc', 'El formato del campo receptor.nrc no es válido.'],
     'NRC minimum' => [taxCreditReceiver(['nrc' => '1']), 'receptor.nrc', 'El campo receptor.nrc debe contener al menos 2 caracteres.'],
+    'NRC of zeros keeps one digit' => [taxCreditReceiver(['nrc' => '000']), 'receptor.nrc', 'El campo receptor.nrc debe contener al menos 2 caracteres.'],
     'NRC maximum' => [taxCreditReceiver(['nrc' => '123456789']), 'receptor.nrc', 'El campo receptor.nrc no debe contener más de 8 caracteres.'],
     'name required' => [taxCreditWithoutReceiverField('nombre'), 'receptor.nombre', 'El campo receptor.nombre es obligatorio.'],
     'name maximum' => [taxCreditReceiver(['nombre' => str_repeat('a', 251)]), 'receptor.nombre', 'El campo receptor.nombre no debe contener más de 250 caracteres.'],
@@ -162,6 +177,7 @@ test('tax credit validation returns 422 with the official limits', function (arr
     'commercial name maximum' => [taxCreditReceiver(['nombreComercial' => str_repeat('a', 151)]), 'receptor.nombreComercial', 'El campo nombre comercial del receptor no debe contener más de 150 caracteres.'],
     'address required' => [taxCreditWithoutReceiverField('direccion'), 'receptor.direccion', 'El campo receptor.direccion es obligatorio.'],
     'phone minimum' => [taxCreditReceiver(['telefono' => '1234567']), 'receptor.telefono', 'El campo receptor.telefono debe contener al menos 8 caracteres.'],
+    'email required' => [taxCreditWithoutReceiverField('correo'), 'receptor.correo', 'El campo correo del receptor es obligatorio.'],
     'email needs a top level domain' => [taxCreditReceiver(['correo' => 'usuario@dominio']), 'receptor.correo', 'El campo correo del receptor debe ser una dirección de correo electrónico válida.'],
     'email maximum' => [taxCreditReceiver(['correo' => str_repeat('a', 92).'@mail.com']), 'receptor.correo', 'El campo correo del receptor no debe contener más de 100 caracteres.'],
     'other taxes per item not available' => [[...DteApiTestData::validTaxCreditPayload(), 'items' => [['descripcion' => 'Línea', 'cantidad' => 1, 'precioUni' => 1, 'tipoItem' => 4]]], 'items.0.tipoItem', 'El tipo de ítem 4 (otros tributos por ítem) todavía no se puede emitir.'],
@@ -171,4 +187,5 @@ test('tax credit validation returns 422 with the official limits', function (arr
     'perceived IVA nonnegative' => [[...DteApiTestData::validTaxCreditPayload(), 'resumen' => ['ivaPerci' => -1]], 'resumen.ivaPerci', 'El campo IVA percibido debe ser mayor o igual que 0.'],
     'perceived IVA limit' => [[...DteApiTestData::validTaxCreditPayload(), 'resumen' => ['ivaPerci' => 100000000000]], 'resumen.ivaPerci', 'El campo IVA percibido debe ser menor que 100000000000.'],
     'perceived IVA decimals' => [[...DteApiTestData::validTaxCreditPayload(), 'resumen' => ['ivaPerci' => 1.234]], 'resumen.ivaPerci', 'El campo IVA percibido debe tener 0-2 decimales.'],
+    'perceived IVA is 1% of the taxed sales' => [[...DteApiTestData::validTaxCreditPayload(), 'items' => [['descripcion' => 'Servicio', 'cantidad' => 1, 'precioUni' => 100]], 'resumen' => ['ivaPerci' => 1.02]], 'resumen.ivaPerci', 'El IVA percibido debe ser el 1% de las ventas gravadas: $1.00.'],
 ]);

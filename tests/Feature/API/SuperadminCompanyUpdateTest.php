@@ -64,6 +64,20 @@ test('superadmin company update accepts an empty partial payload', function (): 
         ->assertExactJson(['data' => $company->fresh()->toArray()]);
 });
 
+test('superadmin company update stores the NRC without hyphens or leading zeros', function (): void {
+    $company = DteApiTestData::company();
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
+        'company_id' => null,
+    ]));
+
+    $this->patchJson(
+        route('api.v1.superadmin.companies.update', $company),
+        ['nrc' => '0123456-7'],
+    )->assertOk();
+
+    expect($company->fresh()->nrc)->toBe('1234567');
+});
+
 test('superadmin company update allows null optional fields', function (): void {
     $company = DteApiTestData::company();
     Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([

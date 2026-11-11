@@ -284,10 +284,10 @@ test('goods and mixed lines keep the unit of measure sent by the client', functi
     'goods and services' => [3],
 ]);
 
-test('a consumer invoice sends the receiver NRC without its hyphen', function () {
+test('a consumer invoice sends the receiver NRC without its hyphen or leading zeros', function () {
     Sanctum::actingAs(DteApiTestData::user(companyReadyToIssue(), Role::USER));
 
-    $response = $this->postJson(route('api.v1.dtes.store'), consumerInvoiceReceiver(['nrc' => '987654-3']))->assertCreated();
+    $response = $this->postJson(route('api.v1.dtes.store'), consumerInvoiceReceiver(['nrc' => '0987654-3']))->assertCreated();
 
     expect(signedDocument(Dte::query()->findOrFail($response->json('data.record.id'))->signed_json)['receptor']['nrc'])
         ->toBe('9876543');
