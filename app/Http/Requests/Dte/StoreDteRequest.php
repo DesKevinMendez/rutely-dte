@@ -14,6 +14,7 @@ use App\Models\EstablishmentTypes;
 use App\Models\ItemType;
 use App\Models\Municipalities;
 use App\Models\PaymentMethod;
+use App\Models\User;
 use App\Services\Dte\Documents\DteDocumentBuilder;
 use App\Services\Dte\Documents\TaxCreditBuilder;
 use App\Services\Dte\MhCatalog;
@@ -42,10 +43,11 @@ class StoreDteRequest extends FormRequest
 
     public function authorize(): bool
     {
+        /** @var User|Company|null $principal */
         $principal = $this->user();
 
         if ($principal instanceof Company) {
-            return $principal->currentAccessToken()?->can('create:dte') ?? false;
+            return $principal->tokenCan('create:dte');
         }
 
         return $principal?->can('create', Dte::class) ?? false;
