@@ -4,6 +4,7 @@ namespace App\Http\Requests\Company;
 
 use App\Models\Company;
 use App\Services\Dte\MhCatalog;
+use App\Services\Dte\TaxIdentifier;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateCompanyRequest extends FormRequest
@@ -13,6 +14,16 @@ class UpdateCompanyRequest extends FormRequest
         $company = $this->route('company');
 
         return $company instanceof Company && ($this->user()?->can('update', $company) ?? false);
+    }
+
+    /** Normativa 2.0, Anexo IV #21: the issuer NRC goes without hyphens or leading zeros. */
+    protected function prepareForValidation(): void
+    {
+        $nrc = $this->input('nrc');
+
+        if (is_string($nrc)) {
+            $this->merge(['nrc' => TaxIdentifier::nrc($nrc)]);
+        }
     }
 
     /** @return array<string, mixed> */

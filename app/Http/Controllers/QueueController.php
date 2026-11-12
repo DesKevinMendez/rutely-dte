@@ -18,7 +18,8 @@ class QueueController extends Controller
         $transmissions = QueryBuilder::for(
             MhTransmission::query()
                 ->where('company_id', $request->user()->company_id)
-                ->whereIn('status', ['pending', 'failed']),
+                ->whereIn('status', ['pending', 'failed'])
+                ->latestAttempts(),
         )
             ->allowedFilters(
                 AllowedFilter::exact('status'),

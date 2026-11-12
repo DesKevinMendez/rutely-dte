@@ -8,12 +8,10 @@ use App\Models\Company;
 use App\Models\Departament;
 use App\Models\District;
 use App\Models\Dte;
-use App\Models\DteCorrelative;
 use App\Models\Municipalities;
 use App\Models\Receivers;
 use App\Services\Dte\Documents\DteDocumentBuilder;
 use App\Services\Mh\MhTransmissionService;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class DteIssuanceService
@@ -21,6 +19,7 @@ class DteIssuanceService
     public function __construct(
         private readonly FirmadorService $firmador,
         private readonly MhTransmissionService $transmission,
+        private readonly DteControlNumberAllocator $controlNumbers,
     ) {}
 
     /**
@@ -36,9 +35,8 @@ class DteIssuanceService
 
         $environment = (string) $company->environment;
         $now = now('America/El_Salvador');
-        $correlative = $this->nextCorrelative($company, $now->year);
         $generationCode = strtoupper((string) Str::uuid());
-        $controlNumber = $this->controlNumber($company, $dteType->value, $correlative);
+        $controlNumber = $this->controlNumbers->next($company, $dteType->value, $now->year);
 
         $document = $builder->build($company, $payload, $controlNumber, $generationCode, $now);
         $receiverIdentity = DteDocumentBuilder::receiverIdentity($document['receptor']);
@@ -82,34 +80,6 @@ class DteIssuanceService
             'record' => $dte->refresh(),
             'mhResult' => $mhResult,
         ];
-    }
-
-    private function nextCorrelative(Company $company, int $fiscalYear): int
-    {
-        $key = DteCorrelative::keyFor($company, $fiscalYear);
-
-        return DB::transaction(function () use ($company, $key): int {
-            $row = DteCorrelative::query()->firstOrCreate(
-                ['company_id' => $company->id, 'key' => $key],
-                ['last_value' => '0'],
-            );
-            $row = DteCorrelative::query()->whereKey($row->id)->lockForUpdate()->firstOrFail();
-            $next = ((int) $row->last_value) + 1;
-            $row->update(['last_value' => (string) $next]);
-
-            return $next;
-        });
-    }
-
-    private function controlNumber(Company $company, string $dteType, int $correlative): string
-    {
-        return sprintf(
-            'DTE-%s-%s%s-%s',
-            $dteType,
-            $company->mh_establishment_code,
-            $company->mh_pos_code,
-            str_pad((string) $correlative, 15, '0', STR_PAD_LEFT),
-        );
     }
 
     /**

@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Dte;
 
+use App\Models\Company;
 use App\Models\DocumentType;
 use App\Models\Dte;
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,11 +14,26 @@ use Illuminate\Validation\Rule;
  */
 class StoreDteInvalidationRequest extends FormRequest
 {
+    /**
+     * A company API token with create:dte (POS) can invalidate the documents of its own company that are not
+     * invalidated yet; dashboard users go through the DTE policy.
+     */
     public function authorize(): bool
     {
         $dte = $this->route('dte');
 
-        return $dte instanceof Dte && ($this->user()?->can('invalidate', $dte) ?? false);
+        if (! $dte instanceof Dte) {
+            return false;
+        }
+
+        /** @var User|Company|null $principal */
+        $principal = $this->user();
+
+        if ($principal instanceof Company) {
+            return $principal->getKey() === $dte->company_id && $dte->status !== 'INVALIDADO';
+        }
+
+        return $principal?->can('invalidate', $dte) ?? false;
     }
 
     /** @return array<string, mixed> */

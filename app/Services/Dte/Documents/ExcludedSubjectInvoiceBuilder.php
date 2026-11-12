@@ -57,14 +57,16 @@ class ExcludedSubjectInvoiceBuilder extends DteDocumentBuilder
     protected function summary(array $items, array $payload): array
     {
         $totalPurchases = $this->roundedSum($items, 'compra');
+        $globalDiscount = (float) data_get($payload, 'resumen.descu', 0);
+        $subtotal = round($totalPurchases - $globalDiscount, 2);
         $withheldIncomeTax = (float) data_get($payload, 'resumen.reteRenta', 0);
-        $amountDue = round($totalPurchases - $withheldIncomeTax, 2);
+        $amountDue = round($subtotal - $withheldIncomeTax, 2);
 
         return [
             'totalCompra' => $totalPurchases,
-            'descu' => 0.0,
-            'totalDescu' => $this->roundedSum($items, 'montoDescu'),
-            'subTotal' => $totalPurchases,
+            'descu' => $globalDiscount,
+            'totalDescu' => round(array_sum(array_column($items, 'montoDescu')) + $globalDiscount, 2),
+            'subTotal' => $subtotal,
             'reteRenta' => $withheldIncomeTax,
             'totalPagar' => $amountDue,
             'totalLetras' => $this->amountInWords($amountDue),
