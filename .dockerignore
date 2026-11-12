@@ -9,3 +9,8 @@ public/build
 public/hot
 database/*.sqlite
 storage/logs/*
+tests
+docs
+playwright-report
+test-results
+blob-report

@@ -147,6 +147,11 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --wait
             docker compose -f docker-compose.prod.yml exec -T app php artisan optimize
             docker compose -f docker-compose.prod.yml ps
+
+            # Remove the images of earlier deploys so they don't pile up on the droplet.
+            docker images rutely-dte-prod-app --format '{{.Repository}}:{{.Tag}}' \
+              | grep -vxF "rutely-dte-prod-app:${APP_IMAGE_TAG}" \
+              | xargs -r docker rmi
         env:
           APP_NAME: ${{ vars.APP_NAME }}
           APP_ENV: ${{ vars.APP_ENV }}
