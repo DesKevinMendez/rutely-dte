@@ -4,12 +4,15 @@ use App\Models\Company;
 use App\Models\Dte;
 use App\Models\DteInvalidation;
 use App\Role;
+use App\Services\Mh\MhTransmissionService;
 use Database\Seeders\DocumentTypeSeeder;
 use Database\Seeders\DteTypeSeeder;
 use Database\Seeders\ItemTypeSeeder;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\DteApiTestData;
 use Tests\Support\MhSchema;
+
+use function Pest\Laravel\mock;
 
 beforeEach(function () {
     $this->seed(DocumentTypeSeeder::class);
@@ -122,3 +125,36 @@ test('a company API token cannot invalidate a document it does not own or may no
     'an invalidated document' => [['create:dte'], fn (Company $company): Dte => DteApiTestData::dte($company, ['status' => 'INVALIDADO']), invalidationPayload()],
     'another company document with an invalid payload' => [['create:dte'], fn (Company $company): Dte => DteApiTestData::dte(DteApiTestData::company()), []],
 ]);
+
+test('a document keeps its status and Hacienda answer when Hacienda rejects its invalidation', function () {
+    $company = companyWithSigningCertificate();
+    $dte = DteApiTestData::dte($company, ['observations' => null]);
+    $rejection = [
+        'estado' => 'RECHAZADO',
+        'selloRecibido' => null,
+        'descripcionMsg' => 'DOCUMENTO NO PUEDE SER INVALIDADO',
+        'observaciones' => ['El plazo para invalidar el documento venció'],
+    ];
+    mock(MhTransmissionService::class)->shouldReceive('transmitInvalidation')->once()->andReturn($rejection);
+    Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
+
+    $this->postJson(route('api.v1.dtes.invalidations.store', $dte), invalidationPayload())
+        ->assertOk()
+        ->assertJson([
+            'data' => [
+                'dte' => ['status' => 'PROCESADO'],
+                'invalidation' => ['status' => 'RECHAZADO', 'observations' => 'El plazo para invalidar el documento venció'],
+                'mh_result' => $rejection,
+            ],
+        ]);
+
+    expect($dte->fresh()->only(['status', 'observations', 'received_seal', 'mh_response_json']))->toBe([
+        'status' => 'PROCESADO',
+        'observations' => null,
+        'received_seal' => 'SELLO-MH',
+        'mh_response_json' => ['estado' => 'PROCESADO'],
+    ])->and(DteInvalidation::query()->where('dte_id', $dte->id)->sole()->only(['status', 'observations']))->toBe([
+        'status' => 'RECHAZADO',
+        'observations' => 'El plazo para invalidar el documento venció',
+    ]);
+});
