@@ -114,11 +114,13 @@ class DteInvalidationService
             'observations' => $observations,
         ]);
 
-        $dte->update([
-            'status' => $approved ? 'INVALIDADO' : 'RECHAZADO',
-            'observations' => $observations,
-            'mh_response_json' => $mhResult,
-        ]);
+        if ($approved) {
+            $dte->update([
+                'status' => 'INVALIDADO',
+                'observations' => $observations,
+                'mh_response_json' => $mhResult,
+            ]);
+        }
 
         return [
             'updated' => $dte->refresh(),
