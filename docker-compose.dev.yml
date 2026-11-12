@@ -2,9 +2,7 @@ name: rutely-dte-dev
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: rutely-dte-dev-app:${APP_IMAGE_TAG:?APP_IMAGE_TAG is required}
     container_name: rutelydtedev
     restart: unless-stopped
     env_file:
@@ -22,9 +20,7 @@ services:
       - rutely-dte-dev-network
 
   queue:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: rutely-dte-dev-app:${APP_IMAGE_TAG:?APP_IMAGE_TAG is required}
     container_name: rutelydtedevworker
     restart: unless-stopped
     env_file:

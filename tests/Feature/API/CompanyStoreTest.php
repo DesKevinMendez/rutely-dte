@@ -100,6 +100,20 @@ test('an admin can create a company and is assigned to it', function () {
     ]);
 });
 
+test('a company stores its NRC without hyphens or leading zeros', function () {
+    Sanctum::actingAs(User::factory()->create());
+
+    $response = $this->postJson(route('api.v1.companies.store'), [
+        ...validCompanyPayload(),
+        'nrc' => '0123456-7',
+    ])->assertCreated();
+
+    $this->assertDatabaseHas(Company::class, [
+        'id' => $response->json('data.id'),
+        'nrc' => '1234567',
+    ]);
+});
+
 test('a superadmin can create a company and is assigned to it', function () {
     $user = User::factory()->withRole(Role::SUPERADMIN)->create();
 

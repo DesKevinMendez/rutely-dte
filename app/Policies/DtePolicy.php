@@ -28,6 +28,12 @@ class DtePolicy
         return $this->view($user, $dte) && ! in_array($dte->status, ['INVALIDADO'], true);
     }
 
+    public function retryTransmission(User $user, Dte $dte): bool
+    {
+        return $user->company_id === $dte->company_id
+            && $user->hasRole(Role::ADMIN->value);
+    }
+
     public function update(User $user, Dte $dte): bool
     {
         return false;

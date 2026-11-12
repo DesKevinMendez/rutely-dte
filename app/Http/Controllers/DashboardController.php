@@ -26,6 +26,7 @@ class DashboardController extends Controller
             'pending_transmissions' => MhTransmission::query()
                 ->where('company_id', $companyId)
                 ->whereIn('status', ['pending', 'failed'])
+                ->latestAttempts()
                 ->count(),
         ];
 

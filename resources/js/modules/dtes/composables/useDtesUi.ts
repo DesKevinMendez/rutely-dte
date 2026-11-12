@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRequest } from '@/core/composables/useRequest';
 import type { ApiResponse } from '@/core/types/api.types';
 import type {
@@ -51,13 +51,33 @@ const toStorePayload = (draft: DteDraft): DteStorePayload => ({
 export function useDtesUi() {
     const filterTipoDte = ref('');
     const filterEstado = ref('');
-    const filterFecha = ref(getTodayDate());
+    const filterDate = ref(getTodayDate());
+    const dateMode = ref('day');
+    const dateFrom = ref('');
+    const dateTo = ref('');
     const { post, isLoading } = useRequest();
+
+    const dateRangeMessage = computed(() => {
+        if (dateMode.value !== 'range') {
+            return null;
+        }
+
+        if (!dateFrom.value || !dateTo.value) {
+            return 'Selecciona ambas fechas para aplicar el rango.';
+        }
+
+        return dateFrom.value > dateTo.value
+            ? 'La fecha final debe ser igual o posterior a la fecha inicial.'
+            : null;
+    });
 
     const resetFilters = (): void => {
         filterTipoDte.value = '';
         filterEstado.value = '';
-        filterFecha.value = getTodayDate();
+        filterDate.value = getTodayDate();
+        dateMode.value = 'day';
+        dateFrom.value = '';
+        dateTo.value = '';
     };
 
     const createDte = async (
@@ -93,7 +113,11 @@ export function useDtesUi() {
     return {
         filterTipoDte,
         filterEstado,
-        filterFecha,
+        filterDate,
+        dateMode,
+        dateFrom,
+        dateTo,
+        dateRangeMessage,
         resetFilters,
         isLoading,
         createDte,

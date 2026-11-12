@@ -182,7 +182,7 @@ const formatTimestamp = (value: string): string =>
                     }}</span></InfoItem
                 >
                 <InfoItem label="Observaciones guardadas"
-                    ><span class="break-words whitespace-pre-wrap">{{
+                    ><span class="wrap-anywhere whitespace-pre-wrap">{{
                         dte.observations ?? 'Sin observaciones'
                     }}</span></InfoItem
                 >

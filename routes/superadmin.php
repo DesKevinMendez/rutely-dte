@@ -3,6 +3,7 @@
 use App\Http\Controllers\Superadmin\ApiCompanyTokenController;
 use App\Http\Controllers\Superadmin\CompanyController;
 use App\Http\Controllers\Superadmin\CompanyUserController;
+use App\Http\Controllers\Superadmin\DteCorrelativeController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/superadmin')
@@ -11,6 +12,11 @@ Route::prefix('v1/superadmin')
     ->group(function (): void {
         Route::apiResource('companies', CompanyController::class)
             ->only(['index', 'store', 'show', 'update']);
+
+        Route::get('companies/{company}/dte-correlative', [DteCorrelativeController::class, 'show'])
+            ->name('companies.dte-correlative.show');
+        Route::patch('companies/{company}/dte-correlative', [DteCorrelativeController::class, 'update'])
+            ->name('companies.dte-correlative.update');
 
         Route::apiResource('companies.users', CompanyUserController::class)
             ->only(['index', 'store']);

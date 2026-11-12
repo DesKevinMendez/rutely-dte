@@ -5,6 +5,7 @@ namespace App\Http\Requests\Company;
 use App\Models\Company;
 use App\Models\User;
 use App\Services\Dte\MhCatalog;
+use App\Services\Dte\TaxIdentifier;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -18,6 +19,16 @@ class StoreCompanyRequest extends FormRequest
         $user = $this->user();
 
         return $user instanceof User && $user->can('create', Company::class);
+    }
+
+    /** Normativa 2.0, Anexo IV #21: the issuer NRC goes without hyphens or leading zeros. */
+    protected function prepareForValidation(): void
+    {
+        $nrc = $this->input('nrc');
+
+        if (is_string($nrc)) {
+            $this->merge(['nrc' => TaxIdentifier::nrc($nrc)]);
+        }
     }
 
     /**

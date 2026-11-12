@@ -3,6 +3,7 @@
 namespace Tests\Support;
 
 use Opis\JsonSchema\Errors\ErrorFormatter;
+use Opis\JsonSchema\Helper;
 use Opis\JsonSchema\Validator;
 
 /**
@@ -22,6 +23,8 @@ class MhSchema
     /**
      * Whole numbers are encoded without a fraction because the validator reports
      * some of them as not multiple of 0.01 when they are floats (90.0 fails, 90 passes).
+     * Twelve decimal places avoid binary float noise for amounts like 81.22 while
+     * still detecting excess precision beyond the eight decimals MH allows.
      *
      * @param  array<string, mixed>  $document
      * @return array<string, array<int, string>>
@@ -32,7 +35,14 @@ class MhSchema
         $validator->setMaxErrors(50);
 
         $data = json_decode((string) json_encode($document, JSON_THROW_ON_ERROR));
-        $result = $validator->validate($data, (string) file_get_contents(__DIR__."/mh-schemas/{$schema}.json"));
+        $previousScale = Helper::$numberScale;
+        Helper::$numberScale = 12;
+
+        try {
+            $result = $validator->validate($data, (string) file_get_contents(__DIR__."/mh-schemas/{$schema}.json"));
+        } finally {
+            Helper::$numberScale = $previousScale;
+        }
 
         return $result->isValid() ? [] : (new ErrorFormatter)->format($result->error());
     }

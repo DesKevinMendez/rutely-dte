@@ -10,6 +10,15 @@ use App\Services\Dte\MhCatalog;
  */
 class TaxCreditBuilder extends SaleDocumentBuilder
 {
+    /** Normativa 2.0, Anexo IV #141: the perceived IVA is 1% of the taxed sales. */
+    private const PERCEIVED_IVA_RATE = 0.01;
+
+    /** @param  array<string, mixed>  $payload */
+    public function perceivedIva(array $payload): float
+    {
+        return round($this->roundedSum($this->items($payload['items']), 'ventaGravada') * self::PERCEIVED_IVA_RATE, 2);
+    }
+
     protected function version(): int
     {
         return 4;

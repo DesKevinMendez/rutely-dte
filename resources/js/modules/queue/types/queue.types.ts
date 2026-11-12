@@ -1,3 +1,5 @@
+import type { DteApiRecord, MhResponse } from '@/modules/dtes/types/dte.types';
+
 export type QueueApiStatus = 'pending' | 'failed';
 export type QueueJobStatus = 'PENDING' | 'FAILED';
 
@@ -24,6 +26,17 @@ export interface QueueJob {
     status: QueueJobStatus;
     lastError: string | null;
     createdAt: string;
+}
+
+export interface QueueDteRetryResult {
+    record: DteApiRecord;
+    mh_result: MhResponse;
+}
+
+export interface QueueDteRetryOutcome {
+    dteId: string;
+    isAccepted: boolean;
+    message: string;
 }
 
 export interface QueueRetryResult {

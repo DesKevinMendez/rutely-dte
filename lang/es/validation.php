@@ -7,6 +7,8 @@ return [
     'date_format' => 'El campo :attribute debe tener el formato :format.',
     'decimal' => 'El campo :attribute debe tener :decimal decimales.',
     'distinct' => 'El campo :attribute tiene un valor duplicado.',
+    'dte_export_max_rows' => 'El archivo supera el límite de filas de Excel. Aplica filtros e inténtalo de nuevo.',
+    'dte_retry_without_failed_transmission' => 'Este DTE no tiene una transmisión fallida para reintentar.',
     'email' => 'El campo :attribute debe ser una dirección de correo electrónico válida.',
     'enum' => 'El valor seleccionado para :attribute no es válido.',
     'exists' => 'El valor seleccionado para :attribute no es válido.',
@@ -65,6 +67,12 @@ return [
     'uuid' => 'El campo :attribute debe ser un UUID válido.',
 
     'custom' => [
+        'filter.date' => [
+            'prohibits' => 'Selecciona un día específico o un rango de fechas.',
+        ],
+        'filter.to' => [
+            'after_or_equal' => 'La fecha final debe ser igual o posterior a la fecha inicial.',
+        ],
         'certificadoXml' => [
             'max' => 'El certificado de Hacienda no debe pesar más de 2 MB.',
         ],
@@ -102,8 +110,13 @@ return [
         'role' => 'rol',
         'status' => 'estado',
         'company_id' => 'empresa',
+        'next_value' => 'próximo correlativo',
         'environment' => 'ambiente',
         'per_page' => 'elementos por página',
+        'filter' => 'filtros',
+        'filter.date' => 'fecha de emisión',
+        'filter.from' => 'fecha inicial',
+        'filter.to' => 'fecha final',
         'abilities' => 'permisos',
         'abilities.*' => 'permiso',
         'mh_establishment_code' => 'código de establecimiento MH',
@@ -138,6 +151,7 @@ return [
         'receptor.direccion.distrito' => 'distrito del receptor',
         'receptor.direccion.complemento' => 'complemento de dirección del receptor',
         'receptor.correo' => 'correo del receptor',
+        'resumen.descu' => 'descuento global',
         'resumen.ivaRete' => 'IVA retenido',
         'resumen.ivaPerci' => 'IVA percibido',
         'resumen.reteRenta' => 'retención de renta',

@@ -9,6 +9,7 @@ use App\Http\Controllers\ContingencyStatusController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DteController;
 use App\Http\Controllers\DteInvalidationController;
+use App\Http\Controllers\DteRetryController;
 use App\Http\Controllers\MhCertificatesController;
 use App\Http\Controllers\MhCredentialsController;
 use App\Http\Controllers\QueueController;
@@ -19,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/guess.php';
+require __DIR__.'/shared.php';
 
 Route::get('/user', function (Request $request): User {
     /** @var User $user */
@@ -38,11 +40,17 @@ Route::group(['prefix' => 'v1'], function () {
             ->name('api.v1.dtes.index');
         Route::get('dtes/{dte}', [DteController::class, 'show'])
             ->name('api.v1.dtes.show');
+        Route::post('dtes/{dte}/retries', DteRetryController::class)
+            ->name('api.v1.dtes.retries.store');
     });
 
     Route::post('dtes', [DteController::class, 'store'])
         ->middleware(['auth:sanctum', 'dte-company-abilities:create:dte'])
         ->name('api.v1.dtes.store');
+
+    Route::post('dtes/{dte}/invalidations', [DteInvalidationController::class, 'store'])
+        ->middleware(['auth:sanctum', 'dte-company-abilities:create:dte'])
+        ->name('api.v1.dtes.invalidations.store');
 
     Route::middleware(['auth:sanctum', 'user-token'])->group(function () {
         Route::get('dashboard', [DashboardController::class, 'show'])
@@ -76,9 +84,6 @@ Route::group(['prefix' => 'v1'], function () {
             ->name('api.v1.mh-certificates.show');
         Route::post('mh-certificates', [MhCertificatesController::class, 'store'])
             ->name('api.v1.mh-certificates.store');
-
-        Route::post('dtes/{dte}/invalidations', [DteInvalidationController::class, 'store'])
-            ->name('api.v1.dtes.invalidations.store');
 
         Route::get('contingency', [ContingencyStatusController::class, 'show'])
             ->name('api.v1.contingency.show');

@@ -10,12 +10,11 @@ use Tests\Support\DteApiTestData;
 use function Pest\Laravel\mock;
 
 /**
- * A company that signs for real with the official test certificate. Only the
- * transmission to MH is replaced, so a test exercises the whole document chain.
+ * A company that signs for real with the official test certificate.
  *
  * @param  array<string, mixed>  $overrides
  */
-function companyReadyToIssue(array $overrides = []): Company
+function companyWithSigningCertificate(array $overrides = []): Company
 {
     $company = DteApiTestData::company(['nit' => OfficialMhFixture::NIT, ...$overrides]);
 
@@ -27,6 +26,19 @@ function companyReadyToIssue(array $overrides = []): Company
         'encrypted_private_key_password' => OfficialMhFixture::PASSWORD,
         'active' => true,
     ]);
+
+    return $company;
+}
+
+/**
+ * A company that signs for real with the official test certificate. Only the
+ * transmission to MH is replaced, so a test exercises the whole document chain.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function companyReadyToIssue(array $overrides = []): Company
+{
+    $company = companyWithSigningCertificate($overrides);
 
     $transmission = mock(MhTransmissionService::class);
     $transmission->shouldReceive('transmitDte')->andReturn(DteApiTestData::mhResult());

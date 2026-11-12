@@ -66,7 +66,7 @@ test('company member can filter DTEs by emission date', function () {
     Sanctum::actingAs(DteApiTestData::user($company, Role::USER));
 
     $this->getJson(route('api.v1.dtes.index', [
-        'filter' => ['fecha' => '2026-08-18'],
+        'filter' => ['date' => '2026-08-18'],
     ]))
         ->assertOk()
         ->assertExactJson([

@@ -14,8 +14,11 @@ use App\Models\EstablishmentTypes;
 use App\Models\ItemType;
 use App\Models\Municipalities;
 use App\Models\PaymentMethod;
+use App\Models\User;
 use App\Services\Dte\Documents\DteDocumentBuilder;
+use App\Services\Dte\Documents\TaxCreditBuilder;
 use App\Services\Dte\MhCatalog;
+use App\Services\Dte\TaxIdentifier;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -28,7 +31,8 @@ class StoreDteRequest extends FormRequest
 {
     private const MAX_AMOUNT = 100000000000;
 
-    private const PAYMENT_TOLERANCE = 0.01;
+    /** Normativa 2.0, regla 7.3: Hacienda accepts ±$0.01 against its own calculation. */
+    private const MH_TOLERANCE = 0.01;
 
     /** Normativa 2.0, Anexo IV: consumer data required above the legal amount. */
     private const IDENTIFICATION_FIELDS = [
@@ -39,17 +43,19 @@ class StoreDteRequest extends FormRequest
 
     public function authorize(): bool
     {
+        /** @var User|Company|null $principal */
         $principal = $this->user();
 
         if ($principal instanceof Company) {
-            return $principal->currentAccessToken()?->can('create:dte') ?? false;
+            return $principal->tokenCan('create:dte');
         }
 
         return $principal?->can('create', Dte::class) ?? false;
     }
 
     /**
-     * NIT, NRC and DUI are written with hyphens in El Salvador, but Hacienda receives only their digits.
+     * NIT, NRC and DUI are written with hyphens in El Salvador, but Hacienda receives only their digits,
+     * and the NRC without leading zeros (Normativa 2.0, Anexo IV #41).
      */
     protected function prepareForValidation(): void
     {
@@ -59,10 +65,12 @@ class StoreDteRequest extends FormRequest
             return;
         }
 
-        foreach (['nit', 'nrc'] as $field) {
-            if (is_string($receiver[$field] ?? null)) {
-                $receiver[$field] = str_replace('-', '', $receiver[$field]);
-            }
+        if (is_string($receiver['nit'] ?? null)) {
+            $receiver['nit'] = str_replace('-', '', $receiver['nit']);
+        }
+
+        if (is_string($receiver['nrc'] ?? null)) {
+            $receiver['nrc'] = TaxIdentifier::nrc($receiver['nrc']);
         }
 
         $hasDigitsOnlyDocument = in_array($receiver['tipoDocumento'] ?? null, [MhCatalog::DUI_DOCUMENT_TYPE, MhCatalog::NIT_DOCUMENT_TYPE], true);
@@ -117,9 +125,13 @@ class StoreDteRequest extends FormRequest
                 }
 
                 $builder = DteDocumentBuilder::for($this->documentType());
+                $totalPurchases = 0.0;
 
                 foreach ($this->input('items') as $index => $item) {
-                    if ($builder->lineAmount($item) < 0) {
+                    $lineAmount = $builder->lineAmount($item);
+                    $totalPurchases += $lineAmount;
+
+                    if ($lineAmount < 0) {
                         $validator->errors()->add(
                             "items.{$index}.montoDescu",
                             'El monto de descuento del ítem no puede ser mayor que el valor de la línea.',
@@ -149,6 +161,18 @@ class StoreDteRequest extends FormRequest
                     }
                 }
 
+                if ($builder instanceof TaxCreditBuilder) {
+                    $this->validatePerceivedIva($validator, $builder);
+                }
+
+                $isExcludedSubject = $this->documentType() === IssuableDteType::EXCLUDED_SUBJECT;
+
+                if ($isExcludedSubject && (float) $this->input('resumen.descu', 0) > round($totalPurchases, 2)) {
+                    $validator->errors()->add('resumen.descu', 'El descuento global no puede ser mayor que el total de compras.');
+
+                    return;
+                }
+
                 $amountDue = $builder->totalToPay($this->only(['items', 'resumen']));
 
                 if ($amountDue < 0) {
@@ -166,16 +190,33 @@ class StoreDteRequest extends FormRequest
                 }
 
                 $payments = $this->input('resumen.pagos');
+                $isExcludedSubjectOnCredit = $isExcludedSubject && $condition === MhCatalog::CREDIT_CONDITION;
 
-                if (is_array($payments)) {
+                if (is_array($payments) && ! $isExcludedSubjectOnCredit) {
                     $paid = array_sum(array_column($payments, 'montoPago'));
 
-                    if (round(abs($paid - $amountDue), 2) > self::PAYMENT_TOLERANCE) {
+                    if (round(abs($paid - $amountDue), 2) > self::MH_TOLERANCE) {
                         $validator->errors()->add('resumen.pagos', 'La suma de las formas de pago debe coincidir con el total a pagar.');
                     }
                 }
             },
         ];
+    }
+
+    /**
+     * Normativa 2.0, Anexo IV #141: when it applies, the perceived IVA is 1% of the taxed sales.
+     */
+    private function validatePerceivedIva(Validator $validator, TaxCreditBuilder $builder): void
+    {
+        $perceivedIva = (float) $this->input('resumen.ivaPerci', 0);
+        $expectedIva = $builder->perceivedIva($this->only(['items', 'resumen']));
+
+        if ($perceivedIva > 0 && round(abs($perceivedIva - $expectedIva), 2) > self::MH_TOLERANCE) {
+            $validator->errors()->add(
+                'resumen.ivaPerci',
+                'El IVA percibido debe ser el 1% de las ventas gravadas: $'.number_format($expectedIva, 2).'.',
+            );
+        }
     }
 
     /** @param  array<string, mixed>  $item */
@@ -224,7 +265,11 @@ class StoreDteRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Normativa 2.0, Anexo IV #57: only FE, CRE, FEXE, FSEE and CDE may leave the receiver email empty.
+     *
+     * @return array<string, mixed>
+     */
     private function taxCreditReceiverRules(): array
     {
         return [
@@ -239,7 +284,7 @@ class StoreDteRequest extends FormRequest
             'receptor.nombreComercial' => ['sometimes', 'nullable', 'string', 'max:150'],
             'receptor.direccion' => ['required', 'array'],
             ...$this->receiverAddressRules(),
-            ...$this->receiverContactRules(1),
+            ...$this->receiverContactRules(1, isEmailRequired: true),
         ];
     }
 
@@ -306,11 +351,13 @@ class StoreDteRequest extends FormRequest
     }
 
     /** @return array<string, mixed> */
-    private function receiverContactRules(int $minimumEmailLength): array
+    private function receiverContactRules(int $minimumEmailLength, bool $isEmailRequired = false): array
     {
+        $emailPresence = $isEmailRequired ? ['required'] : ['sometimes', 'nullable'];
+
         return [
             'receptor.telefono' => ['sometimes', 'nullable', 'string', 'min:8', 'max:30'],
-            'receptor.correo' => ['sometimes', 'nullable', 'email:filter', "min:{$minimumEmailLength}", 'max:100'],
+            'receptor.correo' => [...$emailPresence, 'email:filter', "min:{$minimumEmailLength}", 'max:100'],
         ];
     }
 
@@ -319,17 +366,27 @@ class StoreDteRequest extends FormRequest
     {
         $type = $this->documentType();
         $isExcludedSubject = $type === IssuableDteType::EXCLUDED_SUBJECT;
+        $isExcludedSubjectOnCredit = $isExcludedSubject
+            && (int) $this->input('resumen.condicionOperacion', MhCatalog::CASH_CONDITION) === MhCatalog::CREDIT_CONDITION;
+        $paymentReferenceRules = ['sometimes', 'nullable', 'string', 'max:50'];
+
+        if ($isExcludedSubject) {
+            $paymentReferenceRules[] = $isExcludedSubjectOnCredit
+                ? 'prohibited'
+                : 'prohibited_if:resumen.pagos.*.codigo,'.MhCatalog::CASH_PAYMENT_METHOD;
+        }
 
         return [
             'resumen' => ['sometimes', 'array'],
+            ...($isExcludedSubject ? ['resumen.descu' => ['sometimes', ...$this->amountRules(2)]] : []),
             'resumen.ivaRete' => $isExcludedSubject ? ['prohibited'] : ['sometimes', ...$this->amountRules(2)],
             'resumen.ivaPerci' => $type === IssuableDteType::TAX_CREDIT ? ['sometimes', ...$this->amountRules(2)] : ['prohibited'],
             'resumen.reteRenta' => $isExcludedSubject ? ['sometimes', ...$this->amountRules(2)] : ['prohibited'],
             'resumen.condicionOperacion' => ['bail', 'sometimes', 'integer', Rule::in(MhCatalog::OPERATION_CONDITIONS)],
             'resumen.pagos' => ['bail', 'required_if:resumen.condicionOperacion,2,3', 'array', 'min:1'],
-            'resumen.pagos.*.codigo' => ['bail', 'required', 'string', Rule::exists(PaymentMethod::class, 'code')],
-            'resumen.pagos.*.montoPago' => ['required', ...$this->amountRules(2)],
-            'resumen.pagos.*.referencia' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'resumen.pagos.*.codigo' => $isExcludedSubjectOnCredit ? ['bail', 'prohibited', 'nullable', 'string'] : ['bail', 'required', 'string', Rule::exists(PaymentMethod::class, 'code')],
+            'resumen.pagos.*.montoPago' => ['required', ...$this->amountRules(2), ...($isExcludedSubjectOnCredit ? ['max:0'] : [])],
+            'resumen.pagos.*.referencia' => $paymentReferenceRules,
             'resumen.pagos.*.plazo' => ['bail', 'required_if:resumen.condicionOperacion,2', 'nullable', 'string', Rule::in(MhCatalog::PAYMENT_TERMS)],
             'resumen.pagos.*.periodo' => ['bail', 'required_if:resumen.condicionOperacion,2', 'nullable', 'numeric', 'gt:0'],
             'resumen.observaciones' => ['sometimes', 'nullable', 'string', 'max:3000'],
