@@ -5,9 +5,6 @@ import type { ProfileSummary } from '../types/profile.types';
 
 export function useProfileUi() {
     const auth = useAuth();
-    const isAdmin = computed(
-        () => auth.user?.roles.some((role) => role.name === 'admin') ?? false,
-    );
     const company = computed(() => auth.user?.company ?? null);
 
     const profile = computed<ProfileSummary>(() => {
@@ -37,5 +34,5 @@ export function useProfileUi() {
         };
     });
 
-    return { profile, isAdmin, company };
+    return { profile, company };
 }
