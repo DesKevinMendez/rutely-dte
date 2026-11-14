@@ -17,7 +17,7 @@
               <td style="font-family:'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: {{ $titleColor }};">
                 {{ $title }}
               </td>
-              <td align="right" style="width: 20px; font-family:'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 700; color: #7C3AED;">
+              <td align="right" style="width: 20px; font-family:'Plus Jakarta Sans', sans-serif; font-size: 18px; font-weight: 700; color: #4f46e5;">
                 &plus;
               </td>
             </tr>

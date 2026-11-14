@@ -12,7 +12,7 @@
                 <td style="vertical-align: middle; padding-left: 10px;">
                     <a href="{{ $url }}" style="text-decoration: none; display: block;">
                         <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; font-weight: 800; color: #111827; line-height: 40px;">
-                            Rutely.biz
+                            Rutely POS
                         </span>
                     </a>
                 </td>
