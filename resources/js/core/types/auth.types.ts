@@ -15,5 +15,6 @@ export interface AuthUser {
 
 export interface AuthCompany {
     id: string;
+    name: string;
     environment: ApiEnvironment;
 }

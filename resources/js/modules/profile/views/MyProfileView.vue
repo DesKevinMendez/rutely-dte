@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Card } from 'ornito';
+import { Card, InfoItem } from 'ornito';
 import ProfileHeaderCard from '../components/ProfileHeaderCard.vue';
 import { useProfileUi } from '../composables/useProfileUi';
 
-const { profile } = useProfileUi();
+const { profile, isAdmin, companyName } = useProfileUi();
 </script>
 
 <template>
@@ -41,6 +41,14 @@ const { profile } = useProfileUi();
                         >{{ profile.phone }}</span
                     >
                 </div>
+            </div>
+        </Card>
+
+        <Card v-if="isAdmin" title="Datos de empresa">
+            <div class="grid gap-x-4 gap-y-4 sm:grid-cols-2">
+                <InfoItem label="Nombre de la empresa">
+                    {{ companyName ?? 'Aún no tienes una empresa asociada.' }}
+                </InfoItem>
             </div>
         </Card>
     </div>

@@ -2,8 +2,8 @@
 import { IconEye, IconPlus } from '@tabler/icons-vue';
 import { BaseButton, Card, DataTable, IconButton, ViewHeader } from 'ornito';
 import type { TableField } from 'ornito';
-import { formatSalvadoranPhone } from '@/core/composables/formatSalvadoranPhone';
 import { useRouter } from 'vue-router';
+import { formatSalvadoranPhone } from '@/core/composables/formatSalvadoranPhone';
 import type { Company } from '@/modules/superadmin/companies/types/company.types';
 
 const router = useRouter();
