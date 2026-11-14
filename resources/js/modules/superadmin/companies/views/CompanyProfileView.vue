@@ -2,6 +2,7 @@
 import { IconEdit } from '@tabler/icons-vue';
 import { BaseButton, Card, InfoItem } from 'ornito';
 import { formatIdentityDocument } from '@/core/composables/formatIdentityDocument';
+import { formatSalvadoranPhone } from '@/core/composables/formatSalvadoranPhone';
 import useCompanyShow from '@/modules/superadmin/companies/composables/useCompanyShow';
 
 const { company } = useCompanyShow();
@@ -42,7 +43,7 @@ const { company } = useCompanyShow();
                     {{ company.email }}
                 </InfoItem>
                 <InfoItem label="Teléfono">
-                    {{ company.phone }}
+                    {{ formatSalvadoranPhone(company.phone) }}
                 </InfoItem>
                 <InfoItem label="Dirección" column>
                     {{ company.address }}
