@@ -80,6 +80,25 @@ const router = createRouter({
                     name: 'my-profile',
                     component: () =>
                         import('@/modules/profile/views/MyProfileView.vue'),
+                    children: [
+                        {
+                            path: '',
+                            name: 'my-profile-redirect',
+                            redirect: { name: 'my-profile-personal-info' },
+                        },
+                        {
+                            path: 'personal-info',
+                            name: 'my-profile-personal-info',
+                            component: () =>
+                                import('@/modules/profile/views/MyProfilePersonalView.vue'),
+                        },
+                        {
+                            path: 'company',
+                            name: 'my-profile-company',
+                            component: () =>
+                                import('@/modules/profile/views/MyProfileCompanyView.vue'),
+                        },
+                    ],
                 },
             ],
         },

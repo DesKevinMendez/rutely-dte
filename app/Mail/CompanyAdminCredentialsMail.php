@@ -30,7 +30,8 @@ final class CompanyAdminCredentialsMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'mail.company-admin-credentials',
+            view: 'mail.company-admin-credentials',
+            text: 'mail.company-admin-credentials-text',
             with: [
                 'loginUrl' => rtrim((string) config('app.url'), '/').'#/login',
             ],

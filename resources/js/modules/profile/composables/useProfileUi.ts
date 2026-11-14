@@ -1,9 +1,11 @@
 import { computed } from 'vue';
+import { formatSalvadoranPhone } from '@/core/composables/formatSalvadoranPhone';
 import { useAuth } from '@/core/stores/auth';
 import type { ProfileSummary } from '../types/profile.types';
 
 export function useProfileUi() {
     const auth = useAuth();
+    const company = computed(() => auth.user?.company ?? null);
 
     const profile = computed<ProfileSummary>(() => {
         const name = auth.user?.name ?? 'Usuario';
@@ -26,9 +28,11 @@ export function useProfileUi() {
             initials,
             role,
             email: auth.user?.email ?? '—',
-            phone: auth.user?.phone ?? '—',
+            phone: auth.user?.phone
+                ? formatSalvadoranPhone(auth.user.phone)
+                : '—',
         };
     });
 
-    return { profile };
+    return { profile, company };
 }

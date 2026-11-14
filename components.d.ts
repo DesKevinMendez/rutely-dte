@@ -63,6 +63,8 @@ declare module 'vue' {
     MhCredentialsSkeleton: typeof import('./resources/js/modules/mh-credentials/components/MhCredentialsSkeleton.vue')['default']
     MhCredentialsStatusCard: typeof import('./resources/js/modules/mh-credentials/components/MhCredentialsStatusCard.vue')['default']
     MhCredentialsView: typeof import('./resources/js/modules/mh-credentials/views/MhCredentialsView.vue')['default']
+    MyProfileCompanyView: typeof import('./resources/js/modules/profile/views/MyProfileCompanyView.vue')['default']
+    MyProfilePersonalView: typeof import('./resources/js/modules/profile/views/MyProfilePersonalView.vue')['default']
     MyProfileView: typeof import('./resources/js/modules/profile/views/MyProfileView.vue')['default']
     OnboardingForm: typeof import('./resources/js/guess/modules/onboarding/components/OnboardingForm.vue')['default']
     OnboardingView: typeof import('./resources/js/guess/modules/onboarding/views/OnboardingView.vue')['default']
