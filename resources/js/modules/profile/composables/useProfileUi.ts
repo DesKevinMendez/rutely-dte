@@ -8,7 +8,7 @@ export function useProfileUi() {
     const isAdmin = computed(
         () => auth.user?.roles.some((role) => role.name === 'admin') ?? false,
     );
-    const companyName = computed(() => auth.user?.company?.name ?? null);
+    const company = computed(() => auth.user?.company ?? null);
 
     const profile = computed<ProfileSummary>(() => {
         const name = auth.user?.name ?? 'Usuario';
@@ -37,5 +37,5 @@ export function useProfileUi() {
         };
     });
 
-    return { profile, isAdmin, companyName };
+    return { profile, isAdmin, company };
 }
