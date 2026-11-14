@@ -1,4 +1,4 @@
-import type { AuthUser } from '@/core/types/auth.types';
+import type { AuthCompany, AuthUser } from '@/core/types/auth.types';
 import type { CompanyPayload } from '@/modules/superadmin/companies/types/company.types';
 
 export interface OnboardingForm {
@@ -40,7 +40,5 @@ export interface RegisterResponse {
 export type CompanyRequest = CompanyPayload;
 
 export interface CompanyResponse {
-    data: {
-        id: string;
-    };
+    data: AuthCompany;
 }

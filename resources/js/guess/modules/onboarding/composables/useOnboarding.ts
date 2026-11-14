@@ -1,8 +1,10 @@
 import { computed, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import * as yup from 'yup';
+import { formatSalvadoranPhone } from '@/core/composables/formatSalvadoranPhone';
 import { useRequest } from '@/core/composables/useRequest';
 import { useAuth } from '@/core/stores/auth';
+import type { AuthCompany } from '@/core/types/auth.types';
 import type { Company } from '@/modules/superadmin/companies/types/company.types';
 import type {
     CompanyRequest,
@@ -102,7 +104,7 @@ export default function useOnboarding(
         commercialName: initialCompany?.commercial_name ?? '',
         nit: initialCompany?.nit ?? '',
         nrc: initialCompany?.nrc ?? '',
-        phone: initialCompany?.phone ?? '',
+        phone: formatSalvadoranPhone(initialCompany?.phone),
         email: initialCompany?.email ?? '',
         address: initialCompany?.address ?? '',
         economicActivityCode: initialCompany?.economic_activity_code ?? '',
@@ -188,7 +190,7 @@ export default function useOnboarding(
         own_pos_code: form.ownPosCode,
     });
 
-    const createCompany = async (url: string): Promise<string | null> => {
+    const createCompany = async (url: string): Promise<AuthCompany | null> => {
         const payload = companyPayload();
 
         const response = await post<CompanyResponse, CompanyRequest>(
@@ -196,7 +198,7 @@ export default function useOnboarding(
             payload,
         );
 
-        return response.data.value?.data.id ?? null;
+        return response.data.value?.data ?? null;
     };
 
     const continueFlow = async (): Promise<void> => {
@@ -207,11 +209,9 @@ export default function useOnboarding(
         error.value = null;
 
         if (mode === 'superadmin') {
-            const companyId = await createCompany(
-                '/api/v1/superadmin/companies',
-            );
+            const company = await createCompany('/api/v1/superadmin/companies');
 
-            if (companyId) {
+            if (company) {
                 await router.push({ name: 'superadmin-companies' });
             }
 
@@ -222,16 +222,17 @@ export default function useOnboarding(
             return;
         }
 
-        const companyId = await createCompany('/api/v1/companies');
+        const company = await createCompany('/api/v1/companies');
         const currentUser = auth.user;
 
-        if (!companyId || !currentUser) {
+        if (!company || !currentUser) {
             return;
         }
 
         auth.setUser({
             ...currentUser,
-            company_id: companyId,
+            company_id: company.id,
+            company,
         });
 
         await router.push({ name: 'dashboard' });
