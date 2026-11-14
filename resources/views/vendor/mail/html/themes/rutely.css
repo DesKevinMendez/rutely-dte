@@ -1,8 +1,17 @@
 /* resources/views/vendor/mail/html/themes/rutely.css */
 
-body, .wrapper {
-    background-color: #F3F4F6 !important;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+body,
+.wrapper {
+    background-color: #f3f4f6 !important;
+    font-family:
+        'Plus Jakarta Sans',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif !important;
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
@@ -19,7 +28,7 @@ body, .wrapper {
 }
 
 .body {
-    background-color: #F3F4F6 !important;
+    background-color: #f3f4f6 !important;
     border: none !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -27,7 +36,7 @@ body, .wrapper {
 }
 
 .inner-body {
-    background-color: #FFFFFF !important;
+    background-color: #ffffff !important;
     border: none !important;
     border-radius: 12px !important;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
@@ -57,7 +66,7 @@ p {
     background-color: #4f46e5 !important;
     border: none !important;
     border-radius: 9999px !important;
-    color: #FFFFFF !important;
+    color: #ffffff !important;
     display: inline-block !important;
     font-size: 16px !important;
     font-weight: 700 !important;
@@ -71,6 +80,6 @@ p {
 }
 
 .footer p {
-    color: #9CA3AF !important;
+    color: #9ca3af !important;
     font-size: 13px !important;
 }
