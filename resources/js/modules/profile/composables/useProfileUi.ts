@@ -1,4 +1,5 @@
 import { computed } from 'vue';
+import { formatSalvadoranPhone } from '@/core/composables/formatSalvadoranPhone';
 import { useAuth } from '@/core/stores/auth';
 import type { ProfileSummary } from '../types/profile.types';
 
@@ -26,7 +27,9 @@ export function useProfileUi() {
             initials,
             role,
             email: auth.user?.email ?? '—',
-            phone: auth.user?.phone ?? '—',
+            phone: auth.user?.phone
+                ? formatSalvadoranPhone(auth.user.phone)
+                : '—',
         };
     });
 

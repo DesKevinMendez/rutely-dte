@@ -2,6 +2,7 @@
 import { IconEye, IconPlus } from '@tabler/icons-vue';
 import { BaseButton, Card, DataTable, IconButton, ViewHeader } from 'ornito';
 import type { TableField } from 'ornito';
+import { formatSalvadoranPhone } from '@/core/composables/formatSalvadoranPhone';
 import { useRouter } from 'vue-router';
 import type { Company } from '@/modules/superadmin/companies/types/company.types';
 
@@ -16,7 +17,11 @@ const columns: TableField<Company>[] = [
     { label: 'Nombre comercial', key: 'commercial_name' },
     { label: 'NIT', key: 'nit' },
     { label: 'Correo', key: 'email' },
-    { label: 'Teléfono', key: 'phone' },
+    {
+        label: 'Teléfono',
+        key: 'phone',
+        format: (company) => formatSalvadoranPhone(company.phone),
+    },
 ];
 </script>
 

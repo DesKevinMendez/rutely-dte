@@ -2,6 +2,7 @@ import { computed, reactive, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import * as yup from 'yup';
 import { useRequest } from '@/core/composables/useRequest';
+import { formatSalvadoranPhone } from '@/core/composables/formatSalvadoranPhone';
 import { useAuth } from '@/core/stores/auth';
 import type { Company } from '@/modules/superadmin/companies/types/company.types';
 import type {
@@ -102,7 +103,7 @@ export default function useOnboarding(
         commercialName: initialCompany?.commercial_name ?? '',
         nit: initialCompany?.nit ?? '',
         nrc: initialCompany?.nrc ?? '',
-        phone: initialCompany?.phone ?? '',
+        phone: formatSalvadoranPhone(initialCompany?.phone),
         email: initialCompany?.email ?? '',
         address: initialCompany?.address ?? '',
         economicActivityCode: initialCompany?.economic_activity_code ?? '',

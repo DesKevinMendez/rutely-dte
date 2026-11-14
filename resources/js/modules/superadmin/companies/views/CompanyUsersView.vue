@@ -4,6 +4,7 @@ import { Alert, BaseButton, Card, DataTable } from 'ornito';
 import type { TableField } from 'ornito';
 import { computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
+import { formatSalvadoranPhone } from '@/core/composables/formatSalvadoranPhone';
 import CompanyUserFormModal from '@/modules/superadmin/companies/components/CompanyUserFormModal.vue';
 import useCompanyUsers from '@/modules/superadmin/companies/composables/useCompanyUsers';
 import type { CompanyUser } from '@/modules/superadmin/companies/types/company-user.types';
@@ -29,7 +30,8 @@ const columns: TableField<CompanyUser>[] = [
     {
         label: 'Teléfono',
         key: 'phone',
-        format: (user) => user.phone || 'No registrado',
+        format: (user) =>
+            user.phone ? formatSalvadoranPhone(user.phone) : 'No registrado',
     },
 ];
 
