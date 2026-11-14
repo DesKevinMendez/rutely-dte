@@ -1,4 +1,4 @@
-import type { ApiResponse, PaginatedApiResponse } from '@/core/types/api.types';
+import type { ApiResponse } from '@/core/types/api.types';
 
 export interface CompanyUser {
     id: string;
@@ -16,5 +16,3 @@ export interface CompanyUserPayload {
 }
 
 export type CompanyUserResponse = ApiResponse<CompanyUser>;
-
-export type CompanyUsersResponse = PaginatedApiResponse<CompanyUser>;

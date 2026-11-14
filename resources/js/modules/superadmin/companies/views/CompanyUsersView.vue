@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { IconPlus } from '@tabler/icons-vue';
-import { Alert, BaseButton, Card, DataTable } from 'ornito';
+import { BaseButton, Card, DataTable } from 'ornito';
 import type { TableField } from 'ornito';
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { formatSalvadoranPhone } from '@/core/composables/formatSalvadoranPhone';
 import CompanyUserFormModal from '@/modules/superadmin/companies/components/CompanyUserFormModal.vue';
@@ -12,13 +12,10 @@ import type { CompanyUser } from '@/modules/superadmin/companies/types/company-u
 const route = useRoute();
 const companyId = computed(() => String(route.params.id ?? ''));
 const {
-    users,
-    isLoading,
-    error,
+    usersUrl,
     isFormModalOpen,
     isSaving,
     formError,
-    loadUsers,
     openCreateModal,
     closeFormModal,
     saveUser,
@@ -34,16 +31,10 @@ const columns: TableField<CompanyUser>[] = [
             user.phone ? formatSalvadoranPhone(user.phone) : 'No registrado',
     },
 ];
-
-watch(companyId, loadUsers, { immediate: true });
 </script>
 
 <template>
     <div class="space-y-6">
-        <Alert v-if="error" type="danger" role="alert">
-            {{ error }}
-        </Alert>
-
         <Card title="Usuarios de la empresa">
             <template #headerButtons>
                 <BaseButton
@@ -57,18 +48,11 @@ watch(companyId, loadUsers, { immediate: true });
                 </BaseButton>
             </template>
 
-            <p
-                v-if="isLoading"
-                class="py-8 text-center text-sm text-gray-500 dark:text-gray-400"
-                role="status"
-            >
-                Cargando usuarios…
-            </p>
             <DataTable
-                v-else
+                :url="usersUrl"
                 :columns="columns"
-                :data="users"
-                :show-search="false"
+                search-by="name"
+                search-placeholder="Buscar por nombre..."
                 actions-label="Opciones"
             />
         </Card>

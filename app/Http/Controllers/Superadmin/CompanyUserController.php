@@ -13,14 +13,19 @@ use App\Response\CommonResponse;
 use App\Role;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class CompanyUserController extends Controller
 {
     public function index(CatalogIndexRequest $request, Company $company): CommonCollection
     {
-        $users = User::query()
-            ->with('roles')
-            ->where('company_id', $company->id)
+        $users = QueryBuilder::for(
+            User::query()
+                ->with('roles')
+                ->where('company_id', $company->id),
+        )
+            ->allowedFilters(AllowedFilter::partial('name'))
             ->orderBy('name')
             ->paginate($request->integer('per_page', 10));
 
