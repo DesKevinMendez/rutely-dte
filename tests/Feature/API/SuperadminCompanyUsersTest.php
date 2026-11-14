@@ -81,12 +81,13 @@ test('superadmin can search and paginate company users by name', function (): vo
         'company_id' => $company->id,
         'name' => 'Luis Gómez',
     ]);
+    $otherCompany = DteApiTestData::company([
+        'name' => 'Otra empresa, S.A. de C.V.',
+        'nit' => '06142812901016',
+        'email' => 'otra@example.com',
+    ]);
     User::factory()->withRole(Role::ADMIN)->create([
-        'company_id' => DteApiTestData::company([
-            'name' => 'Otra empresa, S.A. de C.V.',
-            'nit' => '06142812901016',
-            'email' => 'otra@example.com',
-        ])->id,
+        'company_id' => $otherCompany->id,
         'name' => 'Ana Otra Empresa',
     ]);
 
