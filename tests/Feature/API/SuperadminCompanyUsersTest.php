@@ -67,6 +67,57 @@ test('superadmin can list only users assigned to the selected company', function
         ]);
 });
 
+test('superadmin can search and paginate company users by name', function (): void {
+    $company = DteApiTestData::company();
+    $firstMatchingUser = User::factory()->withRole(Role::ADMIN)->create([
+        'company_id' => $company->id,
+        'name' => 'Ana Alvarez',
+    ]);
+    User::factory()->withRole(Role::ADMIN)->create([
+        'company_id' => $company->id,
+        'name' => 'Ana Pérez',
+    ]);
+    User::factory()->withRole(Role::ADMIN)->create([
+        'company_id' => $company->id,
+        'name' => 'Luis Gómez',
+    ]);
+    User::factory()->withRole(Role::ADMIN)->create([
+        'company_id' => DteApiTestData::company([
+            'name' => 'Otra empresa, S.A. de C.V.',
+            'nit' => '06142812901016',
+            'email' => 'otra@example.com',
+        ])->id,
+        'name' => 'Ana Otra Empresa',
+    ]);
+
+    Sanctum::actingAs(User::factory()->withRole(Role::SUPERADMIN)->create([
+        'company_id' => null,
+    ]));
+
+    $this->getJson(route('api.v1.superadmin.companies.users.index', [
+        'company' => $company,
+        'per_page' => 1,
+        'filter' => ['name' => 'Ana'],
+    ]))
+        ->assertOk()
+        ->assertJson([
+            'data' => [
+                [
+                    'id' => $firstMatchingUser->id,
+                    'name' => 'Ana Alvarez',
+                ],
+            ],
+            'pagination' => [
+                'total' => 2,
+                'per_page' => 1,
+                'current_page' => 1,
+                'last_page' => 2,
+                'from' => 1,
+                'to' => 1,
+            ],
+        ]);
+});
+
 test('superadmin can create an active company admin with a generated password', function (string $phone) {
     Queue::fake();
     $company = DteApiTestData::company();
